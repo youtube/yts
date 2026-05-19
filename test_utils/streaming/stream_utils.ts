@@ -23,32 +23,31 @@ const RETRY_COUNT_LIMIT = 10;
 /** Delay between retries for appendBuffer in milliseconds. */
 const RETRY_DELAY_MS = 2000;
 
-/** Interface for streaming metadata. */
-export interface StreamInfo {
-  mimetype: string;
-  src: string;
-  fileSize: number;
-}
+/**
+ * Fetches media segment data from a URL and appends it to the SourceBuffer.
+ *
+ * @param contentBuffer The SourceBuffer to append to.
+ * @param contentUrl URL of the media content.
+ */
+export async function appendContentToBuffer(
+    contentBuffer: SourceBuffer,
+    contentUrl: string,
+    ): Promise<void> {
+  console.log(`Fetching ${contentUrl}`);
+  const response = await fetch(contentUrl);
 
-/** Handles fetching and appending the audio stream as a single chunk. */
-export async function handleAudioFetch(
-  audioInfo: StreamInfo,
-  sb: SourceBuffer,
-): Promise<void> {
-  try {
-    console.log(`Fetching audio: ${audioInfo.src}`);
-    const response = await fetch(audioInfo.src);
-    if (!response.ok) {
-      throw new Error(
-        `Audio fetch failed: ${response.status} ${response.statusText}`,
-      );
-    }
-    const data = await response.arrayBuffer();
-    console.log(`Appending audio data of size ${data.byteLength}.`);
-    await appendToBufferWithRetry(sb, data, 'audio');
-  } catch (e) {
-    logError(e, 'audio fetch/append');
+  if (!response.ok) {
+    const errorMsg =
+        `Fetch failed for ${contentUrl}. Status: ${response.status}`;
+    console.error(errorMsg);
+    throw new Error(errorMsg);
   }
+
+  const buffer = await response.arrayBuffer();
+  console.log(
+      `Fetch complete for ${contentUrl}. Byte length: ${buffer.byteLength}`);
+
+  await appendToBufferWithRetry(contentBuffer, buffer, contentUrl);
 }
 
 /** Helper to append data to a SourceBuffer safely with retries on QuotaExceededError. */

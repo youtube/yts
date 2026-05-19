@@ -36,26 +36,9 @@ import {AV1_STREAMS} from './av1';
 import {EAC3_STREAMS} from './eac3';
 import {H264_STREAMS} from './h264';
 import {IAMF_STREAMS} from './iamf';
-import {AudioStreamSpecificMetadata, AudioStreamsType, VideoStreamSpecificMetadata, VideoStreamsType} from './interfaces';
+import type {CustomMap, StreamDef, StreamTypeInfo} from './interfaces';
 import {OPUS_STREAMS} from './opus';
 import {VP9_STREAMS} from './vp9';
-
-type StreamTypeInfo = AudioStreamsType | VideoStreamsType;
-type CustomMap = AudioStreamSpecificMetadata | VideoStreamSpecificMetadata;
-
-/** Represents a single media stream definition. */
-export interface StreamDef {
-  codec: string;
-  mediatype: string;
-  container: string;
-  mimetype: string;
-  size: number;
-  src: string;
-  duration: number;
-  bps: number;
-  customMap?: CustomMap;
-  get(attribute: string): unknown;
-}
 
 const codecTypes: {[key: string]: VideoCodec} = {
   [AV1_STREAMS.streamtype]: AV1_CODEC,
@@ -164,7 +147,7 @@ function createStreamDef(
     mediatype: mediaType,
     container: containerOverride ? containerOverride : container,
     mimetype: mime,
-    size,
+    fileSize: size,
     src: util.getMediaPath(src),
     duration,
     bps: duration > 0 ? Math.floor(size / duration) : 0,

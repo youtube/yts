@@ -19,7 +19,7 @@
  * @fileoverview Util methods migrated from legacy YTS.
  */
 
-import {getMaxAV1SupportedWindow, getMaxVp9SupportedWindow} from 'google3/third_party/javascript/yts/test_utils/playback_util';
+import {getMaxAV1SupportedWindow, getMaxSupportedWindowSize, getMaxVp9SupportedWindow} from 'google3/third_party/javascript/yts/test_utils/playback_util';
 
 const MEDIA_PATH =
   '//storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/';
@@ -107,6 +107,22 @@ export function isVp9GtFHD() {
 export function isVp9Gt4K() {
   const vp9 = getMaxVp9SupportedWindow();
   return vp9[0] * vp9[1] > 8294400;
+}
+
+/**
+ * Returns true if the maximum resolution for any codec is greater than FHD.
+ */
+export function isGtFHD() {
+  const size = getMaxSupportedWindowSize();
+  return size[0] * size[1] > 2073600;
+}
+
+/**
+ * Returns true if the maximum resolution for any codec is greater than 4K.
+ */
+export function isGt4K() {
+  const size = getMaxSupportedWindowSize();
+  return size[0] * size[1] > 8294400;
 }
 
 /**

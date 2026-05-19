@@ -16,7 +16,8 @@
  */
 
 import {HLG_AV1_METADATA, PQ_AV1_METADATA} from '../codecs/av1_codec';
-import {VideoStreamData} from './interfaces';
+
+import type {VideoStreamData} from './interfaces';
 
 // tslint:disable:enforce-name-casing
 

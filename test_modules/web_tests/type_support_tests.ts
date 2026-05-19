@@ -15,19 +15,17 @@
  * limitations under the License.
  */
 
+import 'jasmine';
+import 'yts';
+
 import * as util from 'google3/third_party/javascript/yts/test_utils/legacy_yts_utils';
 import {
   createMimeTypeStr,
   getMaxSupportedWindowSize,
   isHdrSupported,
 } from 'google3/third_party/javascript/yts/test_utils/playback_util';
-import {
-  AV1,
-  StreamDef,
-  VP9,
-} from 'google3/third_party/javascript/yts/test_utils/streams/media_streams';
-import 'jasmine';
-import 'yts';
+import type {StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
+import {AV1, VP9} from 'google3/third_party/javascript/yts/test_utils/streams/media_streams';
 
 describe('Type Support Tests', () => {
   const maxWindow = getMaxSupportedWindowSize();

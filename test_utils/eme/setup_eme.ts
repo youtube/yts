@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-import {StreamDef} from '../streams/media_streams';
+import type {StreamDef} from '../streams/interfaces';
+
 import {EMEHandler} from './eme_handler';
 import {LicenseManager} from './license_manager';
 

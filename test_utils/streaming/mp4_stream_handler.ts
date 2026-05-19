@@ -17,13 +17,10 @@
 
 import {Segment} from 'google3/third_party/javascript/yts/test_utils/parsers/interfaces';
 import {parseMp4} from 'google3/third_party/javascript/yts/test_utils/parsers/mp4';
-import {sleep} from 'google3/third_party/javascript/yts/yts_common';
-import {
-  StreamInfo,
-  appendToBufferWithRetry,
-  combineUint8Arrays,
-  logError,
-} from './stream_utils';
+import type {StreamInfo} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
+
+import {BaseStreamHandler} from './base_stream_handler';
+import {appendToBufferWithRetry, combineUint8Arrays} from './stream_utils';
 
 /** Initial buffer size needed before attempting to parse MP4 sidx box. */
 const MIN_BUFFER_FOR_SIDX_PARSING = 32768;
@@ -31,74 +28,45 @@ const MIN_BUFFER_FOR_SIDX_PARSING = 32768;
 /** Maximum bytes to read before giving up on sidx-aligned streaming. */
 const MAX_DATA_BEFORE_RAW_APPEND = 1024 * 1024;
 
-/** Target buffer depth in seconds to maintain to avoid QuotaExceededError. */
-const TARGET_BUFFER_DEPTH = 10;
-
-/** Interval to poll the buffer status when throttling in milliseconds. */
-const THROTTLE_POLL_INTERVAL_MS = 500;
-
 /** Class to manage state and logic for MP4 video streaming. */
-export class Mp4StreamHandler {
+export class Mp4StreamHandler extends BaseStreamHandler {
   private segments: Segment[] = [];
   private segmentsParsed = false;
   private bufferedData = new Uint8Array(0);
   private totalBytesRead = 0;
   private currentSegmentIndex = 0;
   private initSegmentAppended = false;
-  private isStopped = false;
 
   constructor(
-    private readonly videoElement: HTMLVideoElement,
-    private readonly videoInfo: StreamInfo,
-    private readonly sb: SourceBuffer,
-    private readonly ms: MediaSource,
-    private readonly stopTime?: number,
-  ) {}
+      videoElement: HTMLVideoElement,
+      videoInfo: StreamInfo,
+      sb: SourceBuffer,
+      ms: MediaSource,
+      stopTime?: number,
+  ) {
+    super(videoElement, videoInfo, sb, ms, stopTime);
+  }
 
-  /** Main entry point for starting the video stream. */
-  async handleStreaming(): Promise<void> {
-    try {
+  /** Hook executed for incoming chunk events. */
+  protected override async onChunkRead(value: Uint8Array): Promise<void> {
+    this.bufferedData = combineUint8Arrays(this.bufferedData, value);
+    this.totalBytesRead += value.length;
+    await this.processBufferedData();
+  }
+
+  /** Hook executed when pipeline completes. */
+  protected override async onStreamEnded(): Promise<void> {
+    if (this.bufferedData.length > 0 && !this.isStopped) {
       console.log(
-        `Fetching ${this.videoInfo.mimetype} video: ${this.videoInfo.src}`,
-      );
-      const response = await fetch(this.videoInfo.src);
-      if (!response.ok || !response.body) {
-        throw new Error(
-          `Video fetch failed: ${response.status} ${response.statusText}`,
-        );
-      }
-      const reader = response.body.getReader();
-
-      while (!this.isStopped) {
-        const {done, value} = await reader.read();
-        if (done) break;
-
-        this.bufferedData = combineUint8Arrays(this.bufferedData, value);
-        this.totalBytesRead += value.length;
-
-        await this.processBufferedData();
-      }
-
-      if (this.bufferedData.length > 0 && !this.isStopped) {
-        console.log(
           `Appending remaining data of size ${this.bufferedData.length}`,
-        );
-        await appendToBufferWithRetry(this.sb, this.bufferedData, 'video-tail');
-      }
-
-      if (this.isStopped) {
-        await reader.cancel();
-      }
-    } catch (e) {
-      logError(e, 'video stream processing');
-      throw e;
+      );
+      await appendToBufferWithRetry(this.sb, this.bufferedData, 'video-tail');
     }
   }
 
+
   /** Checks if any buffered data can be parsed or appended. */
   private async processBufferedData(): Promise<void> {
-    await this.throttleIfNecessary();
-
     if (!this.segmentsParsed) {
       if (
         this.bufferedData.length >= MIN_BUFFER_FOR_SIDX_PARSING ||
@@ -120,33 +88,6 @@ export class Mp4StreamHandler {
       await appendToBufferWithRetry(this.sb, this.bufferedData, 'video-raw');
       this.bufferedData = new Uint8Array(0);
     }
-  }
-
-  /** Wait if the buffer is already full enough to prevent QuotaExceededError. */
-  private async throttleIfNecessary(): Promise<void> {
-    while (this.ms.readyState === 'open') {
-      const bufferEnd = this.getBufferEnd();
-      const bufferDepth = bufferEnd - this.videoElement.currentTime;
-
-      if (bufferDepth > TARGET_BUFFER_DEPTH) {
-        console.log(`Throttling buffer at ${bufferDepth.toFixed(2)}s depth.`);
-        await sleep(THROTTLE_POLL_INTERVAL_MS);
-      } else {
-        break;
-      }
-    }
-  }
-
-  /** Returns the end time of the buffered range around the current playhead. */
-  private getBufferEnd(): number {
-    const time = this.videoElement.currentTime;
-    const buffered = this.sb.buffered;
-    for (let i = 0; i < buffered.length; i++) {
-      if (time >= buffered.start(i) && time <= buffered.end(i)) {
-        return buffered.end(i);
-      }
-    }
-    return time; // If not in a buffered range, assume we need data.
   }
 
   /** Attempts to parse MP4 segments from the current buffer. */
@@ -193,9 +134,6 @@ export class Mp4StreamHandler {
       }
 
       if (this.bufferedData.length < segment.size) {
-        console.log(
-          `Waiting for segment ${this.currentSegmentIndex} (received ${this.bufferedData.length} of ${segment.size})`,
-        );
         break;
       }
 

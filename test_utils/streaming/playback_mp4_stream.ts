@@ -15,66 +15,130 @@
  * limitations under the License.
  */
 
+import type {StreamInfo} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
 import {objectUrlFromSafeSource, unwrapUrl} from 'safevalues';
+
+import {BaseStreamHandler} from './base_stream_handler';
 import {Mp4StreamHandler} from './mp4_stream_handler';
-import {StreamInfo, handleAudioFetch, logError} from './stream_utils';
+import {StreamPromise, toStreamPromise} from './stream_promise';
+import {appendContentToBuffer, logError} from './stream_utils';
+
+
+
+/** Streaming handler format indicators. */
+export enum StreamHandlerType {
+  MP4 = 'mp4',
+  BASE = 'base',
+}
+
+const STREAM_HANDLER_MAP = {
+  [StreamHandlerType.MP4]: Mp4StreamHandler,
+  [StreamHandlerType.BASE]: BaseStreamHandler,
+};
+
+
 
 /**
- * Streams an MP4 video chunk by chunk using MediaSource, aligned with segment boundaries.
+ * Processes streams continuously through generic setups.
+ *
+ * @param videoElement Underlying media target node.
+ * @param handlerType Specific routing handler enum descriptor.
+ * @param videoInfoOrInfos Video data parameters.
+ * @param audioInfo Optional audio stream configuration.
+ * @param stopTime Point where streaming terminates.
+ * @param onSourceObjects Lifecycle callback execution handler.
+ * @return Future resolving after processing sequences finalized.
  */
-export async function streamMp4VideoByChunks(
-  videoElement: HTMLVideoElement,
-  videoInfo: StreamInfo,
-  audioInfo?: StreamInfo,
-  stopTime?: number,
-  onSourceObjects?: (
-    ms: MediaSource,
-    videoSb: SourceBuffer,
-    audioSb?: SourceBuffer,
-  ) => void,
-): Promise<void> {
-  console.log('Streaming MP4 video by chunks');
-  const mediaSource = new MediaSource();
+export function streamVideoByChunksV2(
+    videoElement: HTMLVideoElement,
+    handlerType: StreamHandlerType,
+    videoInfoOrInfos: StreamInfo|StreamInfo[],
+    audioInfo?: StreamInfo,
+    stopTime?: number,
+    onSourceObjects?: (
+        ms: MediaSource,
+        videoSbs: SourceBuffer[],
+        audioSb?: SourceBuffer,
+        ) => void,
+    ): StreamPromise<void> {
+  let isStopped = false;
+  const activeHandlers: BaseStreamHandler[] = [];
 
-  await new Promise<void>((resolve) => {
+  const mainPromise = new Promise<void>((resolve) => {
+    console.log(`Streaming ${handlerType} video by chunks`);
+    const HandlerClass = STREAM_HANDLER_MAP[handlerType];
+    const mediaSource = new MediaSource();
+    const videoInfos =
+        Array.isArray(videoInfoOrInfos) ? videoInfoOrInfos : [videoInfoOrInfos];
+
     mediaSource.addEventListener(
-      'sourceopen',
-      async () => {
-        console.log('MediaSource sourceopen event received');
-        const videoSb = mediaSource.addSourceBuffer(videoInfo.mimetype);
-        const audioSb = audioInfo
-          ? mediaSource.addSourceBuffer(audioInfo.mimetype)
-          : undefined;
-
-        if (onSourceObjects) onSourceObjects(mediaSource, videoSb, audioSb);
-
-        const audioPromise = audioSb
-          ? handleAudioFetch(audioInfo!, audioSb)
-          : Promise.resolve();
-        const videoHandler = new Mp4StreamHandler(
-          videoElement,
-          videoInfo,
-          videoSb,
-          mediaSource,
-          stopTime,
-        );
-        const videoPromise = videoHandler.handleStreaming();
-
-        try {
-          await Promise.all([audioPromise, videoPromise]);
-          console.log('All streaming promises resolved');
-          if (mediaSource.readyState === 'open') mediaSource.endOfStream();
-        } catch (e) {
-          logError(e, 'streamMp4VideoByChunks Promise.all');
-          if (mediaSource.readyState === 'open') {
-            mediaSource.endOfStream('network');
+        'sourceopen',
+        async () => {
+          if (isStopped) {
+            resolve();
+            return;
           }
-        }
-        resolve();
-      },
-      {once: true},
+
+          const audioSb = audioInfo ?
+              mediaSource.addSourceBuffer(audioInfo.mimetype) :
+              undefined;
+          const audioPromise = audioSb ?
+              appendContentToBuffer(audioSb, audioInfo!.src) :
+              Promise.resolve();
+
+
+          const videoSbs: SourceBuffer[] = [];
+          const videoPromises: Array<Promise<void>> = [];
+
+          for (const videoInfo of videoInfos) {
+            if (!videoInfo) continue;
+            const videoSb = mediaSource.addSourceBuffer(videoInfo.mimetype);
+            videoSbs.push(videoSb);
+            const videoHandler = new HandlerClass(
+                videoElement,
+                videoInfo,
+                videoSb,
+                mediaSource,
+                stopTime,
+            );
+            activeHandlers.push(videoHandler);
+            videoPromises.push(videoHandler.handleStreaming());
+          }
+
+          if (onSourceObjects) {
+            onSourceObjects(mediaSource, videoSbs, audioSb);
+          }
+
+          // Handle case where stop() was called in the async gap before
+          // sourceopen finished
+          if (isStopped) {
+            for (const h of activeHandlers) h.stop();
+          }
+
+          try {
+            await Promise.all([audioPromise, ...videoPromises]);
+            console.log(`All streaming promises for ${handlerType} resolved`);
+            if (mediaSource.readyState === 'open') mediaSource.endOfStream();
+          } catch (e) {
+            logError(e, `streamVideoByChunksV2 Promise.all (${handlerType})`);
+            if (mediaSource.readyState === 'open') {
+              mediaSource.endOfStream('network');
+            }
+          }
+
+          resolve();
+        },
+        {once: true},
     );
 
     videoElement.src = unwrapUrl(objectUrlFromSafeSource(mediaSource));
+  });
+
+  // Allow external callers to stop the streaming loop.
+  return toStreamPromise(mainPromise, () => {
+    isStopped = true;
+    for (const handler of activeHandlers) {
+      handler.stop();
+    }
   });
 }

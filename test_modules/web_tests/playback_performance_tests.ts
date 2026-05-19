@@ -15,21 +15,16 @@
  * limitations under the License.
  */
 
-import {setupEme} from 'google3/third_party/javascript/yts/test_utils/eme/em_util';
 import {EMEHandler} from 'google3/third_party/javascript/yts/test_utils/eme/eme_handler';
 import {LicenseManager} from 'google3/third_party/javascript/yts/test_utils/eme/license_manager';
+import {setupEme} from 'google3/third_party/javascript/yts/test_utils/eme/setup_eme';
 import * as util from 'google3/third_party/javascript/yts/test_utils/legacy_yts_utils';
+import {setupMse} from 'google3/third_party/javascript/yts/test_utils/mse/setup_mse';
 import {VideoPerformanceMetrics} from 'google3/third_party/javascript/yts/test_utils/mse/video_performance';
 import * as playbackUtil from 'google3/third_party/javascript/yts/test_utils/playback_util';
-import * as mp4Stream from 'google3/third_party/javascript/yts/test_utils/streaming/playback_mp4_stream';
-import * as playbackStream from 'google3/third_party/javascript/yts/test_utils/streaming/playback_stream';
-import {
-  AAC,
-  AV1,
-  H264,
-  StreamDef,
-  VP9,
-} from 'google3/third_party/javascript/yts/test_utils/streams/media_streams';
+import {StreamPromise} from 'google3/third_party/javascript/yts/test_utils/streaming/stream_promise';
+import type {StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
+import {AAC, AV1, H264, VP9} from 'google3/third_party/javascript/yts/test_utils/streams/media_streams';
 
 // Seekable DRM videos start at currentTime = 12 seconds.
 const DRM_VIDEO_START_TIME = 12;
@@ -39,18 +34,13 @@ const HIGH_BITRATE_VIDEO_STOP_TIME = 10;
 const DRM_VIDEO_STOP_TIME = DRM_VIDEO_START_TIME + VIDEO_STOP_TIME;
 // Default time to stop adding more data to the buffer.
 const DEFAULT_BUFFER_STOP_TIME = 15;
-const BUFFER_SAFETY_MARGIN_SEC = 5;
 const DEFAULT_TIMEOUT_MS = 60_000;
 const EXTENDED_TIMEOUT_MS = 120_000;
 // Playback speeds to test for VSP.
 const PLAYBACK_SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
-// MediaSource chunking parameters.
-const CHUNK_SIZE = 4 * 1024 * 1024;
-const APPEND_CHUNK_DELAY_MS = 50;
-
-/** ID of the video element used for playback performance tests. */
-const VIDEO_ELEMENT_ID = 'playback-perf-video-element';
+// The active stream, if any.
+let activeStream: StreamPromise<void>|undefined;
 
 /**
  * Helper class to update status and do assertion for the performance tests.
@@ -121,14 +111,6 @@ class PerfTestUtil {
   }
 }
 
-function passableStream(stream: StreamDef) {
-  return {
-    mimetype: stream.mimetype,
-    src: stream.src,
-    fileSize: stream.size,
-  };
-}
-
 function* getNextStreamPair(audioStream: StreamDef, videoStreams: StreamDef[]) {
   for (const [index, videoStream] of videoStreams.entries()) {
     verifyStream(videoStream, index);
@@ -139,203 +121,158 @@ function* getNextStreamPair(audioStream: StreamDef, videoStreams: StreamDef[]) {
   }
 }
 
-function initializeVideoElement() {
-  if (getVideoElement()) {
-    console.warn('Detected existing video element before creating a new one!');
-    cleanupVideoElement();
-    console.log('Existing video element cleaned up.');
-  }
-
-  console.log('Initializing video element');
-  const container = document.createElement('div');
-  container.style.position = 'fixed';
-  container.style.top = '0';
-  container.style.left = '0';
-  container.style.width = '100%';
-  container.style.height = '100%';
-  document.body.appendChild(container);
-
-  const video = document.createElement('video');
-  video.id = VIDEO_ELEMENT_ID;
-  video.style.width = '100%';
-  video.style.height = '100%';
-  container.appendChild(video);
-}
-
-function getVideoElement() {
-  return document.getElementById(VIDEO_ELEMENT_ID) as HTMLVideoElement | null;
-}
-
-function cleanupVideoElement() {
-  const video = getVideoElement();
-  if (!video) {
-    console.warn('No video element found for cleanup!');
-    return;
-  }
-  console.log('Cleaning up video element');
-  const container = video.parentElement;
-  playbackUtil.removeCobaltVideo(video);
-  if (container) {
-    document.body.removeChild(container);
-  }
-}
-
 function createTotalVideoFramesValidationTest(
   videoStream: StreamDef,
   frames: number,
 ) {
   it(
-    'TotalVideoFrames',
-    (done) => {
-      const video = getVideoElement()!;
-      const audioStream = AAC['Audio1MB'];
+      'TotalVideoFrames',
+      (done) => {
+        const video = playbackUtil.getVideoElement()!;
+        const audioStream = AAC['Audio1MB'];
 
-      const perfTestUtil = new PerfTestUtil(video);
+        const perfTestUtil = new PerfTestUtil(video);
 
-      function onTimeUpdate() {
-        perfTestUtil.updateVideoPerfMetricsStatus();
-        const decodedFrames = perfTestUtil.getTotalDecodedFrames();
-        // Note that the audio is longer than the video, so the media will keep
-        // playing even after all frames have been decoded, unless we manually
-        // pause it.
-        if (video.currentTime >= 10 || decodedFrames >= frames) {
-          video.removeEventListener('timeupdate', onTimeUpdate);
-          video.pause();
-          console.log(`Validating that total decoded frames is ${frames}`);
-          expect(perfTestUtil.getTotalDecodedFrames())
-            .withContext('playbackQuality.totalVideoFrames')
-            .toBe(frames);
-          done();
+        function onTimeUpdate() {
+          perfTestUtil.updateVideoPerfMetricsStatus();
+          const decodedFrames = perfTestUtil.getTotalDecodedFrames();
+          // Note that the audio is longer than the video, so the media will
+          // keep playing even after all frames have been decoded, unless we
+          // manually pause it.
+          if (video.currentTime >= 10 || decodedFrames >= frames) {
+            video.removeEventListener('timeupdate', onTimeUpdate);
+            video.pause();
+            console.log(`Validating that total decoded frames is ${frames}`);
+            expect(perfTestUtil.getTotalDecodedFrames())
+                .withContext('playbackQuality.totalVideoFrames')
+                .toBe(frames);
+            done();
+          }
         }
-      }
-      video.addEventListener('timeupdate', onTimeUpdate);
-      playbackUtil.listenForErrors(video, 'video', true);
+        video.addEventListener('timeupdate', onTimeUpdate);
+        playbackUtil.listenForErrors(video, 'video', true);
 
-      // It's okay to use a simple MediaSource load rather than
-      // streamVideoByChunks, because the total video size is ~1MB.
-      video.src = playbackUtil.createMediaSourceUrl([audioStream, videoStream]);
-      console.log('video.src=', video.src);
-      video.play();
-      console.log('video.play()');
-    },
-    DEFAULT_TIMEOUT_MS,
+        // It's okay to use a simple MediaSource because the video size is ~1MB.
+        video.src =
+            playbackUtil.createMediaSourceUrl([audioStream, videoStream]);
+        console.log('video.src=', video.src);
+        video.play();
+        console.log('video.play()');
+      },
+      DEFAULT_TIMEOUT_MS,
   );
 }
 
 function createFrameDropValidationTest(videoStreams: StreamDef[]) {
   it(
-    'FrameDrop',
-    (done) => {
-      const video = getVideoElement()!;
-      const perfTestUtil = new PerfTestUtil(video);
-      const audioStream = AAC['AudioNormal'];
-      const streamGenerator = getNextStreamPair(audioStream, videoStreams);
-      let playTimeoutId = 0;
-      let isSwitching = false;
+      'FrameDrop',
+      (done) => {
+        const video = playbackUtil.getVideoElement()!;
+        const perfTestUtil = new PerfTestUtil(video);
+        const audioStream = AAC['AudioNormal'];
+        const streamGenerator = getNextStreamPair(audioStream, videoStreams);
+        let playTimeoutId = 0;
+        let isSwitching = false;
 
-      function onError(error: unknown) {
-        if (error instanceof Error && error.name === 'AbortError') {
-          // Ignore abort errors as all it means is that we are already
-          // switching to the next stream.
-          return;
-        }
-
-        let msg: string;
-        if (error instanceof MediaError) {
-          msg = `Code ${error.code}: ${error.message}`;
-        } else if (error instanceof Error) {
-          msg = error.message;
-        } else {
-          msg = String(error);
-        }
-        isSwitching = false;
-        console.log('Switching to next stream due to error: ', msg);
-        playNextSrc(2.0);
-      }
-
-      /**
-       * Plays the next stream in the streamGenerator. If the video is paused,
-       * it will be played at the given playbackRate. Otherwise, the playback
-       * rate will be set to 1.0.
-       */
-      function playNextSrc(playbackRate = 1.0) {
-        if (isSwitching) {
-          // Don't switch to the next stream if we're already switching.
-          return;
-        }
-        isSwitching = true;
-        clearTimeout(playTimeoutId);
-        video.removeEventListener('timeupdate', onTimeUpdate);
-        video.src = '';
-        video.load();
-        const next = streamGenerator.next();
-        if (next.done) {
-          fail('None of the high FPS video streams are supported!');
-          done();
-          return;
-        }
-        const {audioStream, videoStream} = next.value;
-
-        playbackStream
-          .streamVideoByChunks(
-            video,
-            [passableStream(audioStream), passableStream(videoStream)],
-            CHUNK_SIZE,
-            APPEND_CHUNK_DELAY_MS,
-            DEFAULT_BUFFER_STOP_TIME,
-          )
-          .catch(onError);
-
-        console.log('video.src set by streamVideoByChunks');
-        video.playbackRate = playbackRate;
-        console.log('video.playbackRate=', video.playbackRate);
-        video.addEventListener('timeupdate', onTimeUpdate);
-        const promise = video.play();
-        if (promise) {
-          promise
-            .then(() => {
-              isSwitching = false;
-            })
-            .catch(onError);
-        } else {
-          isSwitching = false;
-          playbackUtil.listenForErrors(video, 'video', false, onError);
-        }
-        console.log('video.play()');
-
-        playTimeoutId = setTimeout(() => {
-          if (video.paused) {
-            console.log('Video did not play after 5 seconds.');
-            isSwitching = false;
-            playNextSrc(2.0);
+        function onError(error: unknown) {
+          if (error instanceof Error && error.name === 'AbortError') {
+            // Ignore abort errors as all it means is that we are already
+            // switching to the next stream.
+            return;
           }
-        }, 5000);
-      }
 
-      function onTimeUpdate() {
-        clearTimeout(playTimeoutId);
-        perfTestUtil.updateVideoPerfMetricsStatus();
-        const droppedFrames = perfTestUtil.getTotalDroppedFrames();
-        if (video.currentTime >= 10) {
-          video.removeEventListener('timeupdate', onTimeUpdate);
-          video.pause();
-          perfTestUtil.assertAtLeastOneFrameDecoded();
-          if (droppedFrames >= 2) {
-            console.log('Validated that dropped frames API is working.');
-            done();
+          let msg: string;
+          if (error instanceof MediaError) {
+            msg = `Code ${error.code}: ${error.message}`;
+          } else if (error instanceof Error) {
+            msg = error.message;
           } else {
-            console.log(
-              'Could not validate dropped frames API (no frames dropped).',
-            );
-            playNextSrc(2);
+            msg = String(error);
+          }
+          isSwitching = false;
+          console.log('Switching to next stream due to error: ', msg);
+          playNextSrc(2.0);
+        }
+
+        /**
+         * Plays the next stream in the streamGenerator. If the video is paused,
+         * it will be played at the given playbackRate. Otherwise, the playback
+         * rate will be set to 1.0.
+         */
+        function playNextSrc(playbackRate = 1.0) {
+          if (isSwitching) {
+            // Don't switch to the next stream if we're already switching.
+            return;
+          }
+          isSwitching = true;
+          clearTimeout(playTimeoutId);
+          video.removeEventListener('timeupdate', onTimeUpdate);
+          video.src = '';
+          video.load();
+          const next = streamGenerator.next();
+          if (next.done) {
+            fail('None of the high FPS video streams are supported!');
+            done();
+            return;
+          }
+          const {audioStream, videoStream} = next.value;
+
+          // Stop the previous stream before starting a new one.
+          activeStream?.stop();
+          activeStream = setupMse(
+              video, videoStream, audioStream, DEFAULT_BUFFER_STOP_TIME);
+          activeStream.catch(onError);
+
+          console.log('video.src set');
+          video.playbackRate = playbackRate;
+          console.log('video.playbackRate=', video.playbackRate);
+          video.addEventListener('timeupdate', onTimeUpdate);
+          const promise = video.play();
+          if (promise) {
+            promise
+                .then(() => {
+                  isSwitching = false;
+                })
+                .catch(onError);
+          } else {
+            isSwitching = false;
+            playbackUtil.listenForErrors(video, 'video', false, onError);
+          }
+          console.log('video.play()');
+
+          playTimeoutId = setTimeout(() => {
+            if (video.paused) {
+              console.log('Video did not play after 5 seconds.');
+              isSwitching = false;
+              playNextSrc(2.0);
+            }
+          }, 5000);
+        }
+
+        function onTimeUpdate() {
+          clearTimeout(playTimeoutId);
+          perfTestUtil.updateVideoPerfMetricsStatus();
+          const droppedFrames = perfTestUtil.getTotalDroppedFrames();
+          if (video.currentTime >= 10) {
+            video.removeEventListener('timeupdate', onTimeUpdate);
+            video.pause();
+            perfTestUtil.assertAtLeastOneFrameDecoded();
+            if (droppedFrames >= 2) {
+              console.log('Validated that dropped frames API is working.');
+              done();
+            } else {
+              console.log(
+                  'Could not validate dropped frames API (no frames dropped).',
+              );
+              playNextSrc(2);
+            }
           }
         }
-      }
 
-      playbackUtil.listenForErrors(video, 'video', false, onError);
-      playNextSrc();
-    },
-    EXTENDED_TIMEOUT_MS,
+        playbackUtil.listenForErrors(video, 'video', false, onError);
+        playNextSrc();
+      },
+      EXTENDED_TIMEOUT_MS,
   );
 }
 
@@ -396,7 +333,7 @@ function createPlaybackPerfTest(
         yts.markOptional();
       }
 
-      const video = getVideoElement()!;
+      const video = playbackUtil.getVideoElement()!;
       const audioStream = AAC['AudioNormal'];
       const perfTestUtil = new PerfTestUtil(video);
       let emeHandler: EMEHandler | undefined;
@@ -459,38 +396,14 @@ function createPlaybackPerfTest(
         }
       }
 
-      // Use streamVideoByChunks to allow proper buffering of large files.
-      if (videoStream.mimetype.includes('video/mp4')) {
-        mp4Stream
-          .streamMp4VideoByChunks(
-            video,
-            passableStream(videoStream),
-            passableStream(audioStream),
-            stopTime + BUFFER_SAFETY_MARGIN_SEC,
-          )
-          .catch(onError);
-      } else {
-        playbackStream
-          .streamVideoByChunks(
-            video,
-            [passableStream(audioStream), passableStream(videoStream)],
-            CHUNK_SIZE,
-            APPEND_CHUNK_DELAY_MS,
-            stopTime + BUFFER_SAFETY_MARGIN_SEC,
-          )
-          .catch(onError);
-      }
+      // Use setupMse to allow proper buffering of large files.
+      activeStream = setupMse(video, videoStream, audioStream, stopTime);
+      activeStream.catch(onError);
 
-      console.log('video.src set by streamVideoByChunks');
+      console.log('video.src set');
       video.playbackRate = playbackRate;
       console.log('video.playbackRate=', video.playbackRate);
-      const promise = video.play();
-      if (promise) {
-        promise.catch(onError);
-      } else {
-        playbackUtil.listenForErrors(video, 'video', true, onError);
-      }
-      console.log('video.play()');
+      playbackUtil.playAndHandleErrors(video, onError);
     },
     timeoutMs,
   );
@@ -536,11 +449,13 @@ function createPlaybackPerfTestSuite(
 ) {
   describe('Media Playback Quality', () => {
     beforeEach(() => {
-      initializeVideoElement();
+      activeStream = undefined;
+      playbackUtil.initializeVideoElement();
     });
 
     afterEach(() => {
-      cleanupVideoElement();
+      activeStream?.stop();
+      playbackUtil.cleanupVideoElement();
     });
 
     /**
@@ -564,11 +479,13 @@ function createPlaybackPerfTestSuite(
 
   describe(category, () => {
     beforeEach(() => {
-      initializeVideoElement();
+      activeStream = undefined;
+      playbackUtil.initializeVideoElement();
     });
 
     afterEach(() => {
-      cleanupVideoElement();
+      activeStream?.stop();
+      playbackUtil.cleanupVideoElement();
     });
 
     for (const [index, videoStream] of streamDefs.entries()) {

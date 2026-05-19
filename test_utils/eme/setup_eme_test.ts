@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-import {StreamDef} from '../streams/media_streams';
-import {setupEme} from './em_util';
+import type {StreamDef} from '../streams/interfaces';
+
 import {EMEHandler} from './eme_handler';
 import {LicenseManager} from './license_manager';
+import {setupEme} from './setup_eme';
 
 describe('em_util', () => {
   let mockEmeHandler: jasmine.SpyObj<EMEHandler>;

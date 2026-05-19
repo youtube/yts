@@ -183,10 +183,7 @@ describe('EMEHandler', () => {
       .setMsg(LicenseRequest.serializeBinary(licenseRequest));
     const buffer = Message.serializeBinary(message);
 
-    // TODO: go/ts59upgrade - Remove this suppression after TS 5.9.2 upgrade
-    //   TS2345: Argument of type 'Uint8Array<ArrayBuffer>' is not assignable to parameter of type 'ArrayBuffer'.
-    // @ts-ignore
-    emeHandler.validateEncryptedMessage(buffer);
+    emeHandler.validateEncryptedMessage(buffer.buffer);
     expect(emeHandler.messageEncrypted).toBe(true);
   });
 

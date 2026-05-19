@@ -17,7 +17,7 @@
 
 import {CobaltVideoElement} from 'google3/third_party/javascript/yts/test_utils/cobalt_video_element';
 
-import {requestIndividualization} from '../eme_util';
+import {requestIndividualization} from '../eme/eme_utils';
 import * as util from '../playback_util';
 import {createMediaSourceUrl} from '../playback_util';
 
@@ -115,9 +115,9 @@ async function addPrimaryVideo(shouldPause: boolean, resolve?: () => void) {
     const messageType = messageEvent.messageType;
     const keySession: MediaKeySession = messageEvent.target as MediaKeySession;
 
-    const updateSession = (response: ArrayBuffer) => {
+    const updateSession = (response: Uint8Array) => {
       setTimeout(() => {
-        keySession.update(response).catch(() => {
+        keySession.update(response.buffer).catch(() => {
           console.log('keySession.update failed');
         });
       }, LICENSE_DELAY);

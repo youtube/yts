@@ -19,7 +19,7 @@ import {FpsCounter} from 'google3/third_party/javascript/yts/test_utils/fps_coun
 import {h5vcc} from 'google3/third_party/javascript/yts/yts_common/h5vcc';
 
 import * as playbackUtil from '../playback_util';
-import * as playbackStream from '../streaming/playback_stream';
+import {StreamHandlerType, streamVideoByChunksV2} from '../streaming/playback_mp4_stream';
 
 let errors: string[] = [];
 
@@ -368,14 +368,7 @@ export async function webpOverVideoTest(
       }
     });
     video.muted = true;
-    const chunkSize = 1 * 1024 * 1024; // 1MB
-    const appendChunkDelay = 200; // ms
-    await playbackStream.streamVideoByChunks(
-      video,
-      [stream],
-      chunkSize,
-      appendChunkDelay,
-    );
+    void streamVideoByChunksV2(video, StreamHandlerType.BASE, stream);
     await video.play();
   });
 

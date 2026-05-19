@@ -16,7 +16,7 @@
  */
 
 import {CobaltVideoElement} from 'google3/third_party/javascript/yts/test_utils/cobalt_video_element';
-import {requestIndividualization} from 'google3/third_party/javascript/yts/test_utils/eme_util';
+import {requestIndividualization} from 'google3/third_party/javascript/yts/test_utils/eme/eme_utils';
 import * as util from 'google3/third_party/javascript/yts/test_utils/playback_util';
 import {createMediaSourceUrl} from 'google3/third_party/javascript/yts/test_utils/playback_util';
 
@@ -288,9 +288,9 @@ describe('Functional Tests', () => {
             const messageType = messageEvent.messageType;
             const keySession: MediaKeySession =
               messageEvent.target as MediaKeySession;
-            const updateSession = (response: ArrayBuffer) => {
+            const updateSession = (response: Uint8Array) => {
               setTimeout(() => {
-                keySession.update(response).catch(() => {
+                keySession.update(response.buffer).catch(() => {
                   console.log('keySession.update failed');
                 });
               }, LICENSE_DELAY_MS);

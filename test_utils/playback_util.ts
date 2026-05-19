@@ -18,14 +18,83 @@
 import {CobaltVideoElement} from 'google3/third_party/javascript/yts/test_utils/cobalt_video_element';
 import * as av1Codec from 'google3/third_party/javascript/yts/test_utils/codecs/av1_codec';
 import * as vp9Codec from 'google3/third_party/javascript/yts/test_utils/codecs/vp9_codec';
+import {appendContentToBuffer} from 'google3/third_party/javascript/yts/test_utils/streaming/stream_utils';
 import {h5vcc} from 'google3/third_party/javascript/yts/yts_common/h5vcc';
 import {objectUrlFromSafeSource, unwrapUrl} from 'safevalues';
+
 
 const PIXEL_COUNT_FHD = 2073600;
 const PIXEL_COUNT_4K = 8294400;
 const PIXEL_COUNT_8K = 33177600;
 /** Milliseconds in a second */
 export const SECOND = 1000;
+
+/**
+ * Logs the current playback progress cleanly roughly once per second to prevent
+ * console flooding during timeupdate event polling loops.
+ */
+export function logPlaybackProgress(video: HTMLVideoElement, counter: number) {
+  if (counter % 4 === 0) {
+    console.log(`currentTime: ${video.currentTime.toFixed(2)}s`);
+  }
+}
+
+/**
+ * ID of the video element used for standard test framework playback
+ * verification.
+ */
+const TEST_VIDEO_ELEMENT_ID = 'playback-test-video-element';
+
+/**
+ * Safely initializes a standard HTMLVideoElement wrapped in an
+ * absolute-positioned DOM container. If an existing test video element is
+ * detected, it will be automatically garbage collected prior to initialization.
+ */
+export function initializeVideoElement(): void {
+  if (getVideoElement()) {
+    console.warn(
+        'Detected dangling test video element before creating a new one! Executing emergency cleanup.');
+    cleanupVideoElement();
+  }
+
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.top = '0';
+  container.style.left = '0';
+  container.style.width = '100%';
+  container.style.height = '100%';
+  document.body.appendChild(container);
+
+  const video = document.createElement('video');
+  video.id = TEST_VIDEO_ELEMENT_ID;
+  video.style.width = '100%';
+  video.style.height = '100%';
+  container.appendChild(video);
+}
+
+/**
+ * Retrieves the currently active test HTMLVideoElement from the DOM.
+ * @return The initialized HTMLVideoElement, or null if uninitialized.
+ */
+export function getVideoElement(): HTMLVideoElement|null {
+  return document.getElementById(TEST_VIDEO_ELEMENT_ID) as HTMLVideoElement |
+      null;
+}
+
+/**
+ * Safely destroys the active test HTMLVideoElement and removes its
+ * absolute-positioned container from the document body.
+ */
+export function cleanupVideoElement(): void {
+  const video = getVideoElement();
+  if (!video) return;
+
+  const container = video.parentElement;
+  removeCobaltVideo(video);
+  if (container && container.parentNode) {
+    container.parentNode.removeChild(container);
+  }
+}
 
 /**
  * Creates SafeUrl given content info.
@@ -36,16 +105,30 @@ export function createMediaSourceUrl(
   contentInfo: Array<{mimetype: string; src: string}>,
 ) {
   const mediaSource = new MediaSource();
-  mediaSource.addEventListener('sourceopen', () => {
+  mediaSource.addEventListener('sourceopen', async () => {
+    const promises = [];
     for (const conteInfo of contentInfo) {
-      appendContentToBuffer(
-        mediaSource.addSourceBuffer(conteInfo.mimetype),
-        conteInfo.src,
-      );
+      promises.push(appendContentToBuffer(
+          mediaSource.addSourceBuffer(conteInfo.mimetype),
+          conteInfo.src,
+          ));
+    }
+    try {
+      await Promise.all(promises);
+      if (mediaSource.readyState === 'open') {
+        console.log('Calling mediaSource.endOfStream()');
+        mediaSource.endOfStream();
+      }
+    } catch (e) {
+      console.error('Error loading media for createMediaSourceUrl:', e);
+      if (mediaSource.readyState === 'open') {
+        mediaSource.endOfStream('network');
+      }
     }
   });
   return unwrapUrl(objectUrlFromSafeSource(mediaSource));
 }
+
 
 /**
  * Checks if HDR is supported.
@@ -105,79 +188,6 @@ export function createVideoFormatStr(
     spherical,
     suffix,
   );
-}
-
-/**
- * Appends media segment data from an xhr response ArrayBuffer to
- * the SourceBuffer.
- *
- * @param contentBuffer Http method used to send request.
- * @param contentUrl URL of the media content.
- */
-export async function appendContentToBuffer(
-  contentBuffer: SourceBuffer,
-  contentUrl: string,
-) {
-  const xhr = new XMLHttpRequest();
-  xhr.responseType = 'arraybuffer';
-  xhr.addEventListener('load', () => {
-    console.log(
-      `XHR load for ${contentUrl}. Status: ${xhr.status}. Response type: ${typeof xhr.response}, Byte length: ${xhr.response?.byteLength}`,
-    );
-    if (xhr.status >= 200 && xhr.status < 300 && xhr.response) {
-      if (contentBuffer.updating) {
-        console.warn(
-          `SourceBuffer is updating for ${contentUrl}. Cannot append buffer at this time.`,
-        );
-        // Optionally, queue the append operation or wait for 'updateend'
-        // For now, we'll add a listener for updateend to try appending again.
-        const appendLater = () => {
-          if (!contentBuffer.updating) {
-            console.log(
-              `Retrying appendBuffer for ${contentUrl} after updateend.`,
-            );
-            try {
-              contentBuffer.appendBuffer(xhr.response);
-              console.log(
-                `Successfully appended buffer for ${contentUrl} after updateend.`,
-              );
-            } catch (e) {
-              console.error(
-                `Error appending buffer for ${contentUrl} after updateend:`,
-                e,
-              );
-            }
-          }
-          contentBuffer.removeEventListener('updateend', appendLater);
-          return;
-        };
-        contentBuffer.addEventListener('updateend', appendLater);
-        return;
-      }
-      try {
-        console.log(`Attempting to append buffer for ${contentUrl}.`);
-        contentBuffer.appendBuffer(xhr.response);
-        console.log(`Successfully appended buffer for ${contentUrl}.`);
-      } catch (e) {
-        console.error(`Error appending buffer for ${contentUrl}:`, e);
-      }
-    } else {
-      console.error(
-        `XHR failed or no response for ${contentUrl}. Status: ${xhr.status}, Response: ${xhr.response}`,
-      );
-      // Removed: Attempt to end MediaSource stream from here
-    }
-  });
-  xhr.addEventListener('error', () => {
-    console.error(`XHR network error for ${contentUrl}`);
-    // Removed: Attempt to end MediaSource stream from here
-  });
-  xhr.addEventListener('abort', () => {
-    console.warn(`XHR request aborted for ${contentUrl}`);
-    // Removed: Attempt to end MediaSource stream from here
-  });
-  xhr.open('GET', contentUrl);
-  xhr.send();
 }
 
 /* tslint:disable: restrict-plus-operands*/
@@ -490,6 +500,12 @@ export function getWatchdogViolations() {
 /**
  * Adds a listener to the video element that logs any video errors encountered.
  * Can be optionally configured to fail upon encountering an error.
+ *
+ * Note: This method assumes that video.play() is synchronous, which is not the
+ * case for Chrobalt (Cocbalt 26+).
+ *
+ * For an alternative that can handle either synchronous or asynchronous
+ * playback, use playAndHandleErrors() instead.
  */
 export function listenForErrors(
   videoElement: HTMLVideoElement,
@@ -510,6 +526,35 @@ export function listenForErrors(
       throw new Error(loggableErrorMessage);
     }
   });
+}
+
+/**
+ * Secures video.play() execution against both legacy void signatures and modern
+ * Promise-based rejections to prevent swallowed errors across all versions of
+ * Cobalt.
+ */
+export function playAndHandleErrors(
+    video: HTMLVideoElement,
+    failCallback: (msg: string) => void,
+) {
+  function onError(error: unknown) {
+    let msg: string;
+    if (error instanceof MediaError) {
+      msg = `Code ${error.code}: ${error.message}`;
+    } else if (error instanceof Error) {
+      msg = error.message;
+    } else {
+      msg = String(error);
+    }
+    failCallback('Error during playback: ' + msg);
+  }
+
+  const promise = video.play();
+  if (promise) {
+    promise.catch(onError);
+  } else {
+    listenForErrors(video, 'video', false, onError);
+  }
 }
 
 /**
@@ -578,10 +623,10 @@ export function isGreaterThan8K() {
  * video playback. It checks for support of common resolutions (e.g., 4K, 1080p)
  * using `MediaSource.isTypeSupported` with VP9 codecs.
  *
+ * @param maxResolution An optional maximum resolution to check for support.
  * @return A tuple `[width, height]` for the maximum supported resolution.
  */
-export function getMaxVp9SupportedWindow() {
-  let maxResolution = [99999, 99999];
+export function getMaxVp9SupportedWindow(maxResolution = [99999, 99999]) {
   const vp9DefaultCodecString = vp9Codec.getVp9CodecString();
   if (
     MediaSource.isTypeSupported(

@@ -20,10 +20,12 @@
  * device tests.
  */
 
+import {StreamInfo} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
+
 /**
  * Video metadata for playback analysis.
  */
-export interface VideoMetadata {
+export interface VideoMetadata extends StreamInfo {
   name: string;
   mimetype: string;
   src: string;

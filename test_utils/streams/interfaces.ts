@@ -22,7 +22,7 @@ import {VideoMetadata} from '../codecs/interfaces';
 /**
  * Interface for the metadata associated with a video stream (AV1, H264, etc.).
  */
-export interface VideoStreamSpecificMetadata {
+interface VideoStreamSpecificMetadata {
   // Common fields
   fps?: number;
   resolution?: string;
@@ -74,7 +74,7 @@ export interface VideoStreamCollection {
 /**
  * Interface for stream-specific metadata for audio streams (AAC, AC3, etc.).
  */
-export interface AudioStreamSpecificMetadata {
+interface AudioStreamSpecificMetadata {
   [key: string]: unknown; // Allows for arbitrary properties like '200000' for AAC
   // Common DRM/metadata fields
   video_id?: string;
@@ -134,6 +134,34 @@ export interface VideoStreamsType {
   mediatype: 'video';
   container: string;
   streams: VideoStreamCollection;
+}
+
+/**
+ * Represents either an audio or a video stream collection.
+ */
+export type StreamTypeInfo = AudioStreamsType|VideoStreamsType;
+
+/**
+ * Represents custom metadata for either audio or video streams.
+ */
+export type CustomMap = AudioStreamSpecificMetadata|VideoStreamSpecificMetadata;
+
+/** Interface for streaming metadata. */
+export interface StreamInfo {
+  mimetype: string;
+  src: string;
+  fileSize: number;
+}
+
+/** Represents a single media stream definition. */
+export interface StreamDef extends StreamInfo {
+  codec: string;
+  mediatype: string;
+  container: string;
+  duration: number;
+  bps: number;
+  customMap?: CustomMap;
+  get(attribute: string): unknown;
 }
 
 // tslint:enable:enforce-name-casing
