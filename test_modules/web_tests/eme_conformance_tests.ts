@@ -20,7 +20,7 @@ import 'yts';
 
 import {VideoMetadata} from 'google3/third_party/javascript/yts/test_utils/codecs/interfaces';
 import {EMEHandler} from 'google3/third_party/javascript/yts/test_utils/eme/eme_handler';
-import {countPsshAtoms} from 'google3/third_party/javascript/yts/test_utils/eme/eme_utils';
+import {CobaltMediaKeys, countPsshAtoms, EmeContentType, WIDEVINE_KEY_SYSTEM, WidevineRobustness} from 'google3/third_party/javascript/yts/test_utils/eme/eme_utils';
 import {LicenseManager} from 'google3/third_party/javascript/yts/test_utils/eme/license_manager';
 import {setupEme} from 'google3/third_party/javascript/yts/test_utils/eme/setup_eme';
 import * as util from 'google3/third_party/javascript/yts/test_utils/legacy_yts_utils';
@@ -216,6 +216,119 @@ describe('EME Conformance Tests', () => {
         done();
       });
     }, DEFAULT_TIMEOUT_MS);
+  });
+
+  describe('EME Basic', () => {
+    // TODO(sgunbay): Migrate to using parse_user_agent.ts in the future.
+    function getCobaltVersion(): number {
+      const userAgent = navigator.userAgent;
+      const cobaltRegex = /Cobalt\/(\d+)/;
+      const match = userAgent.match(cobaltRegex);
+      return match ? Number(match[1]) : -1;
+    }
+
+    it('Widevine Support', async () => {
+      const config = [
+        {
+          initDataTypes: ['cenc'],
+          videoCapabilities: [
+            {
+              contentType: EmeContentType.MP4_VIDEO_AVC1,
+            },
+          ],
+        },
+        {
+          initDataTypes: ['webm'],
+          videoCapabilities: [
+            {
+              contentType: EmeContentType.WEBM_VIDEO_VP9,
+            },
+          ],
+        },
+      ];
+
+      console.log('Querying key system with config: ' + JSON.stringify(config));
+      const access = await navigator.requestMediaKeySystemAccess(
+          WIDEVINE_KEY_SYSTEM,
+          config,
+      );
+      expect(access.keySystem).toBe(WIDEVINE_KEY_SYSTEM);
+    });
+
+    it('Negative Widevine Support', async () => {
+      const config = [
+        {
+          initDataTypes: ['cenc'],
+          videoCapabilities: [
+            {
+              contentType: EmeContentType.MP4_VIDEO_AVC1,
+            },
+          ],
+        },
+      ];
+
+      console.log('Querying key system with config: ' + JSON.stringify(config));
+      try {
+        await navigator.requestMediaKeySystemAccess(
+            WIDEVINE_KEY_SYSTEM, config);
+        fail('requestMediaKeySystemAccess succeeded for non-Widevine device.');
+      } catch (e: unknown) {
+        expect((e as Error).name).toBe('NotSupportedError');
+      }
+    });
+
+    it('getMetrics', async () => {
+      const opts = [{
+        initDataTypes: ['cenc', 'sinf', 'keyids'],
+        encryptionScheme: 'cbcs-1-9',
+        videoCapabilities: [{
+          contentType: EmeContentType.MP4_VIDEO_AVC1,
+          robustness: WidevineRobustness.SW_SECURE_DECODE,
+        }],
+        audioCapabilities: [{
+          contentType: EmeContentType.MP4_AUDIO_AAC,
+          robustness: WidevineRobustness.SW_SECURE_CRYPTO,
+        }],
+      }];
+
+      const cobaltVersion = getCobaltVersion();
+
+      console.log('Querying key system with config: ' + JSON.stringify(opts));
+      const keySystemAccess = await navigator.requestMediaKeySystemAccess(
+          WIDEVINE_KEY_SYSTEM, opts as MediaKeySystemConfiguration[]);
+      const mediaKeys =
+          await keySystemAccess.createMediaKeys() as CobaltMediaKeys;
+
+      if (cobaltVersion <= 25) {
+        // kludge for race-condition with c25 which can cause getMetrics() to be
+        // called before MediaKeys is fully initialized.
+        await new Promise(resolve => setTimeout(resolve, 150));
+      }
+
+      if (!mediaKeys.getMetrics) {
+        throw new Error(
+            'mediaKeys.getMetrics is not defined on this platform.');
+      }
+      const metrics = await Promise.resolve(mediaKeys.getMetrics());
+
+      if (!metrics ||
+          (metrics.length === 0 && Object.keys(metrics).length === 0)) {
+        throw new Error('getMetrics() did not return expected result.');
+      }
+
+      if (cobaltVersion >= 26) {
+        // Some devices return raw binary protobuf data instead of base64, even
+        // though the spec says base64 is required.
+        // Fail if the data is not base64, but only on Cobalt 26+ so that
+        // older implementations still pass.
+        const base64WebsafeRegex = /^[A-Za-z0-9_-]+={0,3}$/;
+        if (!base64WebsafeRegex.test(metrics)) {
+          throw new Error(
+              'getMetrics() must return urlsafe base64, matching ' +
+              base64WebsafeRegex);
+        }
+      }
+    });
   });
 
   describe('General', () => {

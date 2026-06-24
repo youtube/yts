@@ -20,6 +20,45 @@
  */
 
 /**
+ * The Widevine key system string.
+ */
+export const WIDEVINE_KEY_SYSTEM = 'com.widevine.alpha';
+
+/**
+ * Basic content types for EME tests.
+ */
+export enum EmeContentType {
+  MP4_VIDEO_AVC1 = 'video/mp4; codecs="avc1.640028"',
+  WEBM_VIDEO_VP9 = 'video/webm; codecs="vp9"',
+  MP4_AUDIO_AAC = 'audio/mp4; codecs="mp4a.40.2"',
+}
+
+/**
+ * The robustness levels for Widevine.
+ */
+export enum WidevineRobustness {
+  HW_SECURE_ALL = 'HW_SECURE_ALL',
+  SW_SECURE_DECODE = 'SW_SECURE_DECODE',
+  SW_SECURE_CRYPTO = 'SW_SECURE_CRYPTO',
+}
+
+/**
+ * Cobalt specific extension to MediaKeys.
+ */
+export interface CobaltMediaKeys extends MediaKeys {
+  /**
+   * Widevine specific extension to gather EME metrics.
+   * Returns base64 encoded protobuf or raw binary data.
+   */
+  // getMetrics can return multiple different types (string, Uint8Array,
+  // ArrayBuffer, Record) depending on the platform and Cobalt version. To
+  // preserve parity with legacy YTS JS tests without introducing complex type
+  // guards, we use 'any' here.
+  // tslint:disable-next-line:no-any
+  getMetrics?(): any;
+}
+
+/**
  * The URL for the provisioning server.
  */
 const PROVISION_SERVER_URL =

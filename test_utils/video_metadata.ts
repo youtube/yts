@@ -55,6 +55,7 @@ export declare interface PatEvent {
   event: string;
   wall_clock_timestamp: number; // Unix Epoch Time in ms
   media_time_sec: number;
+  playback_speed?: number;
   video_fps: number | null;
   expected_frame_code: number | null; // This will be the Gray code
   event_id?: string;
@@ -143,8 +144,7 @@ export const VIDEO_2K_VP9_6001FPS: VideoMetadata = {
 export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_1080P: VideoMetadata =
   {
     'name': 'tv_30fps_cfr_ch2_60sec_1080p',
-    'mimetype':
-      'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"; width=1920; height=1080; framerate=30',
+    'mimetype': 'video/mp4; codecs="vp09.00.40.08.01.01.01.01.00, mp4a.40.2"; width=1920; height=1080; framerate=30',
     'src':
       'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_30fps_600s_cfr_ch1_1080p_vp9.mp4',
     'fileSize': 79835483,
@@ -161,8 +161,7 @@ export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_1080P: VideoMetadata =
 export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_1440P: VideoMetadata =
   {
     'name': 'tv_30fps_cfr_ch2_60sec_1440p',
-    'mimetype':
-      'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"; width=2560; height=1440; framerate=30',
+    'mimetype': 'video/mp4; codecs="vp09.00.50.08.01.01.01.01.00, mp4a.40.2"; width=2560; height=1440; framerate=30',
     'src':
       'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_30fps_600s_cfr_ch1_1440p_vp9.mp4',
     'fileSize': 116377775,
@@ -179,8 +178,7 @@ export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_1440P: VideoMetadata =
 export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_144P: VideoMetadata =
   {
     'name': 'tv_30fps_cfr_ch2_60sec_144p',
-    'mimetype':
-      'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"; width=256; height=144; framerate=30',
+    'mimetype': 'video/mp4; codecs="vp09.00.11.08.01.01.01.01.00, mp4a.40.2"; width=256; height=144; framerate=30',
     'src':
       'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_30fps_600s_test_video_cfr_ch1_144p_vp9.mp4',
     'fileSize': 4881693,
@@ -197,8 +195,7 @@ export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_144P: VideoMetadata =
 export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_2160P: VideoMetadata =
   {
     'name': 'tv_30fps_cfr_ch2_60sec_2160p',
-    'mimetype':
-      'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"; width=3840; height=2160; framerate=30',
+    'mimetype': 'video/mp4; codecs="vp09.00.50.08.01.01.01.01.00, mp4a.40.2"; width=3840; height=2160; framerate=30',
     'src':
       'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_30fps_600s_cfr_ch1_2160p_vp9.mp4',
     'fileSize': 186319123,
@@ -215,8 +212,7 @@ export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_2160P: VideoMetadata =
 export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_240P: VideoMetadata =
   {
     'name': 'tv_30fps_cfr_ch2_60sec_240p',
-    'mimetype':
-      'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"; width=426; height=240; framerate=30',
+    'mimetype': 'video/mp4; codecs="vp09.00.20.08.01.01.01.01.00, mp4a.40.2"; width=426; height=240; framerate=30',
     'src':
       'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_30fps_600s_test_video_cfr_ch1_240p_vp9.mp4',
     'fileSize': 9845703,
@@ -233,8 +229,7 @@ export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_240P: VideoMetadata =
 export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_360P: VideoMetadata =
   {
     'name': 'tv_30fps_cfr_ch2_60sec_360p',
-    'mimetype':
-      'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"; width=640; height=360; framerate=30',
+    'mimetype': 'video/mp4; codecs="vp09.00.21.08.01.01.01.01.00, mp4a.40.2"; width=640; height=360; framerate=30',
     'src':
       'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_30fps_600s_test_video_cfr_ch1_360p_vp9.mp4',
     'fileSize': 17462450,
@@ -251,8 +246,7 @@ export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_360P: VideoMetadata =
 export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_480P: VideoMetadata =
   {
     'name': 'tv_30fps_cfr_ch2_60sec_480p',
-    'mimetype':
-      'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"; width=640; height=480; framerate=30',
+    'mimetype': 'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=480; framerate=30',
     'src':
       'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_30fps_600s_test_video_cfr_ch1_480p_vp9.mp4',
     'fileSize': 26770875,
@@ -269,8 +263,7 @@ export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_480P: VideoMetadata =
 export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_720P: VideoMetadata =
   {
     'name': 'tv_30fps_cfr_ch2_60sec_720p',
-    'mimetype':
-      'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"; width=1280; height=720; framerate=30',
+    'mimetype': 'video/mp4; codecs="vp09.00.31.08.01.01.01.01.00, mp4a.40.2"; width=1280; height=720; framerate=30',
     'src':
       'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_30fps_600s_cfr_ch1_720p_vp9.mp4',
     'fileSize': 48040285,
@@ -287,8 +280,7 @@ export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_720P: VideoMetadata =
 export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_1080P: VideoMetadata =
   {
     'name': 'tv_60fps_cfr_ch2_60sec_1080p',
-    'mimetype':
-      'video/mp4; codecs="vp09.00.40.08.01.01.01.01.00, mp4a.40.2"; width=1920; height=1080; framerate=60',
+    'mimetype': 'video/mp4; codecs="vp09.00.41.08.01.01.01.01.00, mp4a.40.2"; width=1920; height=1080; framerate=60',
     'src':
       'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_60fps_600s_cfr_ch1_1080p_vp9.mp4',
     'fileSize': 98895819,
@@ -305,8 +297,7 @@ export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_1080P: VideoMetadata =
 export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_1440P: VideoMetadata =
   {
     'name': 'tv_60fps_cfr_ch2_60sec_1440p',
-    'mimetype':
-      'video/mp4; codecs="vp09.00.41.08.01.01.01.01.00, mp4a.40.2"; width=2560; height=1440; framerate=60',
+    'mimetype': 'video/mp4; codecs="vp09.00.50.08.01.01.01.01.00, mp4a.40.2"; width=2560; height=1440; framerate=60',
     'src':
       'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_60fps_600s_cfr_ch1_1440p_vp9.mp4',
     'fileSize': 146050425,
@@ -323,8 +314,7 @@ export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_1440P: VideoMetadata =
 export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_144P: VideoMetadata =
   {
     'name': 'tv_60fps_cfr_ch2_60sec_144p',
-    'mimetype':
-      'video/mp4; codecs="vp09.00.11.08.01.01.01.01.00, mp4a.40.2"; width=256; height=144; framerate=60',
+    'mimetype': 'video/mp4; codecs="vp09.00.11.08.01.01.01.01.00, mp4a.40.2"; width=256; height=144; framerate=60',
     'src':
       'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_60fps_600s_test_video_cfr_ch1_144p_vp9.mp4',
     'fileSize': 6089616,
@@ -341,8 +331,7 @@ export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_144P: VideoMetadata =
 export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_2160P: VideoMetadata =
   {
     'name': 'tv_60fps_cfr_ch2_60sec_2160p',
-    'mimetype':
-      'video/mp4; codecs="vp09.00.50.08.01.01.01.01.00, mp4a.40.2"; width=3840; height=2160; framerate=60',
+    'mimetype': 'video/mp4; codecs="vp09.00.51.08.01.01.01.01.00, mp4a.40.2"; width=3840; height=2160; framerate=60',
     'src':
       'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_60fps_600s_cfr_ch1_2160p_vp9.mp4',
     'fileSize': 229315444,
@@ -359,8 +348,7 @@ export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_2160P: VideoMetadata =
 export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_240P: VideoMetadata =
   {
     'name': 'tv_60fps_cfr_ch2_60sec_240p',
-    'mimetype':
-      'video/mp4; codecs="vp09.00.21.08.01.01.01.01.00, mp4a.40.2"; width=426; height=240; framerate=60',
+    'mimetype': 'video/mp4; codecs="vp09.00.21.08.01.01.01.01.00, mp4a.40.2"; width=426; height=240; framerate=60',
     'src':
       'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_60fps_600s_test_video_cfr_ch1_240p_vp9.mp4',
     'fileSize': 12401842,
@@ -377,8 +365,7 @@ export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_240P: VideoMetadata =
 export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_360P: VideoMetadata =
   {
     'name': 'tv_60fps_cfr_ch2_60sec_360p',
-    'mimetype':
-      'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=360; framerate=60',
+    'mimetype': 'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=360; framerate=60',
     'src':
       'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_60fps_600s_test_video_cfr_ch1_360p_vp9.mp4',
     'fileSize': 21888339,
@@ -395,8 +382,7 @@ export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_360P: VideoMetadata =
 export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_480P: VideoMetadata =
   {
     'name': 'tv_60fps_cfr_ch2_60sec_480p',
-    'mimetype':
-      'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=480; framerate=60',
+    'mimetype': 'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=480; framerate=60',
     'src':
       'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_60fps_600s_test_video_cfr_ch1_480p_vp9.mp4',
     'fileSize': 33486375,
@@ -413,8 +399,7 @@ export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_480P: VideoMetadata =
 export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_720P: VideoMetadata =
   {
     'name': 'tv_60fps_cfr_ch2_60sec_720p',
-    'mimetype':
-      'video/mp4; codecs="vp09.00.40.08.01.01.01.01.00, mp4a.40.2"; width=1280; height=720; framerate=60',
+    'mimetype': 'video/mp4; codecs="vp09.00.40.08.01.01.01.01.00, mp4a.40.2"; width=1280; height=720; framerate=60',
     'src':
       'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_60fps_600s_cfr_ch1_720p_vp9.mp4',
     'fileSize': 59707623,
@@ -431,10 +416,12 @@ export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH2_60SEC_720P: VideoMetadata =
  */
 export const VIDEO_TV_10FPS_600S_TEST_VIDEO_CFR_CH1_1080P: VideoMetadata = {
   'name': 'tv_10fps_600s_test_video_cfr_ch1_1080p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.40.08.01.01.01.01.00, mp4a.40.2"; width=1920; height=1080; framerate=10',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_10fps_600s_cfr_ch1_1080p_vp9.mp4',
   'fileSize': 36814732,
+  'width': 1920,
+  'height': 1080,
   'fps': 10,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -445,10 +432,12 @@ export const VIDEO_TV_10FPS_600S_TEST_VIDEO_CFR_CH1_1080P: VideoMetadata = {
  */
 export const VIDEO_TV_10FPS_600S_TEST_VIDEO_CFR_CH1_1440P: VideoMetadata = {
   'name': 'tv_10fps_600s_test_video_cfr_ch1_1440p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.50.08.01.01.01.01.00, mp4a.40.2"; width=2560; height=1440; framerate=10',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_10fps_600s_cfr_ch1_1440p_vp9.mp4',
   'fileSize': 52159158,
+  'width': 2560,
+  'height': 1440,
   'fps': 10,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -459,10 +448,12 @@ export const VIDEO_TV_10FPS_600S_TEST_VIDEO_CFR_CH1_1440P: VideoMetadata = {
  */
 export const VIDEO_TV_10FPS_600S_TEST_VIDEO_CFR_CH1_144P: VideoMetadata = {
   'name': 'tv_10fps_600s_test_video_cfr_ch1_144p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"; width=256; height=144; framerate=10',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-18/tv_10fps_600s_cfr_ch1_144p_vp9.mp4',
   'fileSize': 2735541,
+  'width': 256,
+  'height': 144,
   'fps': 10,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -473,10 +464,12 @@ export const VIDEO_TV_10FPS_600S_TEST_VIDEO_CFR_CH1_144P: VideoMetadata = {
  */
 export const VIDEO_TV_10FPS_600S_TEST_VIDEO_CFR_CH1_2160P: VideoMetadata = {
   'name': 'tv_10fps_600s_test_video_cfr_ch1_2160p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.50.08.01.01.01.01.00, mp4a.40.2"; width=3840; height=2160; framerate=10',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_10fps_600s_cfr_ch1_2160p_vp9.mp4',
   'fileSize': 86356683,
+  'width': 3840,
+  'height': 2160,
   'fps': 10,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -487,10 +480,12 @@ export const VIDEO_TV_10FPS_600S_TEST_VIDEO_CFR_CH1_2160P: VideoMetadata = {
  */
 export const VIDEO_TV_10FPS_600S_TEST_VIDEO_CFR_CH1_240P: VideoMetadata = {
   'name': 'tv_10fps_600s_test_video_cfr_ch1_240p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.20.08.01.01.01.01.00, mp4a.40.2"; width=426; height=240; framerate=10',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-18/tv_10fps_600s_cfr_ch1_240p_vp9.mp4',
   'fileSize': 4902652,
+  'width': 426,
+  'height': 240,
   'fps': 10,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -501,10 +496,12 @@ export const VIDEO_TV_10FPS_600S_TEST_VIDEO_CFR_CH1_240P: VideoMetadata = {
  */
 export const VIDEO_TV_10FPS_600S_TEST_VIDEO_CFR_CH1_360P: VideoMetadata = {
   'name': 'tv_10fps_600s_test_video_cfr_ch1_360p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.21.08.01.01.01.01.00, mp4a.40.2"; width=640; height=360; framerate=10',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-18/tv_10fps_600s_cfr_ch1_360p_vp9.mp4',
   'fileSize': 8320114,
+  'width': 640,
+  'height': 360,
   'fps': 10,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -515,10 +512,12 @@ export const VIDEO_TV_10FPS_600S_TEST_VIDEO_CFR_CH1_360P: VideoMetadata = {
  */
 export const VIDEO_TV_10FPS_600S_TEST_VIDEO_CFR_CH1_480P: VideoMetadata = {
   'name': 'tv_10fps_600s_test_video_cfr_ch1_480p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=480; framerate=10',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-18/tv_10fps_600s_cfr_ch1_480p_vp9.mp4',
   'fileSize': 12517343,
+  'width': 640,
+  'height': 480,
   'fps': 10,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -529,10 +528,12 @@ export const VIDEO_TV_10FPS_600S_TEST_VIDEO_CFR_CH1_480P: VideoMetadata = {
  */
 export const VIDEO_TV_10FPS_600S_TEST_VIDEO_CFR_CH1_720P: VideoMetadata = {
   'name': 'tv_10fps_600s_test_video_cfr_ch1_720p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.31.08.01.01.01.01.00, mp4a.40.2"; width=1280; height=720; framerate=10',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_10fps_600s_cfr_ch1_720p_vp9.mp4',
   'fileSize': 22043009,
+  'width': 1280,
+  'height': 720,
   'fps': 10,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -543,10 +544,12 @@ export const VIDEO_TV_10FPS_600S_TEST_VIDEO_CFR_CH1_720P: VideoMetadata = {
  */
 export const VIDEO_TV_24FPS_600S_TEST_VIDEO_CFR_CH1_1080P: VideoMetadata = {
   'name': 'tv_24fps_600s_test_video_cfr_ch1_1080p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.40.08.01.01.01.01.00, mp4a.40.2"; width=1920; height=1080; framerate=24',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_24fps_600s_cfr_ch1_1080p_vp9.mp4',
   'fileSize': 67718171,
+  'width': 1920,
+  'height': 1080,
   'fps': 24,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -557,10 +560,12 @@ export const VIDEO_TV_24FPS_600S_TEST_VIDEO_CFR_CH1_1080P: VideoMetadata = {
  */
 export const VIDEO_TV_24FPS_600S_TEST_VIDEO_CFR_CH1_1440P: VideoMetadata = {
   'name': 'tv_24fps_600s_test_video_cfr_ch1_1440p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.50.08.01.01.01.01.00, mp4a.40.2"; width=2560; height=1440; framerate=24',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_24fps_600s_cfr_ch1_1440p_vp9.mp4',
   'fileSize': 98123228,
+  'width': 2560,
+  'height': 1440,
   'fps': 24,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -571,10 +576,12 @@ export const VIDEO_TV_24FPS_600S_TEST_VIDEO_CFR_CH1_1440P: VideoMetadata = {
  */
 export const VIDEO_TV_24FPS_600S_TEST_VIDEO_CFR_CH1_144P: VideoMetadata = {
   'name': 'tv_24fps_600s_test_video_cfr_ch1_144p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.11.08.01.01.01.01.00, mp4a.40.2"; width=256; height=144; framerate=24',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-18/tv_24fps_600s_cfr_ch1_144p_vp9.mp4',
   'fileSize': 4309761,
+  'width': 256,
+  'height': 144,
   'fps': 24,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -585,10 +592,12 @@ export const VIDEO_TV_24FPS_600S_TEST_VIDEO_CFR_CH1_144P: VideoMetadata = {
  */
 export const VIDEO_TV_24FPS_600S_TEST_VIDEO_CFR_CH1_2160P: VideoMetadata = {
   'name': 'tv_24fps_600s_test_video_cfr_ch1_2160p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.50.08.01.01.01.01.00, mp4a.40.2"; width=3840; height=2160; framerate=24',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_24fps_600s_cfr_ch1_2160p_vp9.mp4',
   'fileSize': 158770213,
+  'width': 3840,
+  'height': 2160,
   'fps': 24,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -599,10 +608,12 @@ export const VIDEO_TV_24FPS_600S_TEST_VIDEO_CFR_CH1_2160P: VideoMetadata = {
  */
 export const VIDEO_TV_24FPS_600S_TEST_VIDEO_CFR_CH1_240P: VideoMetadata = {
   'name': 'tv_24fps_600s_test_video_cfr_ch1_240p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.20.08.01.01.01.01.00, mp4a.40.2"; width=426; height=240; framerate=24',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-18/tv_24fps_600s_cfr_ch1_240p_vp9.mp4',
   'fileSize': 8404267,
+  'width': 426,
+  'height': 240,
   'fps': 24,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -613,10 +624,12 @@ export const VIDEO_TV_24FPS_600S_TEST_VIDEO_CFR_CH1_240P: VideoMetadata = {
  */
 export const VIDEO_TV_24FPS_600S_TEST_VIDEO_CFR_CH1_360P: VideoMetadata = {
   'name': 'tv_24fps_600s_test_video_cfr_ch1_360p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.21.08.01.01.01.01.00, mp4a.40.2"; width=640; height=360; framerate=24',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-18/tv_24fps_600s_cfr_ch1_360p_vp9.mp4',
   'fileSize': 14777029,
+  'width': 640,
+  'height': 360,
   'fps': 24,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -627,10 +640,12 @@ export const VIDEO_TV_24FPS_600S_TEST_VIDEO_CFR_CH1_360P: VideoMetadata = {
  */
 export const VIDEO_TV_24FPS_600S_TEST_VIDEO_CFR_CH1_480P: VideoMetadata = {
   'name': 'tv_24fps_600s_test_video_cfr_ch1_480p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=480; framerate=24',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-18/tv_24fps_600s_cfr_ch1_480p_vp9.mp4',
   'fileSize': 22585140,
+  'width': 640,
+  'height': 480,
   'fps': 24,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -641,10 +656,12 @@ export const VIDEO_TV_24FPS_600S_TEST_VIDEO_CFR_CH1_480P: VideoMetadata = {
  */
 export const VIDEO_TV_24FPS_600S_TEST_VIDEO_CFR_CH1_720P: VideoMetadata = {
   'name': 'tv_24fps_600s_test_video_cfr_ch1_720p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.31.08.01.01.01.01.00, mp4a.40.2"; width=1280; height=720; framerate=24',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_24fps_600s_cfr_ch1_720p_vp9.mp4',
   'fileSize': 40466183,
+  'width': 1280,
+  'height': 720,
   'fps': 24,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -655,10 +672,12 @@ export const VIDEO_TV_24FPS_600S_TEST_VIDEO_CFR_CH1_720P: VideoMetadata = {
  */
 export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH1_1080P: VideoMetadata = {
   'name': 'tv_30fps_600s_test_video_cfr_ch1_1080p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.40.08.01.01.01.01.00, mp4a.40.2"; width=1920; height=1080; framerate=30',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_30fps_600s_cfr_ch1_1080p_vp9.mp4',
   'fileSize': 79835483,
+  'width': 1920,
+  'height': 1080,
   'fps': 30,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -669,10 +688,12 @@ export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH1_1080P: VideoMetadata = {
  */
 export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH1_1440P: VideoMetadata = {
   'name': 'tv_30fps_600s_test_video_cfr_ch1_1440p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.50.08.01.01.01.01.00, mp4a.40.2"; width=2560; height=1440; framerate=30',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_30fps_600s_cfr_ch1_1440p_vp9.mp4',
   'fileSize': 116377775,
+  'width': 2560,
+  'height': 1440,
   'fps': 30,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -683,10 +704,12 @@ export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH1_1440P: VideoMetadata = {
  */
 export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH1_144P: VideoMetadata = {
   'name': 'tv_30fps_600s_test_video_cfr_ch1_144p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.11.08.01.01.01.01.00, mp4a.40.2"; width=256; height=144; framerate=30',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/02-18/tv_30fps_600s_test_video_cfr_ch1_144p_vp9.mp4',
   'fileSize': 4881693,
+  'width': 256,
+  'height': 144,
   'fps': 30,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -697,10 +720,12 @@ export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH1_144P: VideoMetadata = {
  */
 export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH1_2160P: VideoMetadata = {
   'name': 'tv_30fps_600s_test_video_cfr_ch1_2160p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.50.08.01.01.01.01.00, mp4a.40.2"; width=3840; height=2160; framerate=30',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_30fps_600s_cfr_ch1_2160p_vp9.mp4',
   'fileSize': 186319123,
+  'width': 3840,
+  'height': 2160,
   'fps': 30,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -711,10 +736,12 @@ export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH1_2160P: VideoMetadata = {
  */
 export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH1_240P: VideoMetadata = {
   'name': 'tv_30fps_600s_test_video_cfr_ch1_240p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.20.08.01.01.01.01.00, mp4a.40.2"; width=426; height=240; framerate=30',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/02-18/tv_30fps_600s_test_video_cfr_ch1_240p_vp9.mp4',
   'fileSize': 9845703,
+  'width': 426,
+  'height': 240,
   'fps': 30,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -725,10 +752,12 @@ export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH1_240P: VideoMetadata = {
  */
 export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH1_360P: VideoMetadata = {
   'name': 'tv_30fps_600s_test_video_cfr_ch1_360p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.21.08.01.01.01.01.00, mp4a.40.2"; width=640; height=360; framerate=30',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/02-18/tv_30fps_600s_test_video_cfr_ch1_360p_vp9.mp4',
   'fileSize': 17462450,
+  'width': 640,
+  'height': 360,
   'fps': 30,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -739,10 +768,12 @@ export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH1_360P: VideoMetadata = {
  */
 export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH1_480P: VideoMetadata = {
   'name': 'tv_30fps_600s_test_video_cfr_ch1_480p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=480; framerate=30',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/02-18/tv_30fps_600s_test_video_cfr_ch1_480p_vp9.mp4',
   'fileSize': 26770875,
+  'width': 640,
+  'height': 480,
   'fps': 30,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -753,10 +784,12 @@ export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH1_480P: VideoMetadata = {
  */
 export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH1_720P: VideoMetadata = {
   'name': 'tv_30fps_600s_test_video_cfr_ch1_720p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.31.08.01.01.01.01.00, mp4a.40.2"; width=1280; height=720; framerate=30',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_30fps_600s_cfr_ch1_720p_vp9.mp4',
   'fileSize': 48040285,
+  'width': 1280,
+  'height': 720,
   'fps': 30,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -767,10 +800,12 @@ export const VIDEO_TV_30FPS_600S_TEST_VIDEO_CFR_CH1_720P: VideoMetadata = {
  */
 export const VIDEO_TV_48FPS_600S_TEST_VIDEO_CFR_CH1_1080P: VideoMetadata = {
   'name': 'tv_48fps_600s_test_video_cfr_ch1_1080p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.41.08.01.01.01.01.00, mp4a.40.2"; width=1920; height=1080; framerate=48',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_48fps_600s_cfr_ch1_1080p_vp9.mp4',
   'fileSize': 91246910,
+  'width': 1920,
+  'height': 1080,
   'fps': 48,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -781,10 +816,12 @@ export const VIDEO_TV_48FPS_600S_TEST_VIDEO_CFR_CH1_1080P: VideoMetadata = {
  */
 export const VIDEO_TV_48FPS_600S_TEST_VIDEO_CFR_CH1_1440P: VideoMetadata = {
   'name': 'tv_48fps_600s_test_video_cfr_ch1_1440p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.50.08.01.01.01.01.00, mp4a.40.2"; width=2560; height=1440; framerate=48',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_48fps_600s_cfr_ch1_1440p_vp9.mp4',
   'fileSize': 133934713,
+  'width': 2560,
+  'height': 1440,
   'fps': 48,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -795,10 +832,12 @@ export const VIDEO_TV_48FPS_600S_TEST_VIDEO_CFR_CH1_1440P: VideoMetadata = {
  */
 export const VIDEO_TV_48FPS_600S_TEST_VIDEO_CFR_CH1_144P: VideoMetadata = {
   'name': 'tv_48fps_600s_test_video_cfr_ch1_144p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.11.08.01.01.01.01.00, mp4a.40.2"; width=256; height=144; framerate=48',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-18/tv_48fps_600s_cfr_ch1_144p_vp9.mp4',
   'fileSize': 5663486,
+  'width': 256,
+  'height': 144,
   'fps': 48,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -809,10 +848,12 @@ export const VIDEO_TV_48FPS_600S_TEST_VIDEO_CFR_CH1_144P: VideoMetadata = {
  */
 export const VIDEO_TV_48FPS_600S_TEST_VIDEO_CFR_CH1_2160P: VideoMetadata = {
   'name': 'tv_48fps_600s_test_video_cfr_ch1_2160p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.51.08.01.01.01.01.00, mp4a.40.2"; width=3840; height=2160; framerate=48',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_48fps_600s_cfr_ch1_2160p_vp9.mp4',
   'fileSize': 211926368,
+  'width': 3840,
+  'height': 2160,
   'fps': 48,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -823,10 +864,12 @@ export const VIDEO_TV_48FPS_600S_TEST_VIDEO_CFR_CH1_2160P: VideoMetadata = {
  */
 export const VIDEO_TV_48FPS_600S_TEST_VIDEO_CFR_CH1_240P: VideoMetadata = {
   'name': 'tv_48fps_600s_test_video_cfr_ch1_240p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.21.08.01.01.01.01.00, mp4a.40.2"; width=426; height=240; framerate=48',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-18/tv_48fps_600s_cfr_ch1_240p_vp9.mp4',
   'fileSize': 11338117,
+  'width': 426,
+  'height': 240,
   'fps': 48,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -837,10 +880,12 @@ export const VIDEO_TV_48FPS_600S_TEST_VIDEO_CFR_CH1_240P: VideoMetadata = {
  */
 export const VIDEO_TV_48FPS_600S_TEST_VIDEO_CFR_CH1_360P: VideoMetadata = {
   'name': 'tv_48fps_600s_test_video_cfr_ch1_360p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=360; framerate=48',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-18/tv_48fps_600s_cfr_ch1_360p_vp9.mp4',
   'fileSize': 20065086,
+  'width': 640,
+  'height': 360,
   'fps': 48,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -851,10 +896,12 @@ export const VIDEO_TV_48FPS_600S_TEST_VIDEO_CFR_CH1_360P: VideoMetadata = {
  */
 export const VIDEO_TV_48FPS_600S_TEST_VIDEO_CFR_CH1_480P: VideoMetadata = {
   'name': 'tv_48fps_600s_test_video_cfr_ch1_480p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=480; framerate=48',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-18/tv_48fps_600s_cfr_ch1_480p_vp9.mp4',
   'fileSize': 30687854,
+  'width': 640,
+  'height': 480,
   'fps': 48,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -865,10 +912,12 @@ export const VIDEO_TV_48FPS_600S_TEST_VIDEO_CFR_CH1_480P: VideoMetadata = {
  */
 export const VIDEO_TV_48FPS_600S_TEST_VIDEO_CFR_CH1_720P: VideoMetadata = {
   'name': 'tv_48fps_600s_test_video_cfr_ch1_720p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.40.08.01.01.01.01.00, mp4a.40.2"; width=1280; height=720; framerate=48',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_48fps_600s_cfr_ch1_720p_vp9.mp4',
   'fileSize': 55151071,
+  'width': 1280,
+  'height': 720,
   'fps': 48,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -879,10 +928,12 @@ export const VIDEO_TV_48FPS_600S_TEST_VIDEO_CFR_CH1_720P: VideoMetadata = {
  */
 export const VIDEO_TV_50FPS_600S_TEST_VIDEO_CFR_CH1_1080P: VideoMetadata = {
   'name': 'tv_50fps_600s_test_video_cfr_ch1_1080p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.41.08.01.01.01.01.00, mp4a.40.2"; width=1920; height=1080; framerate=50',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_50fps_600s_cfr_ch1_1080p_vp9.mp4',
   'fileSize': 92311380,
+  'width': 1920,
+  'height': 1080,
   'fps': 50,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -893,10 +944,12 @@ export const VIDEO_TV_50FPS_600S_TEST_VIDEO_CFR_CH1_1080P: VideoMetadata = {
  */
 export const VIDEO_TV_50FPS_600S_TEST_VIDEO_CFR_CH1_1440P: VideoMetadata = {
   'name': 'tv_50fps_600s_test_video_cfr_ch1_1440p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.50.08.01.01.01.01.00, mp4a.40.2"; width=2560; height=1440; framerate=50',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_50fps_600s_cfr_ch1_1440p_vp9.mp4',
   'fileSize': 135657464,
+  'width': 2560,
+  'height': 1440,
   'fps': 50,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -907,10 +960,12 @@ export const VIDEO_TV_50FPS_600S_TEST_VIDEO_CFR_CH1_1440P: VideoMetadata = {
  */
 export const VIDEO_TV_50FPS_600S_TEST_VIDEO_CFR_CH1_144P: VideoMetadata = {
   'name': 'tv_50fps_600s_test_video_cfr_ch1_144p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.11.08.01.01.01.01.00, mp4a.40.2"; width=256; height=144; framerate=50',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-18/tv_50fps_600s_cfr_ch1_144p_vp9.mp4',
   'fileSize': 5733869,
+  'width': 256,
+  'height': 144,
   'fps': 50,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -921,10 +976,12 @@ export const VIDEO_TV_50FPS_600S_TEST_VIDEO_CFR_CH1_144P: VideoMetadata = {
  */
 export const VIDEO_TV_50FPS_600S_TEST_VIDEO_CFR_CH1_2160P: VideoMetadata = {
   'name': 'tv_50fps_600s_test_video_cfr_ch1_2160p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.51.08.01.01.01.01.00, mp4a.40.2"; width=3840; height=2160; framerate=50',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_50fps_600s_cfr_ch1_2160p_vp9.mp4',
   'fileSize': 215028435,
+  'width': 3840,
+  'height': 2160,
   'fps': 50,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -935,10 +992,12 @@ export const VIDEO_TV_50FPS_600S_TEST_VIDEO_CFR_CH1_2160P: VideoMetadata = {
  */
 export const VIDEO_TV_50FPS_600S_TEST_VIDEO_CFR_CH1_240P: VideoMetadata = {
   'name': 'tv_50fps_600s_test_video_cfr_ch1_240p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.21.08.01.01.01.01.00, mp4a.40.2"; width=426; height=240; framerate=50',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-18/tv_50fps_600s_cfr_ch1_240p_vp9.mp4',
   'fileSize': 11460727,
+  'width': 426,
+  'height': 240,
   'fps': 50,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -949,10 +1008,12 @@ export const VIDEO_TV_50FPS_600S_TEST_VIDEO_CFR_CH1_240P: VideoMetadata = {
  */
 export const VIDEO_TV_50FPS_600S_TEST_VIDEO_CFR_CH1_360P: VideoMetadata = {
   'name': 'tv_50fps_600s_test_video_cfr_ch1_360p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=360; framerate=50',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-18/tv_50fps_600s_cfr_ch1_360p_vp9.mp4',
   'fileSize': 20269547,
+  'width': 640,
+  'height': 360,
   'fps': 50,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -963,10 +1024,12 @@ export const VIDEO_TV_50FPS_600S_TEST_VIDEO_CFR_CH1_360P: VideoMetadata = {
  */
 export const VIDEO_TV_50FPS_600S_TEST_VIDEO_CFR_CH1_480P: VideoMetadata = {
   'name': 'tv_50fps_600s_test_video_cfr_ch1_480p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=480; framerate=50',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-18/tv_50fps_600s_cfr_ch1_480p_vp9.mp4',
   'fileSize': 30991702,
+  'width': 640,
+  'height': 480,
   'fps': 50,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -977,10 +1040,12 @@ export const VIDEO_TV_50FPS_600S_TEST_VIDEO_CFR_CH1_480P: VideoMetadata = {
  */
 export const VIDEO_TV_50FPS_600S_TEST_VIDEO_CFR_CH1_720P: VideoMetadata = {
   'name': 'tv_50fps_600s_test_video_cfr_ch1_720p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.40.08.01.01.01.01.00, mp4a.40.2"; width=1280; height=720; framerate=50',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_50fps_600s_cfr_ch1_720p_vp9.mp4',
   'fileSize': 55719162,
+  'width': 1280,
+  'height': 720,
   'fps': 50,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -991,10 +1056,12 @@ export const VIDEO_TV_50FPS_600S_TEST_VIDEO_CFR_CH1_720P: VideoMetadata = {
  */
 export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH1_1080P: VideoMetadata = {
   'name': 'tv_60fps_600s_test_video_cfr_ch1_1080p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.41.08.01.01.01.01.00, mp4a.40.2"; width=1920; height=1080; framerate=60',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_60fps_600s_cfr_ch1_1080p_vp9.mp4',
   'fileSize': 98895819,
+  'width': 1920,
+  'height': 1080,
   'fps': 60,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -1005,10 +1072,12 @@ export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH1_1080P: VideoMetadata = {
  */
 export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH1_1440P: VideoMetadata = {
   'name': 'tv_60fps_600s_test_video_cfr_ch1_1440p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.50.08.01.01.01.01.00, mp4a.40.2"; width=2560; height=1440; framerate=60',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_60fps_600s_cfr_ch1_1440p_vp9.mp4',
   'fileSize': 146050425,
+  'width': 2560,
+  'height': 1440,
   'fps': 60,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -1019,10 +1088,12 @@ export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH1_1440P: VideoMetadata = {
  */
 export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH1_144P: VideoMetadata = {
   'name': 'tv_60fps_600s_test_video_cfr_ch1_144p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.11.08.01.01.01.01.00, mp4a.40.2"; width=256; height=144; framerate=60',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/02-18/tv_60fps_600s_test_video_cfr_ch1_144p_vp9.mp4',
   'fileSize': 6089616,
+  'width': 256,
+  'height': 144,
   'fps': 60,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -1033,10 +1104,12 @@ export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH1_144P: VideoMetadata = {
  */
 export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH1_2160P: VideoMetadata = {
   'name': 'tv_60fps_600s_test_video_cfr_ch1_2160p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.51.08.01.01.01.01.00, mp4a.40.2"; width=3840; height=2160; framerate=60',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_60fps_600s_cfr_ch1_2160p_vp9.mp4',
   'fileSize': 229315444,
+  'width': 3840,
+  'height': 2160,
   'fps': 60,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -1047,10 +1120,12 @@ export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH1_2160P: VideoMetadata = {
  */
 export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH1_240P: VideoMetadata = {
   'name': 'tv_60fps_600s_test_video_cfr_ch1_240p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.21.08.01.01.01.01.00, mp4a.40.2"; width=426; height=240; framerate=60',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/02-18/tv_60fps_600s_test_video_cfr_ch1_240p_vp9.mp4',
   'fileSize': 12401842,
+  'width': 426,
+  'height': 240,
   'fps': 60,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -1061,10 +1136,12 @@ export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH1_240P: VideoMetadata = {
  */
 export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH1_360P: VideoMetadata = {
   'name': 'tv_60fps_600s_test_video_cfr_ch1_360p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=360; framerate=60',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/02-18/tv_60fps_600s_test_video_cfr_ch1_360p_vp9.mp4',
   'fileSize': 21888339,
+  'width': 640,
+  'height': 360,
   'fps': 60,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -1075,10 +1152,12 @@ export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH1_360P: VideoMetadata = {
  */
 export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH1_480P: VideoMetadata = {
   'name': 'tv_60fps_600s_test_video_cfr_ch1_480p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=480; framerate=60',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/02-18/tv_60fps_600s_test_video_cfr_ch1_480p_vp9.mp4',
   'fileSize': 33486375,
+  'width': 640,
+  'height': 480,
   'fps': 60,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -1089,10 +1168,12 @@ export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH1_480P: VideoMetadata = {
  */
 export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH1_720P: VideoMetadata = {
   'name': 'tv_60fps_600s_test_video_cfr_ch1_720p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.40.08.01.01.01.01.00, mp4a.40.2"; width=1280; height=720; framerate=60',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-31/tv_60fps_600s_cfr_ch1_720p_vp9.mp4',
   'fileSize': 59707623,
+  'width': 1280,
+  'height': 720,
   'fps': 60,
   'initialPaddingDelay': 0,
   'grayCodeStartValue': 1,
@@ -1106,7 +1187,7 @@ export const VIDEO_TV_60FPS_600S_TEST_VIDEO_CFR_CH1_720P: VideoMetadata = {
  */
 export const VIDEO_TV_V2_30FPS_600S_TEST_VIDEO_CFR_CH1_1080P: VideoMetadata = {
   'name': 'tv_30fps_600s_test_video_cfr_ch1_1080p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.40.08.01.01.01.01.00, mp4a.40.2"; width=1920; height=1080; framerate=30',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_30fps_600s_test_video_cfr_ch1_1080p_vp9.mp4',
   'fileSize': 79884516,
@@ -1122,7 +1203,7 @@ export const VIDEO_TV_V2_30FPS_600S_TEST_VIDEO_CFR_CH1_1080P: VideoMetadata = {
  */
 export const VIDEO_TV_V2_30FPS_600S_TEST_VIDEO_CFR_CH1_1440P: VideoMetadata = {
   'name': 'tv_30fps_600s_test_video_cfr_ch1_1440p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.50.08.01.01.01.01.00, mp4a.40.2"; width=2560; height=1440; framerate=30',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_30fps_600s_test_video_cfr_ch1_1440p_vp9.mp4',
   'fileSize': 117088101,
@@ -1138,7 +1219,7 @@ export const VIDEO_TV_V2_30FPS_600S_TEST_VIDEO_CFR_CH1_1440P: VideoMetadata = {
  */
 export const VIDEO_TV_V2_30FPS_600S_TEST_VIDEO_CFR_CH1_144P: VideoMetadata = {
   'name': 'tv_30fps_600s_test_video_cfr_ch1_144p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.11.08.01.01.01.01.00, mp4a.40.2"; width=256; height=144; framerate=30',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_30fps_600s_test_video_cfr_ch1_144p_vp9.mp4',
   'fileSize': 4881693,
@@ -1154,7 +1235,7 @@ export const VIDEO_TV_V2_30FPS_600S_TEST_VIDEO_CFR_CH1_144P: VideoMetadata = {
  */
 export const VIDEO_TV_V2_30FPS_600S_TEST_VIDEO_CFR_CH1_2160P: VideoMetadata = {
   'name': 'tv_30fps_600s_test_video_cfr_ch1_2160p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.50.08.01.01.01.01.00, mp4a.40.2"; width=3840; height=2160; framerate=30',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_30fps_600s_test_video_cfr_ch1_2160p_vp9.mp4',
   'fileSize': 186709669,
@@ -1170,7 +1251,7 @@ export const VIDEO_TV_V2_30FPS_600S_TEST_VIDEO_CFR_CH1_2160P: VideoMetadata = {
  */
 export const VIDEO_TV_V2_30FPS_600S_TEST_VIDEO_CFR_CH1_240P: VideoMetadata = {
   'name': 'tv_30fps_600s_test_video_cfr_ch1_240p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.20.08.01.01.01.01.00, mp4a.40.2"; width=426; height=240; framerate=30',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_30fps_600s_test_video_cfr_ch1_240p_vp9.mp4',
   'fileSize': 9845703,
@@ -1186,7 +1267,7 @@ export const VIDEO_TV_V2_30FPS_600S_TEST_VIDEO_CFR_CH1_240P: VideoMetadata = {
  */
 export const VIDEO_TV_V2_30FPS_600S_TEST_VIDEO_CFR_CH1_360P: VideoMetadata = {
   'name': 'tv_30fps_600s_test_video_cfr_ch1_360p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.21.08.01.01.01.01.00, mp4a.40.2"; width=640; height=360; framerate=30',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_30fps_600s_test_video_cfr_ch1_360p_vp9.mp4',
   'fileSize': 17462450,
@@ -1202,7 +1283,7 @@ export const VIDEO_TV_V2_30FPS_600S_TEST_VIDEO_CFR_CH1_360P: VideoMetadata = {
  */
 export const VIDEO_TV_V2_30FPS_600S_TEST_VIDEO_CFR_CH1_480P: VideoMetadata = {
   'name': 'tv_30fps_600s_test_video_cfr_ch1_480p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=480; framerate=30',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_30fps_600s_test_video_cfr_ch1_480p_vp9.mp4',
   'fileSize': 26770875,
@@ -1218,7 +1299,7 @@ export const VIDEO_TV_V2_30FPS_600S_TEST_VIDEO_CFR_CH1_480P: VideoMetadata = {
  */
 export const VIDEO_TV_V2_30FPS_600S_TEST_VIDEO_CFR_CH1_720P: VideoMetadata = {
   'name': 'tv_30fps_600s_test_video_cfr_ch1_720p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.31.08.01.01.01.01.00, mp4a.40.2"; width=1280; height=720; framerate=30',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_30fps_600s_test_video_cfr_ch1_720p_vp9.mp4',
   'fileSize': 47901654,
@@ -1234,7 +1315,7 @@ export const VIDEO_TV_V2_30FPS_600S_TEST_VIDEO_CFR_CH1_720P: VideoMetadata = {
  */
 export const VIDEO_TV_V2_60FPS_600S_TEST_VIDEO_CFR_CH1_1080P: VideoMetadata = {
   'name': 'tv_60fps_600s_test_video_cfr_ch1_1080p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.41.08.01.01.01.01.00, mp4a.40.2"; width=1920; height=1080; framerate=60',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_60fps_600s_test_video_cfr_ch1_1080p_vp9.mp4',
   'fileSize': 100028670,
@@ -1250,7 +1331,7 @@ export const VIDEO_TV_V2_60FPS_600S_TEST_VIDEO_CFR_CH1_1080P: VideoMetadata = {
  */
 export const VIDEO_TV_V2_60FPS_600S_TEST_VIDEO_CFR_CH1_1440P: VideoMetadata = {
   'name': 'tv_60fps_600s_test_video_cfr_ch1_1440p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.50.08.01.01.01.01.00, mp4a.40.2"; width=2560; height=1440; framerate=60',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_60fps_600s_test_video_cfr_ch1_1440p_vp9.mp4',
   'fileSize': 149729707,
@@ -1266,7 +1347,7 @@ export const VIDEO_TV_V2_60FPS_600S_TEST_VIDEO_CFR_CH1_1440P: VideoMetadata = {
  */
 export const VIDEO_TV_V2_60FPS_600S_TEST_VIDEO_CFR_CH1_144P: VideoMetadata = {
   'name': 'tv_60fps_600s_test_video_cfr_ch1_144p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.11.08.01.01.01.01.00, mp4a.40.2"; width=256; height=144; framerate=60',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_60fps_600s_test_video_cfr_ch1_144p_vp9.mp4',
   'fileSize': 6089616,
@@ -1282,7 +1363,7 @@ export const VIDEO_TV_V2_60FPS_600S_TEST_VIDEO_CFR_CH1_144P: VideoMetadata = {
  */
 export const VIDEO_TV_V2_60FPS_600S_TEST_VIDEO_CFR_CH1_2160P: VideoMetadata = {
   'name': 'tv_60fps_600s_test_video_cfr_ch1_2160p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.51.08.01.01.01.01.00, mp4a.40.2"; width=3840; height=2160; framerate=60',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_60fps_600s_test_video_cfr_ch1_2160p_vp9.mp4',
   'fileSize': 228728796,
@@ -1298,7 +1379,7 @@ export const VIDEO_TV_V2_60FPS_600S_TEST_VIDEO_CFR_CH1_2160P: VideoMetadata = {
  */
 export const VIDEO_TV_V2_60FPS_600S_TEST_VIDEO_CFR_CH1_240P: VideoMetadata = {
   'name': 'tv_60fps_600s_test_video_cfr_ch1_240p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.21.08.01.01.01.01.00, mp4a.40.2"; width=426; height=240; framerate=60',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_60fps_600s_test_video_cfr_ch1_240p_vp9.mp4',
   'fileSize': 12401842,
@@ -1314,7 +1395,7 @@ export const VIDEO_TV_V2_60FPS_600S_TEST_VIDEO_CFR_CH1_240P: VideoMetadata = {
  */
 export const VIDEO_TV_V2_60FPS_600S_TEST_VIDEO_CFR_CH1_360P: VideoMetadata = {
   'name': 'tv_60fps_600s_test_video_cfr_ch1_360p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=360; framerate=60',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_60fps_600s_test_video_cfr_ch1_360p_vp9.mp4',
   'fileSize': 21888339,
@@ -1330,7 +1411,7 @@ export const VIDEO_TV_V2_60FPS_600S_TEST_VIDEO_CFR_CH1_360P: VideoMetadata = {
  */
 export const VIDEO_TV_V2_60FPS_600S_TEST_VIDEO_CFR_CH1_480P: VideoMetadata = {
   'name': 'tv_60fps_600s_test_video_cfr_ch1_480p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.30.08.01.01.01.01.00, mp4a.40.2"; width=640; height=480; framerate=60',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_60fps_600s_test_video_cfr_ch1_480p_vp9.mp4',
   'fileSize': 33486375,
@@ -1346,7 +1427,7 @@ export const VIDEO_TV_V2_60FPS_600S_TEST_VIDEO_CFR_CH1_480P: VideoMetadata = {
  */
 export const VIDEO_TV_V2_60FPS_600S_TEST_VIDEO_CFR_CH1_720P: VideoMetadata = {
   'name': 'tv_60fps_600s_test_video_cfr_ch1_720p',
-  'mimetype': 'video/mp4; codecs="vp09.00.10.08.01.01.01.01.00, mp4a.40.2"',
+  'mimetype': 'video/mp4; codecs="vp09.00.40.08.01.01.01.01.00, mp4a.40.2"; width=1280; height=720; framerate=60',
   'src':
     'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/2025/Spectrascope/03-05/tv_60fps_600s_test_video_cfr_ch1_720p_vp9.mp4',
   'fileSize': 60178953,

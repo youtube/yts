@@ -434,11 +434,11 @@ export function createMediaSourceUrlFromSource(mediaSource: MediaSource) {
 }
 
 /**
- * Removes a cobalt video running in dom.
+ * Resets a video element's source and state without removing it from the DOM.
  *
- * @param video The cobalt video to remove.
+ * @param video The HTMLVideoElement to reset.
  */
-export function removeCobaltVideo(video: CobaltVideoElement) {
+export function resetVideoElement(video: HTMLVideoElement) {
   video.pause();
   video.onwaiting = null;
   video.onerror = null;
@@ -451,6 +451,15 @@ export function removeCobaltVideo(video: CobaltVideoElement) {
     URL.revokeObjectURL(oldSrc);
   }
   video.load();
+}
+
+/**
+ * Removes a cobalt video running in dom.
+ *
+ * @param video The cobalt video to remove.
+ */
+export function removeCobaltVideo(video: CobaltVideoElement) {
+  resetVideoElement(video);
   if (video.parentNode) {
     video.parentNode.removeChild(video);
   }

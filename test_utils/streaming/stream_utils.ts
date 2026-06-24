@@ -152,6 +152,11 @@ export async function fetchChunk(
             reject(new Error('MediaSource is not open, cannot appendBuffer.'));
             return;
           }
+          if (sourceBuffer.updating) {
+            console.log('doAppend is executing but buffer is updating, rescheduling.');
+            sourceBuffer.addEventListener('updateend', doAppend, {once: true});
+            return;
+          }
           try {
             console.log('appending chunk from doAppend');
             sourceBuffer.appendBuffer(xhr.response);

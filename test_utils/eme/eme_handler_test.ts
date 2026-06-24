@@ -218,6 +218,8 @@ describe('EMEHandler', () => {
 
   it('should dispose correctly', async () => {
     const removeEventListenerSpy = spyOn(videoElement, 'removeEventListener');
+    const removeAttributeSpy = spyOn(videoElement, 'removeAttribute');
+    const loadSpy = spyOn(videoElement, 'load');
     const licenseManagerDisposeSpy = spyOn(licenseManager, 'dispose');
     const abortSpy = spyOn(XMLHttpRequest.prototype, 'abort');
 
@@ -237,6 +239,8 @@ describe('EMEHandler', () => {
       'encrypted',
       jasmine.any(Function),
     );
+    expect(removeAttributeSpy).toHaveBeenCalledWith('src');
+    expect(loadSpy).toHaveBeenCalled();
     expect(licenseManagerDisposeSpy).toHaveBeenCalled();
     expect(abortSpy).toHaveBeenCalled();
     expect(keySession.close).toHaveBeenCalled();

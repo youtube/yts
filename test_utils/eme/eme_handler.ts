@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+import {resetVideoElement} from 'google3/third_party/javascript/yts/test_utils/playback_util';
 import {LicenseRequest, Message} from 'google3/third_party/javascript/yts/test_utils/proto/license_request.proto';
 
 import {LicenseManager} from './license_manager';
@@ -291,6 +292,9 @@ export class EMEHandler {
 
     try {
       await this.closeAllKeySessions();
+      if (this.video) {
+        resetVideoElement(this.video);
+      }
       await this.video?.setMediaKeys?.(null);
     } catch (e: unknown) {
       console.log('Error disposing EME handler: ', e);
