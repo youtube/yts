@@ -15,6 +15,16 @@
  * limitations under the License.
  */
 
-export * from './global';
-export * from './parse_user_agent';
-export * from './sleep';
+declare const global: unknown;
+
+/**
+ * Returns window in browser environment and global object in Node.js.
+ */
+// tslint:disable-next-line:no-any
+export function getGlobal(): any {
+  if (typeof global !== 'undefined') {
+    return global;
+  } else {
+    return window;
+  }
+}

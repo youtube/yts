@@ -1,0 +1,312 @@
+html {
+  font-size:100%;
+}
+
+body {
+  height: 100%;
+  background-color: rgb(33, 33, 33) !important;
+  color: #fff !important;
+}
+
+#testArea {
+  line-height: 1.5em;
+  font-family: "YouTube Sans", Roboto, Arial, sans-serif;
+  padding: 1.5em;
+  width:35em;
+
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+}
+
+span:focus {
+  border: 0.2em solid blue !important;
+}
+
+h1 {
+  display: block;
+  font-size:2em !important;
+  font-weight: 600;
+  margin: 0.8em 0;
+  line-height: 1.2em;
+}
+
+h3 {
+  display: block;
+  font-size:1.4em !important;
+  font-weight: 600;
+  margin: 0 0 0.5em 0;
+}
+
+/**
+ * Cobalt doesn't support "display: list-item", so we set display to block and
+ * have to use our own bullet points/numbering
+ */
+li{
+    display:block;
+    padding-left:2em;
+}
+
+.passed-header{
+  color: #0f0;
+}
+
+.failed-header{
+  color: #f00;
+}
+
+.skipped-header{
+  color: #fff;
+}
+
+.focusable {
+}
+
+.pseudobutton {
+  margin: 1.5em 1em 1.5em 0;
+  padding: 1em;
+  width: 4em;
+  color: #000;
+  background-color: #fff;
+  display: inline;
+}
+
+#status-box {
+  margin: 1em 1em 1em 0;
+  padding: 1em;
+  color: #000;
+  display:block;
+}
+
+.waiting {
+  background-color: #33f;
+  color: #fff !important;
+}
+
+.in-progress {
+  background-color: #fbc02d;
+  color: #000 !important;
+}
+
+.done {
+  background-color: #107516;
+  color: #fff !important;
+}
+
+.instructions {
+  margin: 1em 0;
+}
+
+/** Emphasized instructions */
+.emphasized{
+  color: #3ea6ff;
+  font-size:1.2em;
+  margin: 0.8em 0;
+}
+
+/** Instruction subtext */
+.subtext {
+	font-size:1em;
+	color:#ccc;
+}
+
+.bold{
+  font-weight:bold;
+}
+
+.warning{
+  color: #f00;
+}
+
+.font-table{
+  width: 100%;
+  display:inline-block;
+  line-height: 0.9em;
+  padding:0;
+  overflow: hidden;
+  margin-bottom:1.5em;
+}
+
+.ft-font-0{
+  font-weight: normal !important;
+  font-family: Roboto !important;
+}
+.ft-font-1{
+  font-weight: normal !important;
+  font-family: sans-serif, serif !important;
+}
+.ft-font-2{
+  font-weight: bold !important;
+  font-family: Roboto !important;
+}
+.ft-font-3{
+  font-weight: bold !important;
+  font-family: sans-serif, serif !important;
+}
+
+.ft-locale-cell {
+  display:inline-block;
+  width: 7%;
+  font-size:0.5em;
+}
+
+.ft-cell{
+  display:inline-block;
+  color: #f0f;
+  width: 13%;
+  font-size:0.8em;
+  white-space: nowrap;
+}
+
+/** Fonts test CSS */
+.manual-font-block {
+  font-family: serif;
+  display: inline-block;
+  width: 250px;
+  line-height: 110% !important;
+  margin-left: 20px;
+  background: white;
+  color: black;
+  width:18%;
+  padding:0.5em;
+  font-size:0.85em;
+}
+
+.dancing-script-png {
+  background: url('fonts/DancingScript.png') no-repeat;
+  background-size: contain;
+  height:100%;
+  width:100%;
+}
+
+.dancing-script{
+  word-wrap: break-word;
+  white-space: normal;
+  line-height: 110% !important;
+}
+
+/** Fonts **/
+@font-face {
+  font-family: 'WOFF Dancing Script';
+  font-style: normal;
+  font-weight: 400;
+  src: url('fonts/dancing-script.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'WOFF2 Dancing Script';
+  font-style: normal;
+  font-weight: 400;
+  src: url('fonts/dancing-script.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'TTF Dancing Script';
+  font-style: normal;
+  font-weight: 400;
+  src: url('fonts/dancing-script.ttf') format('truetype');
+}
+
+.dancing-script-ttf {
+  font-family: 'TTF Dancing Script', sans-serif !important;
+}
+
+.dancing-script-woff {
+  font-family: 'WOFF Dancing Script', monospace !important; 
+}
+
+.dancing-script-woff2 {
+  font-family: 'WOFF2 Dancing Script', monospace !important;
+}
+
+/** WebP tests */
+.marbles-webp {
+  background: url("//storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/manual/webp_animated/marbles.webp")  0% 0% / contain no-repeat;
+}
+.marbles-lossy-webp {
+  background: url("//storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/manual/webp_animated/marbles_lossy.webp")  0% 0% / contain no-repeat;
+}
+.vsauce-sm-webp {
+  background: url("//storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/manual/webp_animated/vsauce_sm.webp")  0% 0% / contain no-repeat;
+}
+.beufort-scale-webp {
+  background: url("//storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/manual/webp_animated/beufort_scale.webp")  0% 0% / contain no-repeat;
+}
+.tomb-mask-webp {
+  background: url("//storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/manual/webp_animated/tomb_mask.webp")  0% 0% / contain no-repeat;
+}
+.moving-block-webp {
+  background: url("//storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/manual/webp_animated/moving_block.webp")  0% 0% / contain no-repeat;
+}
+.animated-webp-720-webp {
+  background: url("//storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/manual/webp_animated/animated_webp_720.webp")  0% 0% / contain no-repeat;
+}
+/** non-animated webp */
+.lossless-webp-0 {
+  background: url("//storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/manual/webp/lossless.webp")  0% 0% / contain no-repeat;
+}
+.lossy-webp-0 {
+  background: url("//storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/manual/webp/lossy.webp")  0% 0% / contain no-repeat;
+}
+.webp-1 {
+  background: url("//storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/manual/webp/webp_1.webp")  0% 0% / contain no-repeat;
+}
+.webp-2 {
+  background: url("//storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/manual/webp/webp_2.webp")  0% 0% / contain no-repeat;
+}
+.webp-3 {
+  background: url("//storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/manual/webp/webp_3.webp")  0% 0% / contain no-repeat;
+}
+
+/**** map-to-mesh stuff ****/
+#mtm-video {
+  width: 100%;
+  height: 100%;
+  filter: map-to-mesh(equirectangular, 100deg 60deg,
+  matrix3d(1, 0, 0, 0,
+                         0, 1, 0, 0,
+                         0, 0, 1, 0,
+                         0, 0, 0, 1));
+}
+@keyframes blink {
+  from {
+      background-color: white;
+  }
+  to {
+      background-color: black;
+  }
+}
+#mtm-spinner {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  animation: blink 1s infinite alternate;
+  width: 20px;
+  height: 20px;
+  z-index: 1;
+}
+#mtm-fps {
+  position: absolute;
+  left: 50px;
+  bottom: 0;
+  background-color: white;
+  color: black;
+  z-index: 1;
+}
+/**** end map-to-mesh stuff ****/
+
+#touch-canvas {
+  height: 10em;
+  position: relative;
+  background-color: white;
+}
+
+.touch-pixel {
+  width: 5px;
+  height: 5px;
+  position: absolute;
+  background-color: red;
+}

@@ -21,6 +21,34 @@
 
 import {getMaxAV1SupportedWindow, getMaxSupportedWindowSize, getMaxVp9SupportedWindow} from 'google3/third_party/javascript/yts/test_utils/playback_util';
 
+/** Structure for Chrome/Cobalt JS heap memory metrics. */
+export interface MemoryInfo {
+  jsHeapSizeLimit: number;
+  totalJSHeapSize: number;
+  usedJSHeapSize: number;
+}
+
+/**
+ * Extended Performance interface with proprietary Chrome/Cobalt memory
+ * methods.
+ */
+export interface PerformanceWithMemory extends Performance {
+  memory?: MemoryInfo;
+  measureAvailableCpuMemory?: () => number;
+  measureUsedCpuMemory?: () => number;
+  measureUsedSwapMemory?: () => number;
+  measureReservedVirtualMemory?: () => number;
+}
+
+/** Typed performance object containing Chrome/Cobalt memory extensions. */
+export const extendedPerformance = window.performance as PerformanceWithMemory;
+
+/** Maximum allowed length for a URL. */
+export const MAX_URL_LENGTH = 2047;
+
+const PIXEL_COUNT_4K = 3840 * 2160;
+const PIXEL_COUNT_8K = 7680 * 4320;
+
 const MEDIA_PATH =
   '//storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/';
 
@@ -126,6 +154,22 @@ export function isGt4K() {
 }
 
 /**
+ * Returns true if the maximum supported resolution is 8K or higher.
+ */
+export function is8k(): boolean {
+  const size = getMaxSupportedWindowSize();
+  return size[0] * size[1] >= PIXEL_COUNT_8K;
+}
+
+/**
+ * Returns true if the maximum supported resolution is 4K or higher.
+ */
+export function is4k(): boolean {
+  const size = getMaxSupportedWindowSize();
+  return size[0] * size[1] >= PIXEL_COUNT_4K;
+}
+
+/**
  * Compares two resolution strings in the format "{number}p".
  * @param r1 The first resolution string.
  * @param r2 The second resolution string.
@@ -150,4 +194,30 @@ export function compareResolutions(r1: string, r2: string) {
   } else {
     return -1;
   }
+}
+
+/**
+ * Expands a URL to the maximum allowed length by appending a repeating
+ * character.
+ * @param url The base URL.
+ * @param charset The character to repeat.
+ * @return The expanded URL.
+ */
+export function expandUrl(url: string, charset: string): string {
+  return url + new Array(MAX_URL_LENGTH - url.length - 1).join(charset);
+}
+
+/**
+ * Casts the given object to `any` to allow testing invalid runtime mutations
+ * or read-only property overrides.
+ *
+ * This is used as an intentional miscast to validate strict browser behavior
+ * or read-only enforcement under erroneous actions.
+ *
+ * @param obj The object to cast.
+ * @return The same object cast to `any` to bypass compiler checks.
+ */
+// tslint:disable-next-line:no-any
+export function asUnsafeAny(obj: unknown): any {
+  return obj;
 }

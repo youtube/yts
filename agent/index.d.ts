@@ -4,6 +4,7 @@
  */
 
 import {TrustedResourceUrl} from 'safevalues';
+import {FailureCode} from '../yts_common/types';
 
 declare global {
   namespace yts {
@@ -21,6 +22,7 @@ declare global {
      */
     function getMetrics(): Record<string, unknown>;
     function addMetric(key: string, value: unknown): void;
+    function addFailureCode(code: FailureCode): void;
     function setMetrics(metrics: Record<string, unknown>): void;
     function clearMetrics(): void;
 

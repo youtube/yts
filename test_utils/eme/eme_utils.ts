@@ -19,10 +19,11 @@
  * @fileoverview Utility functions for EME (Encrypted Media Extensions) tests.
  */
 
-/**
- * The Widevine key system string.
- */
+/** The Widevine key system string. */
 export const WIDEVINE_KEY_SYSTEM = 'com.widevine.alpha';
+
+/** The ClearKey key system string. */
+export const CLEARKEY_KEY_SYSTEM = 'org.w3.clearkey';
 
 /**
  * Basic content types for EME tests.

@@ -19,16 +19,16 @@
 // Sample UA: Mozilla/5.0 (OS_Name; 10.2) Cobalt/21.lts.1.268598-qa (unlike Gecko) v8/7.7.299.8-jit gles Starboard/13, wei_TV_sux_2021/v1.0 (Wei_brand, Wei_Model, Wired)
 // See tests for other examples.
 const UA_MATCHER = new RegExp(
-  [
-    /^.*? \((.+?)\) /, // '(OS_Name; 10.2)'
-    /.*Cobalt\/(.+?) .*/, // 21.lts.1.268598-qa
-    /Starboard\/([0-9]+),.*/, // 13
-    /\/([\-_.A-Za-z0-9]*) /, // 'v1.0'
-    /\(([a-zA-Z0-9\-_. ]+), ?/, // 'Wei_brand'
-    /([a-zA-Z0-9\-_. ]*)/, // 'Wei_Model'
-  ]
-    .map((regex) => regex.source)
-    .join(''),
+    [
+      /^.*? \((.+?)\) /,           // '(OS_Name; 10.2)'
+      /.*Cobalt\/(.+?) .*/,        // 21.lts.1.268598-qa
+      /Starboard\/([0-9]+), ?/,    // 13
+      /(.*?)/,                     // wei_TV_sux_2021
+      /\/([\-_.A-Za-z0-9]*) /,     // 'v1.0'
+      /\(([a-zA-Z0-9\-_. ]+), ?/,  // 'Wei_brand'
+      /([a-zA-Z0-9\-_. ]*)/,       // 'Wei_Model'
+    ].map((regex) => regex.source)
+        .join(''),
 );
 
 const COBALT_VERSION_MATCHER = /([0-9]+)\.[a-z]+\.([0-9]+)\.([0-9]+)-([a-z]+)/i;
@@ -163,6 +163,7 @@ export class CobaltUserAgent {
   osNameAndVersion: string;
   cobaltVersion: CobaltVersion;
   starboardVersion: number;
+  deviceNameBlock: string;
   firmware: string;
   brand: string;
   model: string;
@@ -177,9 +178,10 @@ export class CobaltUserAgent {
     this.osNameAndVersion = matched[1];
     this.cobaltVersion = new CobaltVersion(matched[2]);
     this.starboardVersion = Number(matched[3]);
-    this.firmware = matched[4];
-    this.brand = matched[5];
-    this.model = matched[6];
+    this.deviceNameBlock = matched[4].trim();
+    this.firmware = matched[5];
+    this.brand = matched[6];
+    this.model = matched[7];
 
     const evergreenMatches = EVERGREEN_VERSION_MATCHER.exec(userAgent);
     this.evergreenVersion = new EvergreenVersion(

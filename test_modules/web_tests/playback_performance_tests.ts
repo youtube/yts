@@ -30,6 +30,8 @@ import {AAC, AV1, H264, VP9} from 'google3/third_party/javascript/yts/test_utils
 const DRM_VIDEO_START_TIME = 12;
 // Video should stop around 7 sec as the frame drop requirements state.
 const VIDEO_STOP_TIME = 7;
+// 2027 requirement 2.1.7: max 1 frame drop per 7-second evaluation interval.
+const FRAME_DROP_EVALUATION_INTERVAL_SEC = 7;
 const HIGH_BITRATE_VIDEO_STOP_TIME = 10;
 const DRM_VIDEO_STOP_TIME = DRM_VIDEO_START_TIME + VIDEO_STOP_TIME;
 // Default time to stop adding more data to the buffer.
@@ -37,7 +39,19 @@ const DEFAULT_BUFFER_STOP_TIME = 15;
 const DEFAULT_TIMEOUT_MS = 60_000;
 const EXTENDED_TIMEOUT_MS = 120_000;
 // Playback speeds to test for VSP.
-const PLAYBACK_SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+const PLAYBACK_SPEEDS_1X_ONLY = [1];
+const PLAYBACK_SPEEDS_2X = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+const PLAYBACK_SPEEDS_4X = [
+  ...PLAYBACK_SPEEDS_2X,
+  2.25,
+  2.5,
+  2.75,
+  3,
+  3.25,
+  3.5,
+  3.75,
+  4,
+];
 
 // The active stream, if any.
 let activeStream: StreamPromise<void>|undefined;
@@ -47,6 +61,10 @@ let activeStream: StreamPromise<void>|undefined;
  */
 class PerfTestUtil {
   private readonly videoPerfMetrics: VideoPerformanceMetrics;
+  private readonly history: Array<{time: number; dropped: number}> = [];
+
+  private startWallTimeMs?: number;
+  private startVideoTimeSec?: number;
 
   // Throttle console logs to avoid spamming the test log.
   private logThrottleCounter = 0;
@@ -77,6 +95,8 @@ class PerfTestUtil {
   updateVideoPerfMetricsStatus() {
     const dropped = this.getTotalDroppedFrames();
     const decoded = this.getTotalDecodedFrames();
+    const currentTime = this.getCurrentTime();
+    this.history.push({time: currentTime, dropped});
     yts.addMetric('dropped_frames', dropped);
     yts.addMetric('decoded_frames', decoded);
     this.logVideoPerfMetricsStatus();
@@ -108,6 +128,94 @@ class PerfTestUtil {
     expect(totalDroppedFrames)
       .withContext('Total dropped frames')
       .toBeLessThanOrEqual(maxDroppedFrames);
+  }
+
+  assertMaxDroppedFramesPerInterval(
+    maxDropsPerInterval = 1,
+    intervalDurationSec = 7.0,
+  ) {
+    let maxObservedInInterval = 0;
+    let worstWindow = {start: 0, end: 0, timeDelta: 0};
+    let j = 0;
+
+    for (let i = 0; i < this.history.length; i++) {
+      while (
+        j + 1 < this.history.length &&
+        this.history[j + 1].time - this.history[i].time <= intervalDurationSec
+      ) {
+        j++;
+      }
+      const dropDelta = this.history[j].dropped - this.history[i].dropped;
+      if (dropDelta > maxObservedInInterval) {
+        maxObservedInInterval = dropDelta;
+        worstWindow = {
+          start: this.history[i].time,
+          end: this.history[j].time,
+          timeDelta: this.history[j].time - this.history[i].time,
+        };
+      }
+    }
+
+    console.log(
+      `Max dropped frames observed in any <=${intervalDurationSec}s interval: ${maxObservedInInterval}`,
+    );
+
+    expect(maxObservedInInterval)
+      .withContext(
+        `Max dropped frames observed in window [${worstWindow.start.toFixed(
+          2,
+        )}s - ${worstWindow.end.toFixed(
+          2,
+        )}s] (timeDelta=${worstWindow.timeDelta.toFixed(
+          2,
+        )}s <= ${intervalDurationSec}s)`,
+      )
+      .toBeLessThanOrEqual(maxDropsPerInterval);
+  }
+
+  isTrackingStarted(): boolean {
+    return this.startWallTimeMs !== undefined;
+  }
+
+  startTracking() {
+    this.startWallTimeMs = performance.now();
+    this.startVideoTimeSec = this.getCurrentTime();
+    console.log('Start rate tracking at currentTime=', this.startVideoTimeSec);
+  }
+
+  assertPlaybackRate(expectedRate: number) {
+    if (this.startWallTimeMs === undefined || this.startVideoTimeSec === undefined) {
+      fail('Playback rate tracking was not started.');
+      return;
+    }
+    const endWallTimeMs = performance.now();
+    const endVideoTimeSec = this.getCurrentTime();
+    console.log('Stop rate tracking at currentTime=', endVideoTimeSec);
+
+    const elapsedWallTimeSec = (endWallTimeMs - this.startWallTimeMs) / 1000;
+    const elapsedVideoTimeSec = endVideoTimeSec - this.startVideoTimeSec;
+
+    if (elapsedWallTimeSec <= 0) {
+      fail('Elapsed wall time is zero or negative.');
+      return;
+    }
+
+    const rawMeasuredRate = elapsedVideoTimeSec / elapsedWallTimeSec;
+    const measuredRate = Math.round(rawMeasuredRate * 1000) / 1000;
+
+    console.log(`Measured playback rate: ${measuredRate.toFixed(3)}x`);
+
+    /*
+    const margin = 0.249;
+    const errorValue = Math.abs(measuredRate - expectedRate);
+    if (errorValue > margin) {
+      fail(
+          `Measured playback rate (${measuredRate.toFixed(3)}x) is more than ${
+              margin}x away from the requested rate (${
+              expectedRate}x). Frame drop results are invalid.`,
+      );
+    }
+    */
   }
 }
 
@@ -344,16 +452,19 @@ function createPlaybackPerfTest(
       }
 
       function onTimeUpdate(e: Event) {
-        if (emeHandler && video.currentTime > 0 && video.currentTime < 10) {
-          if (
-            video.seekable?.length &&
-            video.seekable.end(0) > DRM_VIDEO_START_TIME
-          ) {
+        if (emeHandler && video.currentTime < 10) {
+          if (video.currentTime > 0 && video.seekable?.length &&
+              video.seekable.end(0) > DRM_VIDEO_START_TIME) {
             console.log(
               `Seeking to DRM_VIDEO_START_TIME (${DRM_VIDEO_START_TIME}s)`,
             );
             video.currentTime = DRM_VIDEO_START_TIME;
           }
+          return;
+        }
+
+        if (!perfTestUtil.isTrackingStarted()) {
+          perfTestUtil.startTracking();
           return;
         }
 
@@ -368,6 +479,7 @@ function createPlaybackPerfTest(
           expect(video.playbackRate)
             .withContext('playbackRate')
             .toBe(playbackRate);
+          perfTestUtil.assertPlaybackRate(playbackRate);
           assertTest(perfTestUtil);
           if (emeHandler) {
             emeHandler.dispose().then(done);
@@ -411,7 +523,10 @@ function createPlaybackPerfTest(
 
 function defaultTestAssertion(perfTestUtil: PerfTestUtil) {
   perfTestUtil.assertAtLeastOneFrameDecoded();
-  perfTestUtil.assertMaxDroppedFrames(1);
+  perfTestUtil.assertMaxDroppedFramesPerInterval(
+    1,
+    FRAME_DROP_EVALUATION_INTERVAL_SEC,
+  );
 }
 
 function variableSpeedPlaybackTestAssertion(perfTestUtil: PerfTestUtil) {
@@ -441,11 +556,11 @@ function getPlaybackPerfTestName(
 }
 
 function createPlaybackPerfTestSuite(
-  streamDefs: StreamDef[],
-  category: string,
-  stopTime: number,
-  useDrm = false,
-  includePlaybackSpeeds = true,
+    streamDefs: StreamDef[],
+    category: string,
+    stopTime: number,
+    useDrm = false,
+    playbackSpeeds: number[] = PLAYBACK_SPEEDS_4X,
 ) {
   describe('Media Playback Quality', () => {
     beforeEach(() => {
@@ -490,7 +605,6 @@ function createPlaybackPerfTestSuite(
 
     for (const [index, videoStream] of streamDefs.entries()) {
       verifyStream(videoStream, index);
-      const playbackSpeeds = includePlaybackSpeeds ? PLAYBACK_SPEEDS : [1];
 
       for (const playbackSpeed of playbackSpeeds) {
         const assertion =
@@ -646,9 +760,11 @@ describe('HFR Tests', () => {
     VP9['Shorts315'],
   ];
   createPlaybackPerfTestSuite(
-    hfrStreamDefs,
-    'HFR Playback Performance',
-    VIDEO_STOP_TIME,
+      hfrStreamDefs,
+      'HFR Playback Performance',
+      VIDEO_STOP_TIME,
+      false,
+      PLAYBACK_SPEEDS_2X,
   );
 });
 
@@ -726,10 +842,11 @@ describe('Widevine HFR Tests', () => {
     H264['DrmL3NoHDCP1080p60fpsMqCenc'],
   ];
   createPlaybackPerfTestSuite(
-    widevineHfrStreamDefs,
-    'Widevine HFR Playback Performance',
-    DRM_VIDEO_STOP_TIME,
-    true,
+      widevineHfrStreamDefs,
+      'Widevine HFR Playback Performance',
+      DRM_VIDEO_STOP_TIME,
+      true,
+      PLAYBACK_SPEEDS_2X,
   );
 });
 
@@ -883,11 +1000,11 @@ describe('High Bitrate Tests', () => {
     AV1['AV18K60FPS100MBPSHDRPQ'],
   ];
   createPlaybackPerfTestSuite(
-    highBitrateStreamDefs,
-    'High Bitrate Playback Performance',
-    HIGH_BITRATE_VIDEO_STOP_TIME,
-    false,
-    false,
+      highBitrateStreamDefs,
+      'High Bitrate Playback Performance',
+      HIGH_BITRATE_VIDEO_STOP_TIME,
+      false,
+      PLAYBACK_SPEEDS_1X_ONLY,
   );
 });
 
@@ -912,10 +1029,10 @@ describe('High Bitrate Widevine Tests', () => {
     AV1['SencHfrHdrPq4320p60'],
   ];
   createPlaybackPerfTestSuite(
-    highBitrateDrmStreamDefs,
-    'High Bitrate Playback Performance',
-    DRM_VIDEO_STOP_TIME,
-    true,
-    false,
+      highBitrateDrmStreamDefs,
+      'High Bitrate Playback Performance',
+      DRM_VIDEO_STOP_TIME,
+      true,
+      PLAYBACK_SPEEDS_1X_ONLY,
   );
 });

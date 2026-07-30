@@ -17,11 +17,7 @@
 
 import 'jasmine';
 
-import {
-  hasDomProperty,
-  makeCapitalName,
-  makeFieldName,
-} from './legacy_yts_utils';
+import {expandUrl, hasDomProperty, makeCapitalName, makeFieldName, MAX_URL_LENGTH} from './legacy_yts_utils';
 
 describe('legacy_yts_utils', () => {
   describe('hasDomProperty', () => {
@@ -93,5 +89,27 @@ describe('legacy_yts_utils', () => {
     it('should handle empty strings', () => {
       expect(makeFieldName('')).toBe('');
     });
+  });
+
+  describe('expandUrl', () => {
+    it('should expand the URL to the expected length (MAX_URL_LENGTH - 2)',
+       () => {
+         const url = 'https://example.com/test?q=';
+         const expanded = expandUrl(url, 'a');
+         expect(expanded.length).toBe(MAX_URL_LENGTH - 2);
+         expect(expanded.startsWith(url)).toBeTrue();
+         expect(expanded.endsWith('a')).toBeTrue();
+         // Verify that the repeated part contains only the charset
+         const repeatedPart = expanded.substring(url.length);
+         expect(repeatedPart).toBe('a'.repeat(repeatedPart.length));
+       });
+
+    it('should work with different base URL lengths and still yield the same total length',
+       () => {
+         const url1 = 'a';
+         const url2 = 'abcdefghijklmnopqrstuvwxyz';
+         expect(expandUrl(url1, 'x').length).toBe(MAX_URL_LENGTH - 2);
+         expect(expandUrl(url2, 'x').length).toBe(MAX_URL_LENGTH - 2);
+       });
   });
 });

@@ -15,40 +15,35 @@
  * limitations under the License.
  */
 
+import {getScreenDiagonal} from 'google3/third_party/javascript/yts/test_utils/cobalt';
+
 describe('Functional Tests', () => {
   describe('Assorted', () => {
-    // Checks to make sure window.H5vccScreen.GetDiagonal() returns a positive
-    // number
-    it('Screen Size', () => {
-      const diagonal = getScreenSize();
+    // Checks to make sure screen diagonal API returns a positive number
+    it('Screen Size', async () => {
+      const diagonal = await getScreenSize();
 
       if (diagonal <= 0) {
-        fail(`H5vccScreen.GetDiagonal() is reported as ${diagonal}`);
+        fail(`Screen diagonal is reported as ${diagonal}`);
       }
     });
 
-    // Checks to make sure window.H5vccScreen.GetDiagonal() returns a value of
+    // Checks to make sure screen diagonal API returns a value of
     // at least 5.5" for touch devices
-    it('Touch Screen Size', () => {
-      const diagonal = getScreenSize();
+    it('Touch Screen Size', async () => {
+      const diagonal = await getScreenSize();
 
       if (diagonal < 5.5) {
         fail(
-          `H5vccScreen.GetDiagonal() is reported as ${diagonal}, which is less than the 5.5 inches required for touch devices.`,
+            `Screen diagonal is reported as ${
+                diagonal}, which is less than the 5.5 inches required for touch devices.`,
         );
       }
     });
 
-    function getScreenSize() {
-      //tslint:disable-next-line:no-any
-      const win = window as any;
-
-      if (!win.H5vccScreen) {
-        fail('H5vccScreen is not supported');
-      }
-
-      const diagonal = win.H5vccScreen.GetDiagonal();
-      console.log(`window.H5vccScreen.GetDiagonal() value: ${diagonal}`);
+    async function getScreenSize() {
+      const diagonal = await getScreenDiagonal();
+      console.log(`Screen diagonal value: ${diagonal}`);
       return diagonal;
     }
   });

@@ -21,7 +21,8 @@ import {CobaltUserAgent} from 'google3/third_party/javascript/yts/yts_common/ind
 
 function cobaltVersionTest(majorVersion: number) {
   return async () => {
-    const url = `https://raw.githubusercontent.com/youtube/cobalt/${majorVersion}.lts.stable/cobalt/version.h`;
+    const branchSuffix = majorVersion >= 27 ? 'lts' : 'lts.stable';
+    const url = `https://raw.githubusercontent.com/youtube/cobalt/${majorVersion}.${branchSuffix}/cobalt/version.h`;
     console.log(`Loading ${url} to determine latest Cobalt version.`);
     const r = await fetch(url);
     const text = await r.text();
@@ -54,13 +55,13 @@ function cobaltVersionTest(majorVersion: number) {
     console.log(
       `Cobalt version on this device: ${cobaltVersionStr}. Minor version: ${actualMinorStr}.`,
     );
-    if (actualMinor % 10 !== 0) {
+    if (majorVersion < 27 && actualMinor % 10 !== 0) {
       fail(
         `Expected Cobalt minor version on this device (${actualMinorStr}) to be a stable version. Stable versions are a multiple of 10.`,
       );
     }
-    const maxDelta = 2;
-    if (latestMinor - actualMinor <= maxDelta * 10) {
+    const maxDelta = majorVersion >= 27 ? 2 : 20;
+    if (latestMinor - actualMinor <= maxDelta) {
       console.log(
         `Cobalt minor version on this device (${actualMinorStr}) is correctly no older than ${maxDelta} minor versions behind latest (${latestMinorStr}).`,
       );
@@ -76,5 +77,6 @@ describe('Functional Tests', () => {
   describe('User Agent', () => {
     it('Cobalt Version 24', cobaltVersionTest(24));
     it('Cobalt Version 25', cobaltVersionTest(25));
+    it('Cobalt Version 27', cobaltVersionTest(27));
   });
 });

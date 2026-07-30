@@ -283,7 +283,7 @@ export const reqIfPresentKeys: ExpectedKey[] = [
     key: 'MicrophoneToggle',
     keyCode: 0x3002,
     note:
-        'Applies only to remotes that have a microphone and the microphone button is dedicated to voice queries or commands directed to one of the YouTube apps',
+        'Applies only to remotes that have a microphone and the microphone button is dedicated to voice queries or commands directed to one of the YouTube apps. Applies to buttons with combined microphone and AI capabilities.',
   },
   {
     name: 'Previous',
@@ -326,6 +326,8 @@ export const reqIfPresentKeys: ExpectedKey[] = [
     // ATV is working to resolve this.
     key: 'LaunchThisApplication',
     keyCode: 0x3000,
+    note:
+        'Applies only to remotes that implement dedicated hardware buttons for YouTube applications',
   },
 ];
 

@@ -1797,8 +1797,6 @@ describe('MSE Codec Tests', () => {
   }
 
 
-  // --- Test Invocations ---
-
   describe('MSE (Opus)', () => {
     createAppendTest(Opus['SantaHigh'], H264['Video1MB']);
     createAbortTest(Opus['SantaHigh'], H264['Video1MB']);

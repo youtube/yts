@@ -15,6 +15,19 @@
  * limitations under the License.
  */
 
-export * from './global';
-export * from './parse_user_agent';
-export * from './sleep';
+import * as xml2js from 'xml2js';
+
+/**
+ * Parses XML string into a JSON object and returns as a Promise.
+ */
+export function parseXml(xml: string) {
+  return new Promise<unknown>((resolve, reject) => {
+    xml2js.parseString(xml, (error: unknown, result: unknown) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(result);
+      }
+    });
+  });
+}

@@ -27,7 +27,7 @@ import {AAC_STREAMS} from 'google3/third_party/javascript/yts/test_utils/streams
 import {AV1_STREAMS} from 'google3/third_party/javascript/yts/test_utils/streams/av1';
 import {H264_STREAMS} from 'google3/third_party/javascript/yts/test_utils/streams/h264';
 import {StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
-import {AAC, H264, Opus, VP9} from 'google3/third_party/javascript/yts/test_utils/streams/media_streams';
+import {AAC, AV1, H264, Opus, VP9} from 'google3/third_party/javascript/yts/test_utils/streams/media_streams';
 import {OPUS_STREAMS} from 'google3/third_party/javascript/yts/test_utils/streams/opus';
 import {VP9_STREAMS} from 'google3/third_party/javascript/yts/test_utils/streams/vp9';
 import {TimeoutManager} from 'google3/third_party/javascript/yts/test_utils/timeout_manager';
@@ -949,6 +949,111 @@ describe('MSE Conformance Tests', () => {
 
     createInBufferSeekTest('InBufferSeek', Opus['CarMed']);
     createInBufferSeekTest('InBufferSeek (AAC)', AAC['AudioNormal']);
+
+    function createChangeTypeTest(
+        fromStream: StreamDef, toStream: StreamDef, suffix = '',
+        fromSeconds = 2, toSeconds = 3) {
+      it(`ChangeType.${fromStream.codec}.${toStream.codec}${suffix}`, (done) => {
+        const ms = new MediaSource();
+        video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
+
+        const onSourceOpen = () => {
+          ms.removeEventListener('sourceopen', onSourceOpen);
+          const xhrManager = new XhrManager();
+          let sourceBuffer: SourceBuffer;
+
+          try {
+            sourceBuffer = ms.addSourceBuffer(fromStream.mimetype);
+            sourceBuffer.mode = 'sequence';
+
+            const transitionTime = fromSeconds === -1 ? fromStream.duration : fromSeconds;
+            const windowEndTime = transitionTime + (toSeconds === -1 ? toStream.duration : toSeconds);
+            const targetTime = transitionTime + 2;
+
+            const fromLength = fromSeconds === -1 ? fromStream.fileSize : fromStream.bps * fromSeconds;
+            const toLength = toSeconds === -1 ? toStream.fileSize : toStream.bps * toSeconds;
+
+            if (fromSeconds !== -1) {
+              sourceBuffer.appendWindowEnd = transitionTime;
+            }
+
+            const firstXhr = xhrManager.createRequest(fromStream.src, () => {
+              const onFirstUpdateEnd = () => {
+                sourceBuffer.removeEventListener('updateend', onFirstUpdateEnd);
+
+                try {
+                  if (toSeconds !== -1) {
+                    sourceBuffer.appendWindowEnd = windowEndTime;
+                  } else {
+                    sourceBuffer.appendWindowEnd = Infinity;
+                  }
+
+                  sourceBuffer.changeType(toStream.mimetype);
+
+                  const secondXhr = xhrManager.createRequest(toStream.src, () => {
+                    const onSecondUpdateEnd = () => {
+                      sourceBuffer.removeEventListener(
+                          'updateend', onSecondUpdateEnd);
+                      ms.endOfStream();
+
+                      video.addEventListener(
+                          'timeupdate', function onTimeUpdate() {
+                            if (video.currentTime >= targetTime) {
+                              video.removeEventListener(
+                                  'timeupdate', onTimeUpdate);
+                              done();
+                            }
+                          });
+                      video.play();
+                    };
+                    sourceBuffer.addEventListener('updateend', onSecondUpdateEnd);
+                    sourceBuffer.appendBuffer(secondXhr.getResponseData());
+                  }, 0, toLength);
+                  secondXhr.send();
+                } catch (e) {
+                  fail('Failed to changeType or append second stream: ' + e);
+                  done();
+                }
+              };
+              sourceBuffer.addEventListener('updateend', onFirstUpdateEnd);
+              sourceBuffer.appendBuffer(firstXhr.getResponseData());
+            }, 0, fromLength);
+            firstXhr.send();
+          } catch (e) {
+            fail('Failed to add source buffer: ' + e);
+            done();
+          }
+        };
+        ms.addEventListener('sourceopen', onSourceOpen);
+      }, DEFAULT_TIMEOUT_MS);
+    }
+
+    // Different Family Transitions (Optional - SHOULD)
+    createChangeTypeTest(AAC['AudioNormal'], Opus['CarMed']);
+    createChangeTypeTest(Opus['CarMed'], AAC['AudioNormal']);
+    createChangeTypeTest(H264['VideoNormal'], VP9['VideoNormal']);
+    createChangeTypeTest(H264['VideoNormal'], AV1['Bunny360p30fps']);
+    createChangeTypeTest(VP9['VideoNormal'], H264['VideoNormal']);
+    createChangeTypeTest(VP9['VideoNormal'], AV1['Bunny360p30fps']);
+    createChangeTypeTest(AV1['Bunny360p30fps'], H264['VideoNormal']);
+    createChangeTypeTest(AV1['Bunny360p30fps'], VP9['VideoNormal']);
+
+    // Same Family Transitions (Mandatory - MUST)
+    // VP9 Profile Transitions
+    createChangeTypeTest(VP9['VideoNormal'], VP9['HdrPqMed'], '.Profile0To2');
+    createChangeTypeTest(VP9['HdrPqMed'], VP9['VideoNormal'], '.Profile2To0');
+
+    // AV1 Level Transitions
+    createChangeTypeTest(AV1['Bunny1080p60fps'], AV1['Sdr2160p60'], '.Level4.1To5.1');
+    createChangeTypeTest(AV1['Sdr2160p60'], AV1['Bunny1080p60fps'], '.Level5.1To4.1');
+
+    // AV1 Bit Depth (SDR <-> HDR) Transitions
+    createChangeTypeTest(AV1['Bunny1080p60fps'], AV1['HdrPq1080p60'], '.8BitTo10Bit');
+    createChangeTypeTest(AV1['HdrPq1080p60'], AV1['Bunny1080p60fps'], '.10BitTo8Bit');
+
+    // AAC Codec Transitions (AAC-LC <-> HE-AAC)
+    createChangeTypeTest(AAC['AudioShorts'], AAC['AudioLowExplicitHE'], '.LcToHeExplicit', -1, -1);
+    createChangeTypeTest(AAC['AudioLowExplicitHE'], AAC['AudioShorts'], '.HeToLcExplicit', -1, -1);
   });
 
   describe('MSE currentTime', () => {
@@ -1328,6 +1433,7 @@ describe('MSE Conformance Tests', () => {
             video.addEventListener('timeupdate', () => {
               if (times >= warmUpCount) {
                 const interval = Date.now() - last;
+                console.log(`timeupdate interval: ${interval}ms`);
                 if (isMax) {
                   if (interval > extremeGranularity) {
                     extremeGranularity = interval;
@@ -1340,6 +1446,8 @@ describe('MSE Conformance Tests', () => {
               }
               if (times === 50 + warmUpCount) {
                 extremeGranularity = extremeGranularity / 1000.0;
+                console.log(
+                    `most extreme interval: ${extremeGranularity.toFixed(3)}s`);
                 if (isMax) {
                   expect(extremeGranularity)
                       .withContext('maxGranularity')
@@ -1369,17 +1477,37 @@ describe('MSE Conformance Tests', () => {
 
     createGranularityTest('maxGranularityPlaybackRate0.25', 0.25, true, 0.28);
     createGranularityTest('maxGranularityPlaybackRate0.50', 0.50, true, 0.28);
+    createGranularityTest('maxGranularityPlaybackRate0.75', 0.75, true, 0.28);
     createGranularityTest('maxGranularityPlaybackRate1.00', 1.00, true, 0.28);
     createGranularityTest('maxGranularityPlaybackRate1.25', 1.25, true, 0.28);
     createGranularityTest('maxGranularityPlaybackRate1.50', 1.50, true, 0.28);
+    createGranularityTest('maxGranularityPlaybackRate1.75', 1.75, true, 0.28);
     createGranularityTest('maxGranularityPlaybackRate2.00', 2.00, true, 0.28);
+    createGranularityTest('maxGranularityPlaybackRate2.25', 2.25, true, 0.28);
+    createGranularityTest('maxGranularityPlaybackRate2.50', 2.50, true, 0.28);
+    createGranularityTest('maxGranularityPlaybackRate2.75', 2.75, true, 0.28);
+    createGranularityTest('maxGranularityPlaybackRate3.00', 3.00, true, 0.28);
+    createGranularityTest('maxGranularityPlaybackRate3.25', 3.25, true, 0.28);
+    createGranularityTest('maxGranularityPlaybackRate3.50', 3.50, true, 0.28);
+    createGranularityTest('maxGranularityPlaybackRate3.75', 3.75, true, 0.28);
+    createGranularityTest('maxGranularityPlaybackRate4.00', 4.00, true, 0.28);
 
     createGranularityTest('minGranularityPlaybackRate0.25', 0.25, false, 0.015);
     createGranularityTest('minGranularityPlaybackRate0.50', 0.50, false, 0.015);
+    createGranularityTest('minGranularityPlaybackRate0.75', 0.75, false, 0.015);
     createGranularityTest('minGranularityPlaybackRate1.00', 1.00, false, 0.015);
     createGranularityTest('minGranularityPlaybackRate1.25', 1.25, false, 0.015);
     createGranularityTest('minGranularityPlaybackRate1.50', 1.50, false, 0.015);
+    createGranularityTest('minGranularityPlaybackRate1.75', 1.75, false, 0.015);
     createGranularityTest('minGranularityPlaybackRate2.00', 2.00, false, 0.015);
+    createGranularityTest('minGranularityPlaybackRate2.25', 2.25, false, 0.015);
+    createGranularityTest('minGranularityPlaybackRate2.50', 2.50, false, 0.015);
+    createGranularityTest('minGranularityPlaybackRate2.75', 2.75, false, 0.015);
+    createGranularityTest('minGranularityPlaybackRate3.00', 3.00, false, 0.015);
+    createGranularityTest('minGranularityPlaybackRate3.25', 3.25, false, 0.015);
+    createGranularityTest('minGranularityPlaybackRate3.50', 3.50, false, 0.015);
+    createGranularityTest('minGranularityPlaybackRate3.75', 3.75, false, 0.015);
+    createGranularityTest('minGranularityPlaybackRate4.00', 4.00, false, 0.015);
 
     it('progressing', (done) => {
       const ms = new MediaSource();
@@ -1469,12 +1597,16 @@ describe('MSE Conformance Tests', () => {
               if (times <= warmUpCount) {
                 realTimeLast = Date.now();
                 playTimeLast = video.currentTime;
-              } else {
+              } else if ((times - warmUpCount) % 5 === 0) {
                 const realTimeNext = Date.now();
                 const playTimeNext = video.currentTime;
                 const realTimeDelta = (realTimeNext - realTimeLast) / 1000.0;
                 const playTimeDelta = playTimeNext - playTimeLast;
                 const expectedDelta = realTimeDelta * playbackRate;
+                console.log(
+                    `video advanced ${playTimeDelta.toFixed(3)}s in ` +
+                    `${realTimeDelta.toFixed(3)}s wall time`);
+
                 expect(playTimeDelta)
                     .withContext('playback time delta min')
                     .toBeGreaterThanOrEqual(expectedDelta - 0.25);
@@ -1504,11 +1636,19 @@ describe('MSE Conformance Tests', () => {
 
     createPlaybackRateTest('PlaybackRate0.25', 0.25);
     createPlaybackRateTest('PlaybackRate0.50', 0.50);
+    createPlaybackRateTest('PlaybackRate0.75', 0.75);
     createPlaybackRateTest('PlaybackRate1.00', 1.00);
     createPlaybackRateTest('PlaybackRate1.25', 1.25);
     createPlaybackRateTest('PlaybackRate1.50', 1.50);
-    createPlaybackRateTest('PlaybackRate2.00', 2.00);
-    createPlaybackRateTest('PlaybackRate0.75', 0.75);
     createPlaybackRateTest('PlaybackRate1.75', 1.75);
+    createPlaybackRateTest('PlaybackRate2.00', 2.00);
+    createPlaybackRateTest('PlaybackRate2.25', 2.25);
+    createPlaybackRateTest('PlaybackRate2.50', 2.50);
+    createPlaybackRateTest('PlaybackRate2.75', 2.75);
+    createPlaybackRateTest('PlaybackRate3.00', 3.00);
+    createPlaybackRateTest('PlaybackRate3.25', 3.25);
+    createPlaybackRateTest('PlaybackRate3.50', 3.50);
+    createPlaybackRateTest('PlaybackRate3.75', 3.75);
+    createPlaybackRateTest('PlaybackRate4.00', 4.00);
   });
 });

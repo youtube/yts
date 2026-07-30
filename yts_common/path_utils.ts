@@ -15,6 +15,18 @@
  * limitations under the License.
  */
 
-export * from './global';
-export * from './parse_user_agent';
-export * from './sleep';
+import * as path from 'path';
+
+/**
+ * Either returns the pathName if it's an absolute path, or gives the full path
+ * relative to the current working directory.
+ */
+export function getFullPathInCwd(pathName: string): string {
+  if (pathName.startsWith('~/') && process.env['HOME']) {
+    pathName = pathName.replace('~', process.env['HOME']!);
+  }
+  if (path.isAbsolute(pathName)) {
+    return pathName;
+  }
+  return path.join(process.cwd(), pathName);
+}

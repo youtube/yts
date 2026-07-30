@@ -108,6 +108,8 @@ export declare interface H5vcc {
     userOnExitStrategy?: ExitStrategy;
     /** Exit Cobalt using the specified exit strategy on the platform. */
     exit?: () => void;
+    /** Returns screen diagonal value in inches. */
+    getScreenDiagonal?: () => Promise<number>;
   };
   crashLog?: {
     /** Registers a Watchdog client with Cobalt; removed in Cobalt 26. */
@@ -171,13 +173,25 @@ export declare interface H5vcc {
 }
 
 /**
- * Extension of the Window interface to include the h5vcc object.
+ * Interface for H5vccScreen object.
  */
-declare interface H5vccWindow extends Window {
-  h5vcc?: H5vcc;
+export declare interface H5vccScreen {
+  GetDiagonal?: () => number;
+}
+
+declare global {
+  interface Window {
+    h5vcc?: H5vcc;
+    H5vccScreen?: H5vccScreen;
+  }
 }
 
 /**
  * Current window.h5vcc instance, defined in a platform-independent way.
  */
-export const h5vcc = (globalThis.window as H5vccWindow)?.h5vcc;
+export const h5vcc = globalThis.window?.h5vcc;
+
+/**
+ * Current window.H5vccScreen instance, defined in a platform-independent way.
+ */
+export const h5vccScreen = globalThis.window?.H5vccScreen;

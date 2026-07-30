@@ -19,6 +19,8 @@ import {CobaltVideoElement} from 'google3/third_party/javascript/yts/test_utils/
 import {requestIndividualization} from 'google3/third_party/javascript/yts/test_utils/eme/eme_utils';
 import * as util from 'google3/third_party/javascript/yts/test_utils/playback_util';
 import {createMediaSourceUrl} from 'google3/third_party/javascript/yts/test_utils/playback_util';
+import {StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
+import {AV1, VP9} from 'google3/third_party/javascript/yts/test_utils/streams/media_streams';
 
 describe('Functional Tests', () => {
   describe('Media', () => {
@@ -39,6 +41,20 @@ describe('Functional Tests', () => {
     const TEST_TIMEOUT = 60 + HDR_WARMUP_THRESHOLD + VIDEO_TIMEOUT_THRESHOLD;
     const LICENSE_DELAY_MS = 10;
     let secondaryVideoStarted = false;
+    let primaryVideoSnapshot: util.VideoTimeSnapshot;
+    let secondaryVideoSnapshot: util.VideoTimeSnapshot;
+
+    beforeEach(() => {
+      secondaryVideoStarted = false;
+      primaryVideoSnapshot = {
+        videoCurrentTime: 0,
+        wallTime: 0,
+      };
+      secondaryVideoSnapshot = {
+        videoCurrentTime: 0,
+        wallTime: 0,
+      };
+    });
 
     function initializeStyle() {
       const style = document.createElement('style');
@@ -70,10 +86,7 @@ describe('Functional Tests', () => {
       document.head.appendChild(style);
     }
 
-    let primaryVideoSnapshot: util.VideoTimeSnapshot = {
-      videoCurrentTime: 0,
-      wallTime: 0,
-    };
+
     async function addPrimaryDrmVideo(resolve: () => void) {
       const primaryVideoContainer = document.createElement('div');
       primaryVideoContainer.id = 'primary-container';
@@ -202,11 +215,6 @@ describe('Functional Tests', () => {
       primaryVideo.load();
       await primaryVideo.play();
     }
-
-    let secondaryVideoSnapshot: util.VideoTimeSnapshot = {
-      videoCurrentTime: 0,
-      wallTime: 0,
-    };
 
     async function addSecondaryDrmH264Video(resolve: () => void) {
       const secondaryVideoContainer = document.createElement('div');
@@ -425,6 +433,377 @@ describe('Functional Tests', () => {
         const secondVideoPromise = new Promise<void>(
           async (resolve, reject) => {
             await addSecondaryDrmH264Video(resolve);
+            await util.sleep(VIDEO_TIMEOUT_THRESHOLD * util.SECOND);
+            reject('secondaryVideo'.concat(rejectReason));
+          },
+        );
+
+        try {
+          await Promise.all([primaryVideoPromise, secondVideoPromise]);
+        } finally {
+          cleanUpVideoAndContainer('primary-video', 'primary-container');
+          cleanUpVideoAndContainer('secondary-video', 'secondary-container');
+        }
+      },
+      TEST_TIMEOUT * util.SECOND,
+    );
+
+    const PRIMARY_DRM_VIDEO_START_TIME_2027 = 2;
+    const SECONDARY_DRM_VIDEO_START_TIME_2027 = 10;
+    const TEST_DONE_THRESHOLD_2027 = 17;
+
+
+
+    async function addPrimaryDrmVideo2027(resolve: () => void) {
+      const primaryVideoContainer = document.createElement('div');
+      primaryVideoContainer.id = 'primary-container';
+      document.body.appendChild(primaryVideoContainer);
+      const primaryVideo = document.createElement(
+        'video',
+      ) as CobaltVideoElement;
+      primaryVideoContainer.appendChild(primaryVideo);
+      primaryVideo.id = 'primary-video';
+      util.listenForErrors(primaryVideo, 'primaryVideo', true);
+
+      let primaryStream = AV1['SencSdr720p30']; // Default fallback
+
+      if (util.isGreaterThan8K()) {
+        primaryStream = AV1['SencSdr2160p30'];
+      } else if (util.isGreaterThan4K()) {
+        primaryStream = AV1['SencSdr2160p30'];
+      } else if (util.isGreaterThanFHDAndSmallerThanOrEqualTo4K()) {
+        primaryStream = AV1['SencSdr1080p60'];
+      } else {
+        if (MediaSource.isTypeSupported(AV1['SencSdr1080p30'].mimetype)) {
+          primaryStream = AV1['SencSdr1080p30'];
+        } else {
+          primaryStream = AV1['SencSdr720p30'];
+        }
+      }
+
+      console.log(`Primary video selected: ${primaryStream.src} (${primaryStream.mimetype})`);
+
+      const mediaKeySystemAccess = await navigator.requestMediaKeySystemAccess(
+        'com.widevine.alpha',
+        [
+          {
+            'initDataTypes': ['cenc'],
+            'videoCapabilities': [
+              {
+                'contentType': primaryStream.mimetype,
+                'encryptionScheme': 'cenc',
+              },
+            ],
+          },
+        ],
+      );
+
+      const mediaKeys = await mediaKeySystemAccess.createMediaKeys();
+      await primaryVideo.setMediaKeys(mediaKeys);
+
+      const mediaKeySession = mediaKeys.createSession();
+      mediaKeySession.addEventListener('message', (messageEvent) => {
+        util.fetchArrayBuffer(
+          'POST',
+          AV1_LICENSE_URL,
+          messageEvent.message,
+          (licenseArrayBuffer) => {
+            mediaKeySession.update(
+              util.extractLicenseCallback(licenseArrayBuffer),
+            );
+          },
+        );
+      });
+
+      primaryVideo.addEventListener('encrypted', (encryptedEvent) => {
+        mediaKeySession.generateRequest(
+          encryptedEvent.initDataType,
+          encryptedEvent.initData as ArrayBuffer,
+        );
+      });
+
+      primaryVideo.addEventListener('timeupdate', (e) => {
+        if (primaryVideo.currentTime < PRIMARY_DRM_VIDEO_START_TIME_2027) {
+          primaryVideo.currentTime = PRIMARY_DRM_VIDEO_START_TIME_2027;
+          console.log(
+            `primaryVideo started playing at currentTime = ${primaryVideo.currentTime.toFixed(
+              4,
+            )}`,
+          );
+        }
+
+        if (
+          !primaryVideoSnapshot.initialized &&
+          primaryVideo.currentTime >
+            PRIMARY_DRM_VIDEO_START_TIME_2027 + PRE_MEASUREMENT_THRESHOLD
+        ) {
+          primaryVideoSnapshot = util.takeVideoTimeSnapshot(primaryVideo);
+          console.log(
+            `primaryVideo measurement started at currentTime = ${primaryVideo.currentTime.toFixed(
+              4,
+            )}`,
+          );
+          return;
+        }
+
+        if (
+          primaryVideoSnapshot.initialized &&
+          primaryVideo.currentTime - primaryVideoSnapshot.videoCurrentTime >
+            MEASUREMENT_THRESHOLD
+        ) {
+          primaryVideoSnapshot = util.validateVideoCurrentTimeAgainstSnapshot(
+            primaryVideo,
+            primaryVideoSnapshot,
+            ERROR_MARGIN_PERCENT,
+            'primaryVideo',
+          );
+        }
+
+        if (
+          primaryVideo.currentTime > TEST_DONE_THRESHOLD_2027 &&
+          secondaryVideoStarted
+        ) {
+          resolve();
+        }
+      });
+
+      const contentInfo = [
+        {
+          mimetype: primaryStream.mimetype,
+          src: primaryStream.src,
+        },
+      ];
+      primaryVideo.src = createMediaSourceUrl(contentInfo);
+      primaryVideo.load();
+      await primaryVideo.play();
+    }
+
+    async function addSecondaryDrmVideo2027(resolve: () => void) {
+      const secondaryVideoContainer = document.createElement('div');
+      secondaryVideoContainer.id = 'secondary-container';
+      document.body.appendChild(secondaryVideoContainer);
+      const backGroundColors = [
+        '#DB4437',
+        '#9E9E9E',
+        '#4285F4',
+        '#0F9D58',
+        '#F4B400',
+      ];
+      const index = 1;
+      const color = backGroundColors[index];
+      const item = document.createElement('div');
+      secondaryVideoContainer.appendChild(item);
+      item.classList.add('item');
+      item.style.backgroundColor = color;
+      const secondaryVideo = document.createElement(
+        'video',
+      ) as CobaltVideoElement;
+      item.appendChild(secondaryVideo);
+      secondaryVideo.id = 'secondary-video';
+      util.listenForErrors(secondaryVideo, 'secondaryVideo', true);
+
+      let secondaryStream: StreamDef;
+      let requireHwDrm = false;
+
+      if (util.isGreaterThan4K() || util.isGreaterThan8K() || util.isGreaterThanFHDAndSmallerThanOrEqualTo4K()) {
+        requireHwDrm = true;
+        if (util.supportsAV1() && MediaSource.isTypeSupported(AV1['SencSdr720p30'].mimetype)) {
+          secondaryStream = AV1['SencSdr720p30'];
+        } else {
+          secondaryStream = VP9['DrmL3NoHDCP720p30fpsEnc'];
+        }
+      } else {
+        if (util.supportsAV1() && MediaSource.isTypeSupported(AV1['SencSdr480p30'].mimetype)) {
+          secondaryStream = AV1['SencSdr480p30'];
+        } else {
+          secondaryStream = VP9['DrmL3NoHDCP480p30fpsEnc'];
+        }
+      }
+
+      console.log(`Secondary video selected: ${secondaryStream.src} (${secondaryStream.mimetype}), requireHwDrm: ${requireHwDrm}`);
+
+      if (
+        secondaryVideo.setMaxVideoCapabilities &&
+        typeof secondaryVideo.setMaxVideoCapabilities === 'function'
+      ) {
+        console.log('set Max Video Capabilities');
+        const width = (secondaryStream.get('width') as number) || 1280;
+        const height = (secondaryStream.get('height') as number) || 720;
+        const fps = (secondaryStream.get('fps') as number) || 30;
+        secondaryVideo.setMaxVideoCapabilities(
+          `width=${width}; height=${height}; framerate=${fps};`,
+        );
+      }
+
+      let mediaKeySystemAccess: MediaKeySystemAccess | undefined = undefined;
+      const keySystems = requireHwDrm ?
+          ['com.widevine.alpha'] :
+          ['com.youtube.widevine.l3', 'com.widevine.alpha'];
+      let selectedKeySystem = '';
+      for (const keySystem of keySystems) {
+        try {
+          mediaKeySystemAccess = await navigator.requestMediaKeySystemAccess(
+            keySystem,
+            [
+              {
+                'initDataTypes': ['cenc'],
+                'videoCapabilities': [
+                  {
+                    'contentType': secondaryStream.mimetype,
+                    'encryptionScheme': 'cenc',
+                  },
+                ],
+              },
+            ],
+          );
+          selectedKeySystem = keySystem;
+          break;
+        } catch (e) {
+          console.log(`requestMediaKeySystemAccess for ${keySystem} failed`);
+        }
+      }
+
+      if (!mediaKeySystemAccess) {
+        throw new Error('Failed to request MediaKeySystemAccess for secondary video');
+      }
+      console.log(`Selected key system for secondary: ${selectedKeySystem}`);
+
+      const mediaKeys = await mediaKeySystemAccess.createMediaKeys();
+      await secondaryVideo.setMediaKeys(mediaKeys);
+      const mediaKeySession = mediaKeys.createSession();
+
+      mediaKeySession.addEventListener('message', (messageEvent) => {
+        const message = messageEvent.message;
+        const messageType = messageEvent.messageType;
+        const keySession: MediaKeySession =
+          messageEvent.target as MediaKeySession;
+        const updateSession = (response: Uint8Array) => {
+          setTimeout(() => {
+            keySession.update(response.buffer).catch(() => {
+              console.log('keySession.update failed');
+            });
+          }, LICENSE_DELAY_MS);
+        };
+        if (messageType === 'individualization-request') {
+          requestIndividualization(message, updateSession);
+        } else if (messageType === 'license-request') {
+          const videoId = secondaryStream.get('video_id') as string;
+          const signature = secondaryStream.get('widevine_signature') as string;
+          const key = (secondaryStream.get('key') as string) || 'test_key1';
+          const licenseServerUrl = `https://dash-mse-test.appspot.com/api/drm/widevine?drm_system=widevine&source=YOUTUBE&ip=0.0.0.0&ipbits=0&expire=19000000000&key=${key}&sparams=ip,ipbits,expire,drm_system,source,video_id&video_id=${videoId}&signature=${signature}`;
+
+          util.fetchArrayBuffer(
+            'POST',
+            licenseServerUrl,
+            messageEvent.message,
+            (licenseArrayBuffer) => {
+              mediaKeySession.update(
+                util.extractLicenseCallback(licenseArrayBuffer),
+              );
+            },
+          );
+        } else {
+          console.debug('unknown MediaKeyMessageEvent type');
+        }
+      });
+
+      secondaryVideo.addEventListener('encrypted', (encryptedEvent) => {
+        mediaKeySession.generateRequest(
+          encryptedEvent.initDataType,
+          encryptedEvent.initData as BufferSource,
+        );
+      });
+
+      const mediaSource = new MediaSource();
+      mediaSource.addEventListener('sourceopen', () => {
+        const videoSourceBuffer =
+          mediaSource.addSourceBuffer(secondaryStream.mimetype);
+        util.fetchArrayBuffer(
+          'GET',
+          secondaryStream.src,
+          null,
+          (videoArrayBuffer) => {
+            videoSourceBuffer.appendBuffer(videoArrayBuffer);
+          },
+        );
+      });
+
+      secondaryVideo.addEventListener('timeupdate', (e) => {
+        if (secondaryVideo.currentTime < SECONDARY_DRM_VIDEO_START_TIME_2027) {
+          secondaryVideoStarted = true;
+          secondaryVideo.currentTime = SECONDARY_DRM_VIDEO_START_TIME_2027;
+          console.log(
+            `secondaryVideo started playing at currentTime = ${secondaryVideo.currentTime.toFixed(
+              4,
+            )}`,
+          );
+          return;
+        }
+
+        if (
+          !secondaryVideoSnapshot.initialized &&
+          secondaryVideo.currentTime >
+            SECONDARY_DRM_VIDEO_START_TIME_2027 + PRE_MEASUREMENT_THRESHOLD
+        ) {
+          secondaryVideoSnapshot =
+            util.takeVideoTimeSnapshot(secondaryVideo);
+          console.log(
+            `secondaryVideo measurement started at currentTime = ${secondaryVideo.currentTime.toFixed(
+              4,
+            )}`,
+          );
+          return;
+        }
+
+        if (
+          secondaryVideoSnapshot.initialized &&
+          secondaryVideo.currentTime -
+            secondaryVideoSnapshot.videoCurrentTime >
+            MEASUREMENT_THRESHOLD
+        ) {
+          secondaryVideoSnapshot =
+            util.validateVideoCurrentTimeAgainstSnapshot(
+              secondaryVideo,
+              secondaryVideoSnapshot,
+              ERROR_MARGIN_PERCENT,
+              'secondaryVideo',
+            );
+        }
+
+        if (
+          secondaryVideo.currentTime > TEST_DONE_THRESHOLD_2027
+        ) {
+          resolve();
+        }
+      });
+
+      secondaryVideo.src = util.createMediaSourceUrlFromSource(mediaSource);
+      secondaryVideo.load();
+      await secondaryVideo.play();
+    }
+
+    it(
+      'Dual Drm Video Test 2027',
+      async () => {
+        initializeStyle();
+
+        const rejectReason =
+          ' currentTime did not reach the expected value before end of test. ' +
+          'This could be because the video took too long to start playing ' +
+          'or because the video erroneously paused / stalled in the middle.';
+
+        console.log('Rendering dual videos (2027).');
+        const primaryVideoPromise = new Promise<void>(
+          async (resolve, reject) => {
+            await addPrimaryDrmVideo2027(resolve);
+            await util.sleep(VIDEO_TIMEOUT_THRESHOLD * util.SECOND);
+            reject('primaryVideo'.concat(rejectReason));
+          },
+        );
+
+        const secondVideoPromise = new Promise<void>(
+          async (resolve, reject) => {
+            await addSecondaryDrmVideo2027(resolve);
             await util.sleep(VIDEO_TIMEOUT_THRESHOLD * util.SECOND);
             reject('secondaryVideo'.concat(rejectReason));
           },

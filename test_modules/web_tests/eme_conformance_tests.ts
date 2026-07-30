@@ -20,7 +20,7 @@ import 'yts';
 
 import {VideoMetadata} from 'google3/third_party/javascript/yts/test_utils/codecs/interfaces';
 import {EMEHandler} from 'google3/third_party/javascript/yts/test_utils/eme/eme_handler';
-import {CobaltMediaKeys, countPsshAtoms, EmeContentType, WIDEVINE_KEY_SYSTEM, WidevineRobustness} from 'google3/third_party/javascript/yts/test_utils/eme/eme_utils';
+import {CLEARKEY_KEY_SYSTEM, CobaltMediaKeys, countPsshAtoms, EmeContentType, WIDEVINE_KEY_SYSTEM, WidevineRobustness} from 'google3/third_party/javascript/yts/test_utils/eme/eme_utils';
 import {LicenseManager} from 'google3/third_party/javascript/yts/test_utils/eme/license_manager';
 import {setupEme} from 'google3/third_party/javascript/yts/test_utils/eme/setup_eme';
 import * as util from 'google3/third_party/javascript/yts/test_utils/legacy_yts_utils';
@@ -226,6 +226,34 @@ describe('EME Conformance Tests', () => {
       const match = userAgent.match(cobaltRegex);
       return match ? Number(match[1]) : -1;
     }
+
+    interface CanPlayTypeWithTwoArgs {
+      canPlayType(mimeType: string, keySystem: string): string;
+    }
+
+    it('canPlayType.keySystem', () => {
+      const mp4Format = playbackUtil.createVideoFormatStr(
+          'mp4', 'avc1.42E01E', null, null, null, null, '');
+      const webmFormat = playbackUtil.createVideoFormatStr(
+          'webm', VP9['VideoNormal'].codec, null, null, null, null, '');
+      const clearFormat = CLEARKEY_KEY_SYSTEM;
+
+      const videoWithCanPlayType = video as unknown as CanPlayTypeWithTwoArgs;
+
+      const canPlayMp4Clear =
+          videoWithCanPlayType.canPlayType(mp4Format, clearFormat);
+      console.log(`canPlayType("${mp4Format}", "${clearFormat}") = "${
+          canPlayMp4Clear}"`);
+      const canPlayWebmClear =
+          videoWithCanPlayType.canPlayType(webmFormat, clearFormat);
+      console.log(`canPlayType("${webmFormat}", "${clearFormat}") = "${
+          canPlayWebmClear}"`);
+
+      expect(!!canPlayMp4Clear || !!canPlayWebmClear)
+          .withContext(
+              'Should support ClearKey for either MP4 or WebM via canPlayType')
+          .toBeTrue();
+    });
 
     it('Widevine Support', async () => {
       const config = [

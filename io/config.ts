@@ -146,13 +146,6 @@ export declare interface Config extends Ports {
 
   /** Number of times to attempt to launch YouTube on devices. Defaults to 4. */
   launchAttempts: number;
-
-  // TODO(b/455670830): Remove this once Cobalt gracefully handles reloads.
-  /**
-   * When set, add an artificial delay between device reloads. This is to allow
-   * Cobalt to properly save cookies and storage between reloads.
-   */
-  delayBetweenReloadsMs: number;
 }
 
 /**
@@ -205,7 +198,7 @@ function getConfigFile() {
  * Reads configuration from cache, or, failing that, disk. Temporarily exported
  * to be used in MockIo. Will be later absorbed into the storage class.
  */
-export function getConfig() {
+export function getConfig(): Config {
   return Object.assign(getDefaultConfig(), getConfigFile(), configOverrides);
 }
 
@@ -290,7 +283,6 @@ function getDefaultConfig(): Config {
     healthCheckIntervalMs: 60_000,
     dedupeDevices: true,
     launchAttempts: 4,
-    delayBetweenReloadsMs: 0,
   };
 }
 

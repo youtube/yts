@@ -37,6 +37,7 @@ describe('CobaltUserAgent', () => {
     expect(agent.cobaltVersion.flavor).toEqual('qa');
 
     expect(agent.starboardVersion).toEqual(13);
+    expect(agent.deviceNameBlock).toEqual('wei_TV_sux_2021');
     expect(agent.firmware).toEqual('v1.0');
     expect(agent.brand).toEqual('Wei_brand');
     expect(agent.model).toEqual('Wei_Model');
@@ -60,6 +61,7 @@ describe('CobaltUserAgent', () => {
     expect(agent.cobaltVersion.flavor).toEqual('qa');
 
     expect(agent.starboardVersion).toEqual(13);
+    expect(agent.deviceNameBlock).toEqual('wei_TV_sux_2021');
     expect(agent.firmware).toEqual('v1.0');
     expect(agent.brand).toEqual('Wei_.br-and');
     expect(agent.model).toEqual('Wei_.Mo-del');
@@ -83,6 +85,7 @@ describe('CobaltUserAgent', () => {
     expect(agent.cobaltVersion.flavor).toEqual('gold');
 
     expect(agent.starboardVersion).toEqual(12);
+    expect(agent.deviceNameBlock).toEqual('Samsung_TV_KANTS2_2020');
     expect(agent.firmware).toEqual('T-KTS2AKUC-2505.4');
     expect(agent.brand).toEqual('Samsung');
     expect(agent.model).toEqual('UN32M4500BFXZA');
@@ -106,6 +109,8 @@ describe('CobaltUserAgent', () => {
     expect(agent.cobaltVersion.flavor).toEqual('qa');
 
     expect(agent.starboardVersion).toEqual(15);
+    expect(agent.deviceNameBlock)
+        .toEqual('RaspberryPiFoundation_UNKNOWN_Unknown_0');
     expect(agent.firmware).toEqual('Unknown');
     expect(agent.brand).toEqual('Raspberry Pi Foundation');
     expect(agent.model).toEqual('Raspberry Pi 3 Model B');
@@ -129,9 +134,35 @@ describe('CobaltUserAgent', () => {
     expect(agent.cobaltVersion.flavor).toEqual('qa');
 
     expect(agent.starboardVersion).toEqual(17);
+    expect(agent.deviceNameBlock)
+        .toEqual('SystemIntegratorName_DESKTOP_ChipsetModelNumber_2026');
     expect(agent.firmware).toEqual('FirmwareVersion');
     expect(agent.brand).toEqual('BrandName');
     expect(agent.model).toEqual('ModelName');
+
+    expect(agent.evergreenVersion.major).toEqual(-1);
+    expect(agent.evergreenVersion.minor).toEqual(-1);
+    expect(agent.evergreenVersion.patch).toEqual(-1);
+    expect(agent.evergreenVersion.isEvergreenFull).toBeFalse();
+  });
+
+  it('parses a user agent with slashes in device name', () => {
+    const agent = new CobaltUserAgent(
+        'Mozilla/5.0 (Linux armeabi-v7a) Cobalt/21.lts.1.268598-qa (unlike Gecko) v8/7.7.299.8-jit gles Starboard/13, wei/TV/sux/2021/v1.0 (Wei_brand, Wei_Model, Wired)',
+    );
+
+    expect(agent.osNameAndVersion).toEqual('Linux armeabi-v7a');
+
+    expect(agent.cobaltVersion.lts).toEqual(21);
+    expect(agent.cobaltVersion.release).toEqual(1);
+    expect(agent.cobaltVersion.buildId).toEqual(268598);
+    expect(agent.cobaltVersion.flavor).toEqual('qa');
+
+    expect(agent.starboardVersion).toEqual(13);
+    expect(agent.deviceNameBlock).toEqual('wei/TV/sux/2021');
+    expect(agent.firmware).toEqual('v1.0');
+    expect(agent.brand).toEqual('Wei_brand');
+    expect(agent.model).toEqual('Wei_Model');
 
     expect(agent.evergreenVersion.major).toEqual(-1);
     expect(agent.evergreenVersion.minor).toEqual(-1);

@@ -50,16 +50,7 @@ class Storage {
   /** Delete a path */
   remove(pathName: string): void {
     pathName = this.getFullDataDirPath(pathName);
-
-    if (!fs.existsSync(pathName)) {
-      return;
-    }
-
-    if (fs.lstatSync(pathName).isDirectory()) {
-      backwardsCompatibleRmdirSync(pathName);
-    } else {
-      fs.unlinkSync(pathName);
-    }
+    fs.rmSync(pathName, {recursive: true, force: true});
   }
 
   /**
@@ -103,24 +94,6 @@ class Storage {
       }
     }
     return path.join(dir, 'yts_server');
-  }
-}
-
-/**
- * "rmdirSync" is going to be deprecated in later Node versions, but Node 12
- * doesn't have rmSync. Uses rmSync if it's available and rmdirSync if it's not.
- *
- * This is also defined in yts_server/util/util.ts, but is duplicated here so
- * we don't have to deal with dependency issues.
- */
-export function backwardsCompatibleRmdirSync(path: string) {
-  // abort if path doesn't exist
-  if (!fs.existsSync(path)) return;
-
-  if (typeof fs.rmSync === 'function') {
-    fs.rmSync(path, {recursive: true});
-  } else {
-    fs.rmdirSync(path, {recursive: true});
   }
 }
 
