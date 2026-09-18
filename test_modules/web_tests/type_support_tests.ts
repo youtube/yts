@@ -52,132 +52,150 @@ describe('Type Support Tests', () => {
 
   describe('Shorts VP9', () => {
     const codec = 'video/webm; codecs="vp09.00.51.08"';
-    const resolutions = [
-      [144, 256],
-      [240, 426],
-      [360, 640],
-      [480, 854],
-      [576, 1024],
-      [608, 1080],
-      [720, 1280],
-      [1080, 1920],
-      [1440, 2560],
-      [2160, 3840],
+    const specs = [
+      {id: '27.0.0.1', width: 144, height: 256, fps: 30},
+      {id: '27.0.1.1', width: 144, height: 256, fps: 60},
+      {id: '27.0.2.1', width: 240, height: 426, fps: 30},
+      {id: '27.0.3.1', width: 240, height: 426, fps: 60},
+      {id: '27.0.4.1', width: 360, height: 640, fps: 30},
+      {id: '27.0.5.1', width: 360, height: 640, fps: 60},
+      {id: '27.0.6.1', width: 480, height: 854, fps: 30},
+      {id: '27.0.7.1', width: 480, height: 854, fps: 60},
+      {id: '27.0.8.1', width: 576, height: 1024, fps: 30},
+      {id: '27.0.9.1', width: 576, height: 1024, fps: 60},
+      {id: '27.0.10.1', width: 608, height: 1080, fps: 30},
+      {id: '27.0.11.1', width: 608, height: 1080, fps: 60},
+      {id: '27.0.12.1', width: 720, height: 1280, fps: 30},
+      {id: '27.0.13.1', width: 720, height: 1280, fps: 60},
+      {id: '27.0.14.1', width: 1080, height: 1920, fps: 30},
+      {id: '27.0.15.1', width: 1080, height: 1920, fps: 60},
     ];
-    const fpsVals = [30, 60];
 
-    for (const res of resolutions) {
-      if (res[1] > 2160) continue;
-      for (const fps of fpsVals) {
-        const mimeStr = createMimeTypeStr(
-          codec,
-          undefined,
-          res[0],
-          res[1],
-          fps,
-        );
-        const isMandatory = maxWindow[0] >= res[0] && maxWindow[1] >= res[1];
+    for (const spec of specs) {
+      const mimeStr = createMimeTypeStr(
+        codec,
+        undefined,
+        spec.width,
+        spec.height,
+        spec.fps,
+      );
+      const isMandatory =
+        maxWindow[0] >= spec.width && maxWindow[1] >= spec.height;
 
-        it(`VP9 ${res[0]}x${res[1]} ${fps} fps`, () => {
-          checkTypeSupported(mimeStr, isMandatory);
-        });
-      }
+      yts.test({id: spec.id});
+      it(`VP9 ${spec.width}x${spec.height} ${spec.fps} fps`, () => {
+        checkTypeSupported(mimeStr, isMandatory);
+      });
     }
   });
 
   describe('Shorts AV1', () => {
     const codec = 'video/mp4; codecs="av01.0.16M.08"';
-    const resolutions = [
-      [144, 256],
-      [240, 426],
-      [360, 640],
-      [480, 854],
-      [576, 1024],
-      [608, 1080],
-      [720, 1280],
-      [1080, 1920],
-      [1440, 2560],
-      [2160, 3840],
+    const specs = [
+      {id: '27.1.0.1', width: 144, height: 256, fps: 30},
+      {id: '27.1.1.1', width: 144, height: 256, fps: 60},
+      {id: '27.1.2.1', width: 240, height: 426, fps: 30},
+      {id: '27.1.3.1', width: 240, height: 426, fps: 60},
+      {id: '27.1.4.1', width: 360, height: 640, fps: 30},
+      {id: '27.1.5.1', width: 360, height: 640, fps: 60},
+      {id: '27.1.6.1', width: 480, height: 854, fps: 30},
+      {id: '27.1.7.1', width: 480, height: 854, fps: 60},
+      {id: '27.1.8.1', width: 576, height: 1024, fps: 30},
+      {id: '27.1.9.1', width: 576, height: 1024, fps: 60},
+      {id: '27.1.10.1', width: 608, height: 1080, fps: 30},
+      {id: '27.1.11.1', width: 608, height: 1080, fps: 60},
+      {id: '27.1.12.1', width: 720, height: 1280, fps: 30},
+      {id: '27.1.13.1', width: 720, height: 1280, fps: 60},
+      {id: '27.1.14.1', width: 1080, height: 1920, fps: 30},
+      {id: '27.1.15.1', width: 1080, height: 1920, fps: 60},
+      {id: '27.1.16.1', width: 1440, height: 2560, fps: 30},
+      {id: '27.1.17.1', width: 1440, height: 2560, fps: 60},
+      {id: '27.1.18.1', width: 2160, height: 3840, fps: 30},
+      {id: '27.1.19.1', width: 2160, height: 3840, fps: 60},
     ];
-    const fpsVals = [30, 60];
 
-    for (const res of resolutions) {
-      for (const fps of fpsVals) {
-        const mimeStr = createMimeTypeStr(
-          codec,
-          undefined,
-          res[0],
-          res[1],
-          fps,
-        );
-        const isMandatory = maxWindow[0] >= res[0] && maxWindow[1] >= res[1];
+    for (const spec of specs) {
+      const mimeStr = createMimeTypeStr(
+        codec,
+        undefined,
+        spec.width,
+        spec.height,
+        spec.fps,
+      );
+      const isMandatory =
+        maxWindow[0] >= spec.width && maxWindow[1] >= spec.height;
 
-        it(`AV1 ${res[0]}x${res[1]} ${fps} fps`, () => {
-          checkTypeSupported(mimeStr, isMandatory);
-        });
-      }
+      yts.test({id: spec.id});
+      it(`AV1 ${spec.width}x${spec.height} ${spec.fps} fps`, () => {
+        checkTypeSupported(mimeStr, isMandatory);
+      });
     }
   });
 
   describe('Shorts H264', () => {
-    const codec = 'video/mp4; codecs="avc1.640033"';
-    const resolutions = [
-      [144, 256],
-      [240, 426],
-      [360, 640],
-      [480, 854],
-      [576, 1024],
-      [608, 1080],
+    const codec = 'video/mp4; codecs="avc1.4d401f"';
+    const specs = [
+      {id: '27.2.0.1', width: 144, height: 256, fps: 30},
+      {id: '27.2.1.1', width: 144, height: 256, fps: 60},
+      {id: '27.2.2.1', width: 240, height: 426, fps: 30},
+      {id: '27.2.3.1', width: 240, height: 426, fps: 60},
+      {id: '27.2.4.1', width: 360, height: 640, fps: 30},
+      {id: '27.2.5.1', width: 360, height: 640, fps: 60},
+      {id: '27.2.6.1', width: 480, height: 854, fps: 30},
+      {id: '27.2.7.1', width: 480, height: 854, fps: 60},
+      {id: '27.2.8.1', width: 576, height: 1024, fps: 30},
+      {id: '27.2.9.1', width: 576, height: 1024, fps: 60},
+      {id: '27.2.10.1', width: 608, height: 1080, fps: 30},
+      {id: '27.2.11.1', width: 608, height: 1080, fps: 60},
     ];
-    const fpsVals = [30, 60];
 
-    for (const res of resolutions) {
-      for (const fps of fpsVals) {
-        const mimeStr = createMimeTypeStr(
-          codec,
-          undefined,
-          res[0],
-          res[1],
-          fps,
-        );
-        const isMandatory = maxWindow[0] >= res[0] && maxWindow[1] >= res[1];
+    for (const spec of specs) {
+      const mimeStr = createMimeTypeStr(
+        codec,
+        undefined,
+        spec.width,
+        spec.height,
+        spec.fps,
+      );
+      const isMandatory =
+        maxWindow[0] >= spec.width && maxWindow[1] >= spec.height;
 
-        it(`H264 ${res[0]}x${res[1]} ${fps} fps`, () => {
-          checkTypeSupported(mimeStr, isMandatory);
-        });
-      }
+      yts.test({id: spec.id});
+      it(`H264 ${spec.width}x${spec.height} ${spec.fps} fps`, () => {
+        checkTypeSupported(mimeStr, isMandatory);
+      });
     }
   });
 
   describe('AV1 HDR', () => {
-    const streams = [
-      AV1['HdrHlg144p'],
-      AV1['HdrHlg240p'],
-      AV1['HdrHlg360p'],
-      AV1['HdrHlg480p'],
-      AV1['HdrHlg720p24'],
-      AV1['HdrHlg720p60'],
-      AV1['HdrHlg1080p24'],
-      AV1['HdrHlg1080p60'],
-      AV1['HdrHlg1440p24'],
-      AV1['HdrHlg1440p60'],
-      AV1['HdrHlg2160p24'],
-      AV1['HdrHlg2160p60'],
-      AV1['HdrPq144p'],
-      AV1['HdrPq240p'],
-      AV1['HdrPq360p'],
-      AV1['HdrPq480p'],
-      AV1['HdrPq720p24'],
-      AV1['HdrPq720p60'],
-      AV1['HdrPq1080p24'],
-      AV1['HdrPq1080p60'],
-      AV1['HdrPq1440p24'],
-      AV1['HdrPq1440p60'],
-      AV1['HdrPq2160p24'],
-      AV1['HdrPq2160p60'],
+    const streamSpecs = [
+      {id: '27.7.14.1', stream: AV1['HdrHlg144p']},
+      {id: '27.7.15.1', stream: AV1['HdrHlg240p']},
+      {id: '27.7.16.1', stream: AV1['HdrHlg360p']},
+      {id: '27.7.17.1', stream: AV1['HdrHlg480p']},
+      {id: '27.7.18.1', stream: AV1['HdrHlg720p24']},
+      {id: '27.7.19.1', stream: AV1['HdrHlg720p60']},
+      {id: '27.7.20.1', stream: AV1['HdrHlg1080p24']},
+      {id: '27.7.21.1', stream: AV1['HdrHlg1080p60']},
+      {id: '27.7.22.1', stream: AV1['HdrHlg1440p24']},
+      {id: '27.7.23.1', stream: AV1['HdrHlg1440p60']},
+      {id: '27.7.24.1', stream: AV1['HdrHlg2160p24']},
+      {id: '27.7.25.1', stream: AV1['HdrHlg2160p60']},
+      {id: '27.7.26.1', stream: AV1['HdrPq144p']},
+      {id: '27.7.27.1', stream: AV1['HdrPq240p']},
+      {id: '27.7.28.1', stream: AV1['HdrPq360p']},
+      {id: '27.7.29.1', stream: AV1['HdrPq480p']},
+      {id: '27.7.30.1', stream: AV1['HdrPq720p24']},
+      {id: '27.7.31.1', stream: AV1['HdrPq720p60']},
+      {id: '27.7.32.1', stream: AV1['HdrPq1080p24']},
+      {id: '27.7.33.1', stream: AV1['HdrPq1080p60']},
+      {id: '27.7.34.1', stream: AV1['HdrPq1440p24']},
+      {id: '27.7.35.1', stream: AV1['HdrPq1440p60']},
+      {id: '27.7.36.1', stream: AV1['HdrPq2160p24']},
+      {id: '27.7.37.1', stream: AV1['HdrPq2160p60']},
     ];
 
-    for (const stream of streams) {
+    for (const {stream, id} of streamSpecs) {
       const av1Metadata = stream.get('codecMetadata') as {
         level: string;
         bitDepth: number;
@@ -207,6 +225,7 @@ describe('Type Support Tests', () => {
 
       const mimeStr = createFullMimeString(stream);
 
+      yts.test({id});
       it(testName, () => {
         checkTypeSupported(mimeStr, mandatory);
       });
@@ -214,42 +233,42 @@ describe('Type Support Tests', () => {
   });
 
   describe('VP9 HDR', () => {
-    const streams = [
-      VP9['HdrHlgUltralow'],
-      VP9['HdrHlgLow'],
-      VP9['HdrHlgMed'],
-      VP9['HdrHlgHigh'],
-      VP9['HdrHlg720p'],
-      VP9['HdrHlg1080p'],
-      VP9['HdrHlg2k'],
-      VP9['HdrHlg4k'],
-      VP9['HdrHlgUltralowHfr'],
-      VP9['HdrHlgLowHfr'],
-      VP9['HdrHlgMedHfr'],
-      VP9['HdrHlgHighHfr'],
-      VP9['HdrHlg720pHfr'],
-      VP9['HdrHlg1080pHfr'],
-      VP9['HdrHlg2kHfr'],
-      VP9['HdrHlg4kHfr'],
-      VP9['HdrPqUltralow'],
-      VP9['HdrPqLow'],
-      VP9['HdrPqMed'],
-      VP9['HdrPqHigh'],
-      VP9['HdrPq720p'],
-      VP9['HdrPq1080p'],
-      VP9['HdrPq2k'],
-      VP9['HdrPq4k'],
-      VP9['HdrPqUltralowHfr'],
-      VP9['HdrPqLowHfr'],
-      VP9['HdrPqMedHfr'],
-      VP9['HdrPqHighHfr'],
-      VP9['HdrPq720pHfr'],
-      VP9['HdrPq1080pHfr'],
-      VP9['HdrPq2kHfr'],
-      VP9['HdrPq4kHfr'],
+    const streamSpecs = [
+      {id: '27.4.1.1', stream: VP9['HdrHlgUltralow']},
+      {id: '27.4.2.1', stream: VP9['HdrHlgLow']},
+      {id: '27.4.3.1', stream: VP9['HdrHlgMed']},
+      {id: '27.4.4.1', stream: VP9['HdrHlgHigh']},
+      {id: '27.4.5.1', stream: VP9['HdrHlg720p']},
+      {id: '27.4.6.1', stream: VP9['HdrHlg1080p']},
+      {id: '27.4.7.1', stream: VP9['HdrHlg2k']},
+      {id: '27.4.8.1', stream: VP9['HdrHlg4k']},
+      {id: '27.4.9.1', stream: VP9['HdrHlgUltralowHfr']},
+      {id: '27.4.10.1', stream: VP9['HdrHlgLowHfr']},
+      {id: '27.4.11.1', stream: VP9['HdrHlgMedHfr']},
+      {id: '27.4.12.1', stream: VP9['HdrHlgHighHfr']},
+      {id: '27.4.13.1', stream: VP9['HdrHlg720pHfr']},
+      {id: '27.4.14.1', stream: VP9['HdrHlg1080pHfr']},
+      {id: '27.4.15.1', stream: VP9['HdrHlg2kHfr']},
+      {id: '27.4.16.1', stream: VP9['HdrHlg4kHfr']},
+      {id: '27.4.17.1', stream: VP9['HdrPqUltralow']},
+      {id: '27.4.18.1', stream: VP9['HdrPqLow']},
+      {id: '27.4.19.1', stream: VP9['HdrPqMed']},
+      {id: '27.4.20.1', stream: VP9['HdrPqHigh']},
+      {id: '27.4.21.1', stream: VP9['HdrPq720p']},
+      {id: '27.4.22.1', stream: VP9['HdrPq1080p']},
+      {id: '27.4.23.1', stream: VP9['HdrPq2k']},
+      {id: '27.4.24.1', stream: VP9['HdrPq4k']},
+      {id: '27.4.25.1', stream: VP9['HdrPqUltralowHfr']},
+      {id: '27.4.26.1', stream: VP9['HdrPqLowHfr']},
+      {id: '27.4.27.1', stream: VP9['HdrPqMedHfr']},
+      {id: '27.4.28.1', stream: VP9['HdrPqHighHfr']},
+      {id: '27.4.29.1', stream: VP9['HdrPq720pHfr']},
+      {id: '27.4.30.1', stream: VP9['HdrPq1080pHfr']},
+      {id: '27.4.31.1', stream: VP9['HdrPq2kHfr']},
+      {id: '27.4.32.1', stream: VP9['HdrPq4kHfr']},
     ];
 
-    for (const stream of streams) {
+    for (const {stream, id} of streamSpecs) {
       const fps = stream.get('fps') as number;
       const mandatory = util.isVp9Gt4K() || (util.isVp9GtFHD() && fps <= 30);
 
@@ -259,6 +278,7 @@ describe('Type Support Tests', () => {
 
       const mimeStr = createFullMimeString(stream);
 
+      yts.test({id});
       it(testName, () => {
         checkTypeSupported(mimeStr, mandatory);
       });

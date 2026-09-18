@@ -47,16 +47,19 @@ function runImageTest(
 
 describe('Functional Tests', () => {
   describe('Assorted', () => {
+    yts.test({id: '14.9.5.1'});
     it('JPG', async () => {
       await runImageTest(getMediaPath('qual-e/pass.jpg'), 'JPG');
     });
 
+    yts.test({id: '14.9.6.1'});
     it('PNG', async () => {
       await runImageTest(getMediaPath('qual-e/pass.png'), 'PNG');
     });
   });
 
   describe('WebP', () => {
+    yts.test({id: '14.10.1.1'});
     it('WebP', async () => {
       await runImageTest(
           'data:image/webp;base64,UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoBAAEAAwA0JaQAA3AA/vuUAAA=',
@@ -64,6 +67,7 @@ describe('Functional Tests', () => {
           /* appendToDom= */ false);
     });
 
+    yts.test({id: '14.10.2.1'});
     it('WebP Alpha', async () => {
       await runImageTest(
           'data:image/webp;base64,UklGRkoAAABXRUJQVlA4WAoAAAAQAAAAAAAAAAAAQUxQSAwAAAABBxAR/Q9ERP8DAABWUDggGAAAADABAJ0BKgEAAQADADQlpAADcAD++/1QAA==',
@@ -71,6 +75,7 @@ describe('Functional Tests', () => {
           /* appendToDom= */ false);
     });
 
+    yts.test({id: '14.10.3.1'});
     it('WebP Animation', async () => {
       await runImageTest(
           'data:image/webp;base64,UklGRlIAAABXRUJQVlA4WAoAAAASAAAAAAAAAAAAQU5JTQYAAAD/////AABBTk1GJgAAAAAAAAAAAAAAAAAAAGQAAABWUDhMDQAAAC8AAAAQBxAREYiI/gcA',
@@ -78,6 +83,7 @@ describe('Functional Tests', () => {
           /* appendToDom= */ false);
     });
 
+    yts.test({id: '14.10.4.1'});
     it('WebP Lossless', async () => {
       await runImageTest(
           'data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAAAAAAfQ//73v/+BiOh/AAA=',
@@ -177,10 +183,12 @@ describe('Functional Tests', () => {
       });
     }
 
+    yts.test({id: '14.21.1.1'});
     it('Fonts - woff', async () => {
       await runFontTest('woff');
     });
 
+    yts.test({id: '14.21.2.1'});
     it('Fonts - woff2', async () => {
       await runFontTest('woff2');
     });

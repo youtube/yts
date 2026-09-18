@@ -17,6 +17,7 @@
 
 describe('Functional Tests', () => {
   describe('Navigator', () => {
+    yts.test({id: '9442E40D-3E94-4E0F-BC46-5DF5FC68D6BD'});
     it('Online Status', async () => {
       expect(window.navigator.onLine)
         .withContext(

@@ -28,14 +28,17 @@ describe('Functional Tests', () => {
       expect(channelViolations).toContain('test-ping');
     }
 
+    yts.test({id: 'C86E9AC6-1CFB-4D19-A34D-C63EC5C3BCF4'});
     it('Reports event when empty channel is set', async () => {
       await watchdogTest();
     });
 
+    yts.test({id: 'FAD6A337-62BB-44AC-86C3-4AF7DFA17F3D'});
     it('Reports event when empty channel is set - EG Lite', async () => {
       await watchdogTest();
     });
 
+    yts.test({id: '68534776-C0BF-4F03-9E56-4CC7606DBC90'});
     it('Reports event when empty channel is set - EG Full', async () => {
       await watchdogTest();
     });

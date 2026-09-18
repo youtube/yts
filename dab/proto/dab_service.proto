@@ -1,0 +1,634 @@
+/**
+ * @license
+ * Copyright 2026 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// LINT: LEGACY_NAMES
+edition = "2024";
+
+package video_youtube_testing_ytlr_cert_device_automation_bus_v2_0;
+
+import "devtools/staticanalysis/pipeline/analyzers/proto_best_practices/proto/optouts.proto";
+
+import option "third_party/protobuf/cpp_features.proto";
+
+option java_outer_classname = "DabService";
+option features.enforce_naming_style = STYLE_LEGACY;
+option features.(pb.cpp).enum_name_uses_string_view = false;
+option features.enum_type = CLOSED;
+option features.repeated_field_encoding = EXPANDED;
+option features.utf8_validation = NONE;
+
+// Opting out of these checks to maintain proto compatibility with the DAB 2.0
+// protocol.
+option (proto_best_practices.file_optouts) = {
+  categories: [ TIME_UNIT, PACKED_FIELD ]
+};
+
+// If a request/response is not here, it means it's using standard
+// request/response with no additional parameters.
+
+// This is not a standard proto files. All messages are
+//  Not defined here. This file just recreate what it looks like.
+
+// Standard DAB request.
+message DabRequest {}
+
+// Standard DAB response.
+message DabResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+}
+
+message ListSupportedOperationResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+
+  // list of operations
+  repeated string operations = 3;
+}
+
+message Application {
+  string app_id = 1;
+  string friendly_name = 2;
+  string version = 3;
+}
+
+message ListApplicationsResponse {
+  // HTTP status
+  int32 status = 1;
+
+  // Error messages if status is > 299
+  string error = 2;
+
+  // list of apps
+  repeated Application applications = 3;
+}
+
+message LaunchApplicationRequest {
+  // Application id same as the one in Application message
+  string app_id = 1;
+
+  // Parameters to pass in to the app
+  repeated string parameters = 2;
+}
+
+message LaunchApplicationWithContentRequest {
+  // Application id same as the one in Application message
+  string app_id = 1;
+
+  // Content ID to send, this is usually the video id
+  string content_id = 2;
+
+  // Parameters to pass in to the app at the sametime excluding video id
+  repeated string parameters = 3;
+}
+
+message GetApplicationStateRequest {
+  // Application id same as the one in Application message
+  string app_id = 1;
+}
+
+enum ApplicationState {
+  STOPPED = 0;
+  BACKGROUND = 1;
+  FOREGROUND = 2;
+}
+
+message GetApplicationStateResponse {
+  // HTTP status
+  int32 status = 1;
+
+  // Error messages if status is > 299
+  string error = 2;
+
+  // Current application state
+  ApplicationState state = 3;
+}
+
+message ExitApplicationRequest {
+  // Application id same as the one in Application message
+  string app_id = 1;
+
+  // Puts app into background or not.
+  bool background = 2;
+}
+
+message ExitApplicationResponse {
+  // HTTP status
+  int32 status = 1;
+
+  // Error messages if status is > 299
+  string error = 2;
+
+  // Application state after exit command is issued.
+  ApplicationState state = 3;
+}
+
+enum NetworkInterfaceType {
+  Ethernet = 0;
+  Wifi = 1;
+  Bluetooth = 2;
+  Coax = 3;
+  Other = 4;
+}
+
+enum DisplayType {
+  // Device has native display capability
+  Native = 0;
+
+  // Device cannot display natively and needs an external display connected
+  External = 1;
+}
+
+message NetworkInterface {
+  bool connected = 1;
+  string mac_address = 2;
+  string ip_address = 3;
+  repeated string dns = 4;
+  NetworkInterfaceType type = 5;
+}
+
+message GetDeviceInformationResponse {
+  // HTTP status
+  int32 status = 1;
+
+  // Error messages if status is > 299
+  string error = 2;
+  string manufacturer = 3;
+  string model = 4;
+  string serial_number = 5;
+  string chipset = 6;
+  string firmware_version = 7;
+  string firmware_build = 8;
+  repeated NetworkInterface network_interfaces = 9;
+  DisplayType display_type = 10;
+  int32 screen_width_pixels = 11;
+  int32 screen_height_pixels = 12;
+  int64 uptime_since = 13;
+  string device_id = 14;
+}
+
+message OutputResolution {
+  int32 width = 1;
+  int32 height = 2;
+  int32 frequency = 3;
+}
+
+enum MatchContentFrameRate {
+  // Match Content Frame Rate is Always Allowed even if the transition is not
+  // Seamless
+  EnabledAlways = 0;
+
+  // Match Content Frame Rate is Only Allowed when the transition is Seamless
+  EnabledSeamlessOnly = 1;
+
+  // Match Content Frame Rate is Disabled
+  Disabled = 2;
+}
+
+enum HdrOutputMode {
+  // Always output HDMI signal in HDR Format
+  AlwaysHdr = 0;
+
+  // Output HDMI signal in HDR Format Only when playing HDR content
+  HdrOnPlayback = 1;
+
+  // Never Output HDMI Signal in HDR Mode
+  DisableHdr = 2;
+}
+
+enum PictureMode {
+  // Standard Mode or Normal Mode
+  Standard = 0;
+
+  // Dynamic or Vivid Mode
+  Dynamic = 1;
+
+  // Movie or Cinema Mode
+  Movie = 2;
+
+  // Sports Mode
+  Sports = 3;
+
+  // Filmmaker Mode
+  FilmMaker = 4;
+
+  // Game Mode, Lowest Latency Option
+  Game = 5;
+
+  // Automatically adjust the picture mode to the best option for current
+  // content
+  Auto = 6;
+}
+
+message AudioOutputModeWrapper {
+  enum AudioOutputMode {
+    // 2 Channel PCM
+    Stereo = 0;
+
+    // Multichannel PCM e.g. 5.1 PCM
+    MultichannelPcm = 1;
+
+    // Bitstreams sent in passthrough mode
+    PassThrough = 2;
+
+    // Audio Output Mode Recommended by the device partner in current setup
+    Auto = 3;
+  }
+}
+
+message AudioOutputSourceWrapper {
+  enum AudioOutputSource {
+    // Audio Output on Native Speakers of the device
+    NativeSpeaker = 0;
+
+    // Audio Output on ARC Port
+    Arc = 1;
+
+    // Audio Output on E-ARC Port
+    EArc = 2;
+
+    // Audio Output on Optical Port
+    Optical = 3;
+
+    // Audio Output on Auxiliary Port
+    Aux = 4;
+
+    // Audio Output on connected Bluetooth Speaker
+    Bluetooth = 5;
+
+    // Audio Output in the default mode recommended by the device partner in
+    // current setup
+    Auto = 6;
+
+    // HDMI, This is only applicable for Source devices
+    HDMI = 7;
+  }
+}
+
+enum VideoInputSource {
+  // TV Tuner / Antenna
+  Tuner = 0;
+
+  // First HDMI Input Port
+  HDMI1 = 1;
+
+  // Second HDMI Input Port
+  HDMI2 = 2;
+
+  // Third HDMI Input Port
+  HDMI3 = 3;
+
+  // Fourth HDMI Input Port
+  HDMI4 = 4;
+
+  // Composite input port
+  Composite = 5;
+
+  // Component input port
+  Component = 6;
+
+  // TV Home Screen
+  Home = 7;
+
+  // Wireless Casting
+  Cast = 8;
+}
+
+message AudioVolume {
+  int32 min = 1;
+  int32 max = 2;
+}
+
+message Brightness {
+  int32 min = 1;
+  int32 max = 2;
+}
+
+message ListSupportedSystemSettingsResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+  repeated string language = 3;
+  repeated OutputResolution output_resolution = 4;
+  bool memc = 5;
+  bool cec = 6;
+  bool low_latency_mode = 7;
+  repeated MatchContentFrameRate match_content_frame_rate = 8;
+  repeated HdrOutputMode hdr_output_mode = 9;
+  repeated PictureMode picture_mode = 10;
+  repeated AudioOutputModeWrapper.AudioOutputMode audio_output_mode = 11;
+  repeated AudioOutputSourceWrapper.AudioOutputSource audio_output_source = 12;
+  repeated VideoInputSource video_input_source = 13;
+  AudioVolume audio_volume = 14;
+  bool mute = 15;
+  bool text_to_speech = 16;
+  bool screen_saver = 17;
+  int32 screen_saver_min_timeout = 18;
+  bool personalized_ads = 19;
+  bool high_contrast_text = 20;
+  bool identifier_for_advertising = 21;
+  Brightness brightness = 22;
+  string timezone = 23;
+}
+
+message GetCurrentSystemSettingsResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+  string language = 3;
+  OutputResolution output_resolution = 4;
+  bool memc = 5;
+  bool cec = 6;
+  bool low_latency_mode = 7;
+  MatchContentFrameRate match_content_frame_rate = 8;
+  HdrOutputMode hdr_output_mode = 9;
+  PictureMode picture_mode = 10;
+  AudioOutputModeWrapper.AudioOutputMode audio_output_mode = 11;
+  AudioOutputSourceWrapper.AudioOutputSource audio_output_source = 12;
+  VideoInputSource video_input_source = 13;
+  int32 audio_volume = 14;
+  bool mute = 15;
+  bool text_to_speech = 16;
+  bool screen_saver = 17;
+  int32 screen_saver_timeout = 18;
+  bool personalized_ads = 19;
+  bool high_contrast_text = 20;
+  string identifier_for_advertising = 21;
+  int32 brightness = 22;
+}
+
+message SetSystemSettingsResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+  repeated string language = 3;
+  repeated OutputResolution output_resolution = 4;
+  bool memc = 5;
+  bool cec = 6;
+  bool low_latency_mode = 7;
+  repeated MatchContentFrameRate match_content_frame_rate = 8;
+  repeated HdrOutputMode hdr_output_mode = 9;
+  repeated PictureMode picture_mode = 10;
+  repeated AudioOutputModeWrapper.AudioOutputMode audio_output_mode = 11;
+  repeated AudioOutputSourceWrapper.AudioOutputSource audio_output_source = 12;
+  repeated VideoInputSource video_input_source = 13;
+  int32 audio_volume = 14;
+  bool mute = 15;
+  bool text_to_speech = 16;
+  bool screen_saver = 17;
+  int32 screen_saver_timeout = 18;
+  bool personalized_ads = 19;
+  bool high_contrast_text = 20;
+  string identifier_for_advertising = 21;
+}
+
+message SystemSettings {
+  string language = 1;
+  OutputResolution output_resolution = 2;
+  bool memc = 3;
+  bool cec = 4;
+  bool low_latency_mode = 5;
+  MatchContentFrameRate match_content_frame_rate = 6;
+  HdrOutputMode hdr_output_mode = 7;
+  PictureMode picture_mode = 8;
+  AudioOutputModeWrapper.AudioOutputMode audio_output_mode = 9;
+  AudioOutputSourceWrapper.AudioOutputSource audio_output_source = 10;
+  VideoInputSource video_input_source = 11;
+  int32 audio_volume = 12;
+  bool mute = 13;
+  bool text_to_speech = 14;
+  bool screen_saver = 15;
+  int32 screen_saver_timeout = 16;
+  bool personalized_ads = 17;
+  bool high_contrast_text = 18;
+  int32 brightness = 19;
+  string identifier_for_advertising = 20;
+}
+
+message ListSupportedKeysResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+  repeated string key_codes = 3;
+}
+
+message SendKeyPressRequest {
+  string key_code = 1;
+}
+
+message SendLongKeyPressRequest {
+  string key_code = 1;
+  int32 duration_ms = 2;
+}
+
+message CaptureScreenshotResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+  string output_image = 3;
+}
+
+message StartDeviceTelemetryRequest {
+  int32 duration = 1;
+}
+
+message StartDeviceTelemetryResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+  int32 duration = 3;
+}
+
+message StartApplicationTelemetryRequest {
+  string app_id = 1;
+  int32 duration = 2;
+}
+
+message StartApplicationTelemetryResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+  int32 duration = 3;
+}
+
+message StopApplicationTelemetryRequest {
+  string app_id = 1;
+}
+
+message TelemetryMessage {
+  int64 timestamp = 1;
+  string metric = 2;
+  string value = 3;
+}
+
+message CheckDeviceHealthResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+  bool healthy = 3;
+  string message = 4;
+}
+
+enum NotificationLevel {
+  info = 0;
+  warn = 1;
+  debug = 2;
+  trace = 3;
+  error = 4;
+}
+
+message Notification {
+  int64 timestamp = 1;
+  NotificationLevel level = 2;
+  string message = 3;
+}
+
+message VoiceSystem {
+  string name = 1;
+  bool enabled = 2;
+}
+
+message ListSupportedVoiceSystemsResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+  repeated VoiceSystem voice_systems = 3;
+}
+
+message SetVoiceSystemRequest {
+  VoiceSystem voice_system = 1;
+}
+
+message SetVoiceSystemResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+  VoiceSystem voice_system = 3;
+}
+
+message SendVoiceAsAudioRequest {
+  string fileLocation = 1;
+  string voice_system = 2;
+}
+
+message SendVoiceAsTextRequest {
+  string request_text = 1;
+  string voice_system = 2;
+}
+
+message DiscoverDevicesResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+  string ip = 3;
+  string device_id = 4;
+}
+
+message GetDabVersionResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+  repeated string versions = 3;
+}
+
+message InstallApplicationRequest {
+  string app_id = 1;
+  string url = 2;
+  string format = 3;
+  int32 timeout = 4;
+}
+
+message UninstallApplicationRequest {
+  string app_id = 1;
+}
+
+message ClearApplicationDataRequest {
+  string app_id = 1;
+}
+
+message SystemLogsResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+  string logArchive = 3;
+  int32 remainingChunks = 4;
+}
+
+enum PowerMode {
+  Active = 0;
+  Standby = 1;
+  reserved 2;
+}
+
+message GetPowerModeResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+
+  // Current power mode of device.
+  PowerMode power_mode = 3;
+}
+
+message SetPowerModeRequest {
+  // Power mode to set device to.
+  PowerMode power_mode = 1;
+}
+
+message SetPowerModeResponse {
+  // HTTP status error
+  int32 status = 1;
+
+  // Error messages
+  string error = 2;
+
+  // Current power mode of device.
+  PowerMode power_mode = 3;
+}

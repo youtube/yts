@@ -3,7 +3,6 @@
  * framework.
  */
 
-import {TrustedResourceUrl} from 'safevalues';
 import {FailureCode} from '../yts_common/types';
 
 declare global {
@@ -40,10 +39,36 @@ declare global {
     function markOptional(): void;
 
     /**
-     * Constructs TrustedResourceUrl from given relative URL. Used by YTS test
+     * Constructs string URL from given relative URL. Used by YTS test
      * modules and scripts to dynamically load resources such as CSS files.
      */
-    function resourceUrl(relativePath: string): TrustedResourceUrl;
+    function resourceUrl(relativePath: string): string;
+
+
+    /**
+     * Configuration options for capturing a screenshot.
+     */
+    interface ScreenshotOptions {
+      /**
+       * Optional identifier included in the saved screenshot filename.
+       * E.g. 'pre_voice_query' produces:
+       * `screenshot_<device>_pre_voice_query_<timestamp>.png`
+       */
+      name?: string;
+
+      /**
+       * Optional delay in milliseconds to wait before capturing the screenshot
+       * (e.g. to allow UI animations or voice overlays to render).
+       */
+      delayMs?: number;
+    }
+
+    /**
+     * Takes a screenshot of the device screen.
+     * @param options Optional configuration specifying screenshot name and/or delay.
+     * @return A promise that resolves when the screenshot has been captured.
+     */
+    function screenshot(options?: ScreenshotOptions): Promise<void>;
 
     /**
      * YTS test certification metadata.

@@ -17,24 +17,28 @@
 
 describe('Functional Tests', () => {
   describe('localStorage', () => {
+    yts.test({id: '14.6.1.1'});
     it('localStorage', () => {
       expect(window.localStorage)
           .withContext('window.localStorage should be defined')
           .toBeDefined();
     });
 
+    yts.test({id: '14.6.2.1'});
     it('localStorage.setItem', () => {
       expect('setItem' in window.localStorage)
           .withContext('setItem should be in localStorage')
           .toBeTrue();
     });
 
+    yts.test({id: '14.6.3.1'});
     it('localStorage.getItem', () => {
       expect('getItem' in window.localStorage)
           .withContext('getItem should be in localStorage')
           .toBeTrue();
     });
 
+    yts.test({id: '14.6.4.1'});
     it('localStorage.removeItem', () => {
       expect('removeItem' in window.localStorage)
           .withContext('removeItem should be in localStorage')

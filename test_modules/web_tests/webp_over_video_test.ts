@@ -21,6 +21,7 @@ const TEST_TIMEOUT = 50 * 1000; // 50 sec
 
 describe('Functional Tests', () => {
   describe('WebP', () => {
+    yts.test({id: 'B56048AC-C383-4A61-A037-F9600BD152D3'});
     it(
       'WebP Over Video Test',
       async () => {
@@ -32,6 +33,7 @@ describe('Functional Tests', () => {
       TEST_TIMEOUT,
     );
 
+    yts.test({id: 'CD603552-1CA5-4445-8561-D1B3D21CC67F'});
     it(
       '10x WebP Over Video Test',
       async () => {

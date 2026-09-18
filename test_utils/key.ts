@@ -223,6 +223,17 @@ export const unknownKey: ExpectedKey = {
 };
 
 /**
+ * The microphone key
+ */
+export const micKey: ExpectedKey = {
+  name: 'Microphone / Voice',
+  key: 'MicrophoneToggle',
+  keyCode: 0x3002,
+  note:
+      'Applies only to remotes that have a microphone and the microphone button is dedicated to voice queries or commands directed to one of the YouTube apps. Applies to buttons with combined microphone and AI capabilities.',
+};
+
+/**
  * The keys that are required if present
  */
 export const reqIfPresentKeys: ExpectedKey[] = [
@@ -278,13 +289,7 @@ export const reqIfPresentKeys: ExpectedKey[] = [
     key: 'BrowserSearch',
     keyCode: 0xaa,
   },
-  {
-    name: 'Microphone / Voice',
-    key: 'MicrophoneToggle',
-    keyCode: 0x3002,
-    note:
-        'Applies only to remotes that have a microphone and the microphone button is dedicated to voice queries or commands directed to one of the YouTube apps. Applies to buttons with combined microphone and AI capabilities.',
-  },
+  micKey,
   {
     name: 'Previous',
     key: 'MediaTrackPrevious',

@@ -331,7 +331,7 @@ describe('Functional Tests', () => {
           const mediaSource = new MediaSource();
           mediaSource.addEventListener('sourceopen', () => {
             const videoSourceBuffer =
-              mediaSource.addSourceBuffer(videoContentType);
+              mediaSource.addSourceBuffer(util.getMimeTypeWithTunnelMode(videoContentType));
             util.fetchArrayBuffer(
               'GET',
               'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/drml3NoHdcp_h264_480p_30fps_cenc.mp4',
@@ -411,6 +411,7 @@ describe('Functional Tests', () => {
       }
     }
 
+    yts.test({id: 'E085E041-D65D-40F7-A4B8-2224B321B891'});
     it(
       'Dual Drm Video Test',
       async () => {
@@ -717,7 +718,7 @@ describe('Functional Tests', () => {
       const mediaSource = new MediaSource();
       mediaSource.addEventListener('sourceopen', () => {
         const videoSourceBuffer =
-          mediaSource.addSourceBuffer(secondaryStream.mimetype);
+          mediaSource.addSourceBuffer(util.getMimeTypeWithTunnelMode(secondaryStream.mimetype));
         util.fetchArrayBuffer(
           'GET',
           secondaryStream.src,
@@ -782,6 +783,7 @@ describe('Functional Tests', () => {
       await secondaryVideo.play();
     }
 
+    yts.test({id: '5F139C7F-C7DE-4920-AEC3-92F812F0994C'});
     it(
       'Dual Drm Video Test 2027',
       async () => {

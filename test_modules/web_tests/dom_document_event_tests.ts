@@ -45,8 +45,9 @@ describe('DOM Document Tests', () => {
 
   describe('DOM Implementation', () => {
     const element = document.implementation;
-    const props = ['createDocument'];
-    for (const prop of props) {
+    const props = [{id: '18.1.1.1', prop: 'createDocument'}];
+    for (const {prop, id} of props) {
+      yts.test({id});
       it(`DOMImplementation.${prop}`, () => {
         checkDomProperty('DOM Implementation', element, prop);
       });
@@ -56,18 +57,19 @@ describe('DOM Document Tests', () => {
   describe('Document', () => {
     const element = document;
     const props = [
-      'createComment',
-      'createElement',
-      'createElementNS',
-      'createTextNode',
-      'documentElement',
-      'getElementById',
-      'getElementsByTagName',
-      'implementation',
-      'createEvent',
-      'styleSheets',
+      {id: '18.2.4.1', prop: 'createComment'},
+      {id: '18.2.6.1', prop: 'createElement'},
+      {id: '18.2.7.1', prop: 'createElementNS'},
+      {id: '18.2.9.1', prop: 'createTextNode'},
+      {id: '18.2.11.1', prop: 'documentElement'},
+      {id: '18.2.12.1', prop: 'getElementById'},
+      {id: '18.2.13.1', prop: 'getElementsByTagName'},
+      {id: '18.2.15.1', prop: 'implementation'},
+      {id: '18.2.17.1', prop: 'createEvent'},
+      {id: '18.2.18.1', prop: 'styleSheets'},
     ];
-    for (const prop of props) {
+    for (const {prop, id} of props) {
+      yts.test({id});
       it(`Document.${prop}`, () => {
         checkDomProperty('Document', element, prop);
       });
@@ -77,17 +79,18 @@ describe('DOM Document Tests', () => {
   describe('Element', () => {
     const element = document.body;
     const props = [
-      'getAttribute',
-      'getAttributeNS',
-      'getElementsByTagName',
-      'hasAttribute',
-      'hasAttributeNS',
-      'removeAttribute',
-      'setAttribute',
-      'tagName',
-      'style',
+      {id: '18.4.1.1', prop: 'getAttribute'},
+      {id: '18.4.2.1', prop: 'getAttributeNS'},
+      {id: '18.4.5.1', prop: 'getElementsByTagName'},
+      {id: '18.4.7.1', prop: 'hasAttribute'},
+      {id: '18.4.8.1', prop: 'hasAttributeNS'},
+      {id: '18.4.9.1', prop: 'removeAttribute'},
+      {id: '18.4.12.1', prop: 'setAttribute'},
+      {id: '18.4.16.1', prop: 'tagName'},
+      {id: '18.4.17.1', prop: 'style'},
     ];
-    for (const prop of props) {
+    for (const {prop, id} of props) {
+      yts.test({id});
       it(`Element.${prop}`, () => {
         checkDomProperty('Element', element, prop);
       });
@@ -97,36 +100,43 @@ describe('DOM Document Tests', () => {
   describe('Event', () => {
     const videoElement = document.createElement('video');
     const videoEvents = [
-      'loadeddata',
-      'loadedmetadata',
-      'loadstart',
-      'pause',
-      'play',
-      'playing',
-      'progress',
-      'seeked',
-      'seeking',
-      'timeupdate',
-      'waiting',
+      {id: '18.5.3.1', eventName: 'loadeddata'},
+      {id: '18.5.4.1', eventName: 'loadedmetadata'},
+      {id: '18.5.5.1', eventName: 'loadstart'},
+      {id: '18.5.6.1', eventName: 'pause'},
+      {id: '18.5.7.1', eventName: 'play'},
+      {id: '18.5.8.1', eventName: 'playing'},
+      {id: '18.5.9.1', eventName: 'progress'},
+      {id: '18.5.10.1', eventName: 'seeked'},
+      {id: '18.5.11.1', eventName: 'seeking'},
+      {id: '18.5.14.1', eventName: 'timeupdate'},
+      {id: '18.5.15.1', eventName: 'waiting'},
     ];
-    for (const eventName of videoEvents) {
+    for (const {eventName, id} of videoEvents) {
+      yts.test({id});
       it(`Event.${eventName}`, () => {
         checkEventExistence('video', videoElement, eventName);
       });
     }
 
+    yts.test({id: '18.5.16.1'});
     it(`Event.error`, () => {
       checkEventExistence('window', window, 'error');
     });
 
     const eventObj = document.createEvent('Event');
-    const eventProps = ['preventDefault', 'stopPropagation'];
-    for (const prop of eventProps) {
+    const eventProps = [
+      {id: '18.5.17.1', prop: 'preventDefault'},
+      {id: '18.5.18.1', prop: 'stopPropagation'},
+    ];
+    for (const {prop, id} of eventProps) {
+      yts.test({id});
       it(`Event.${prop}`, () => {
         checkDomProperty('Event', eventObj, prop);
       });
     }
 
+    yts.test({id: '18.5.19.1'});
     it(`Event.initEvent`, () => {
       // Preserving this test as-is from its original definition in JS.
       // tslint:disable-next-line:deprecation
@@ -137,8 +147,13 @@ describe('DOM Document Tests', () => {
   });
 
   describe('EventTarget', () => {
-    const props = ['addEventListener', 'dispatchEvent', 'removeEventListener'];
-    for (const prop of props) {
+    const props = [
+      {id: '18.6.1.1', prop: 'addEventListener'},
+      {id: '18.6.2.1', prop: 'dispatchEvent'},
+      {id: '18.6.3.1', prop: 'removeEventListener'},
+    ];
+    for (const {prop, id} of props) {
+      yts.test({id});
       it(`EventTarget.${prop}`, () => {
         checkDomProperty('EventTarget', document.body, prop);
       });
@@ -146,6 +161,7 @@ describe('DOM Document Tests', () => {
   });
 
   describe('HTMLAnchorElement', () => {
+    yts.test({id: '18.7.1.1'});
     it(`HTMLAnchorElement.focus`, () => {
       checkDomProperty(
         'HTMLAnchorElement',
@@ -156,20 +172,28 @@ describe('DOM Document Tests', () => {
   });
 
   describe('HTML Document', () => {
+    yts.test({id: '18.8.1.1'});
     it(`HTMLDocument.body`, () => {
       checkDomProperty('HTML Document', document, 'body');
     });
+    yts.test({id: '18.8.2.1'});
     it(`HTMLDocument.cookie`, () => {
       checkDomProperty('HTML Document', document, 'cookie');
     });
 
-    const bodyEvents = ['blur', 'focus', 'load'];
-    for (const evt of bodyEvents) {
+    const bodyEvents = [
+      {id: '18.8.3.1', evt: 'blur'},
+      {id: '18.8.4.1', evt: 'focus'},
+      {id: '18.8.5.1', evt: 'load'},
+    ];
+    for (const {evt, id} of bodyEvents) {
+      yts.test({id});
       it(`HTMLDocument.${evt}`, () => {
         checkEventExistence('document.body', document.body, evt);
       });
     }
 
+    yts.test({id: '18.8.6.1'});
     it(`HTMLDocument.resize`, () => {
       checkEventExistence('window', window, 'resize');
     });
@@ -177,16 +201,17 @@ describe('DOM Document Tests', () => {
 
   describe('HTML Element', () => {
     const props = [
-      'className',
-      'getBoundingClientRect',
-      'id',
-      'innerHTML',
-      'nodeName',
-      'nodeType',
-      'style',
-      'textContent',
+      {id: '18.9.1.1', prop: 'className'},
+      {id: '18.9.2.1', prop: 'getBoundingClientRect'},
+      {id: '18.9.3.1', prop: 'id'},
+      {id: '18.9.4.1', prop: 'innerHTML'},
+      {id: '18.9.5.1', prop: 'nodeName'},
+      {id: '18.9.6.1', prop: 'nodeType'},
+      {id: '18.9.7.1', prop: 'style'},
+      {id: '18.9.8.1', prop: 'textContent'},
     ];
-    for (const prop of props) {
+    for (const {prop, id} of props) {
+      yts.test({id});
       it(`HTMLElement.${prop}`, () => {
         checkDomProperty('HTML Element', document.body, prop);
       });
@@ -194,6 +219,7 @@ describe('DOM Document Tests', () => {
   });
 
   describe('HTML Input Element', () => {
+    yts.test({id: '18.11.1.1'});
     it(`HTMLInputElement.focus`, () => {
       checkDomProperty(
         'HTML Input Element',
@@ -205,20 +231,21 @@ describe('DOM Document Tests', () => {
 
   describe('HTML Media Element', () => {
     const props = [
-      'canPlayType',
-      'autoplay',
-      'load',
-      'pause',
-      'play',
-      'muted',
-      'volume',
-      'currentTime',
-      'duration',
-      'buffered',
-      'paused',
-      'ended',
+      {id: '18.12.1.1', prop: 'canPlayType'},
+      {id: '18.12.2.1', prop: 'autoplay'},
+      {id: '18.12.3.1', prop: 'load'},
+      {id: '18.12.4.1', prop: 'pause'},
+      {id: '18.12.5.1', prop: 'play'},
+      {id: '18.12.6.1', prop: 'muted'},
+      {id: '18.12.7.1', prop: 'volume'},
+      {id: '18.12.8.1', prop: 'currentTime'},
+      {id: '18.12.9.1', prop: 'duration'},
+      {id: '18.12.10.1', prop: 'buffered'},
+      {id: '18.12.11.1', prop: 'paused'},
+      {id: '18.12.12.1', prop: 'ended'},
     ];
-    for (const prop of props) {
+    for (const {prop, id} of props) {
+      yts.test({id});
       it(`HTMLMediaElement.${prop}`, () => {
         checkDomProperty(
           'HTML Media Element',
@@ -230,6 +257,7 @@ describe('DOM Document Tests', () => {
   });
 
   describe('HTML Select Element', () => {
+    yts.test({id: '18.13.1.1'});
     it(`HTMLSelectElement.focus`, () => {
       checkDomProperty(
         'HTML Select Element',

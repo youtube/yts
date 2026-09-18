@@ -19,42 +19,45 @@ import 'jasmine';
 
 describe('HTML DOM Element Tests', () => {
   describe('Element', () => {
+    yts.test({id: '16.1.1.1'});
     it('Unknown Element', () => {
       const element = document.createElement('UNKNOWN');
       expect(element instanceof HTMLUnknownElement).toBeTrue();
     });
 
-    // List of elements and their corresponding test names.
-    const elementsToTest: {[key: string]: string} = {
-      'Anchor': 'a',
-      'Body': 'body',
-      'BR': 'br',
-      'Div': 'div',
-      'Head': 'head',
-      'Heading 1': 'h1',
-      'Heading 2': 'h2',
-      'Heading 3': 'h3',
-      'HTML': 'html',
-      'Image': 'img',
-      'Link': 'link',
-      'Meta': 'meta',
-      'Paragraph': 'p',
-      'Script': 'script',
-      'Span': 'span',
-      'Style': 'style',
-      'Title': 'title',
-      'Video': 'video',
+    // List of elements and their corresponding test names and IDs.
+    const elementsToTest: {[key: string]: {tag: string; id: string}} = {
+      'Anchor': {id: '16.1.2.1', tag: 'a'},
+      'Body': {id: '16.1.8.1', tag: 'body'},
+      'BR': {id: '16.1.9.1', tag: 'br'},
+      'Div': {id: '16.1.14.1', tag: 'div'},
+      'Head': {id: '16.1.21.1', tag: 'head'},
+      'Heading 1': {id: '16.1.22.1', tag: 'h1'},
+      'Heading 2': {id: '16.1.23.1', tag: 'h2'},
+      'Heading 3': {id: '16.1.24.1', tag: 'h3'},
+      'HTML': {id: '16.1.26.1', tag: 'html'},
+      'Image': {id: '16.1.29.1', tag: 'img'},
+      'Link': {id: '16.1.34.1', tag: 'link'},
+      'Meta': {id: '16.1.38.1', tag: 'meta'},
+      'Paragraph': {id: '16.1.43.1', tag: 'p'},
+      'Script': {id: '16.1.47.1', tag: 'script'},
+      'Span': {id: '16.1.49.1', tag: 'span'},
+      'Style': {id: '16.1.50.1', tag: 'style'},
+      'Title': {id: '16.1.61.1', tag: 'title'},
+      'Video': {id: '16.1.63.1', tag: 'video'},
     };
 
     for (const testName of Object.keys(elementsToTest)) {
+      const {tag, id} = elementsToTest[testName];
+      yts.test({id});
       it(`${testName} Element`, () => {
-        const tag = elementsToTest[testName];
         const element = document.createElement(tag);
         expect(element instanceof HTMLUnknownElement).toBeFalse();
       });
     }
 
     // Special case for the <audio> element.
+    yts.test({id: '16.1.3.1'});
     it('Audio Element', () => {
       const audio = document.createElement('audio') as HTMLAudioElement;
       expect(audio instanceof HTMLUnknownElement).toBeFalse();
@@ -71,18 +74,21 @@ describe('HTML DOM Element Tests', () => {
       videoElement = document.createElement('video');
     });
 
+    yts.test({id: '16.2.1.1'});
     it('video.height', () => {
       expect(videoElement.height).toBe(0);
       videoElement.height = 1080;
       expect(videoElement.height).toBe(1080);
     });
 
+    yts.test({id: '16.2.2.1'});
     it('video.width', () => {
       expect(videoElement.width).toBe(0);
       videoElement.width = 1920;
       expect(videoElement.width).toBe(1920);
     });
 
+    yts.test({id: '16.2.3.1'});
     it('video.videoHeight', () => {
       expect(videoElement.videoHeight).toBe(0);
       try {
@@ -96,6 +102,7 @@ describe('HTML DOM Element Tests', () => {
         .toBe(0);
     });
 
+    yts.test({id: '16.2.4.1'});
     it('video.videoWidth', () => {
       expect(videoElement.videoWidth).toBe(0);
       try {
@@ -132,12 +139,14 @@ describe('HTML DOM Element Tests', () => {
       }
     });
 
+    yts.test({id: '16.3.1.1'});
     it('Attr.name', () => {
       const idAttr = attrElement.attributes.getNamedItem('id');
       expect(idAttr).not.toBeNull();
       expect(idAttr!.name).toBe('id');
     });
 
+    yts.test({id: '16.3.4.1'});
     it('Attr.value', () => {
       const classAttr = attrElement.attributes.getNamedItem('class');
       expect(classAttr).not.toBeNull();

@@ -16,6 +16,7 @@
  */
 
 describe('EME Request Tests', () => {
+  yts.test({id: '6A1D5327-823E-425E-9667-8D0F143FC63A'});
   it('generates a Widevine request without a video tag', async () => {
     const keySystem = 'com.widevine.alpha';
     const ROBUSTNESS_HW = 'HW_SECURE_ALL';

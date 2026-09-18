@@ -75,8 +75,11 @@ function cobaltVersionTest(majorVersion: number) {
 
 describe('Functional Tests', () => {
   describe('User Agent', () => {
+    yts.test({id: 'D41E8C73-AA72-480F-912E-F4B3235F3F14'});
     it('Cobalt Version 24', cobaltVersionTest(24));
+    yts.test({id: 'C97ED4CC-3B7A-4B82-A021-68462EFF72D5'});
     it('Cobalt Version 25', cobaltVersionTest(25));
+    yts.test({id: '75ACD551-9C42-4842-8D52-948442B170CE'});
     it('Cobalt Version 27', cobaltVersionTest(27));
   });
 });

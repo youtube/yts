@@ -69,8 +69,9 @@ describe('MSE Conformance Tests', () => {
 
   describe('Media Element Core', () => {
     function createInitialMediaStateTest(
-        name: string, state: string, expectedValue: string|number|boolean,
+        id: string, name: string, state: string, expectedValue: string|number|boolean,
         checkNotEqual = false) {
+      yts.test({id});
       it(name, (done) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -91,32 +92,33 @@ describe('MSE Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createInitialMediaStateTest('InitialMediaDuration', 'duration', NaN);
-    createInitialMediaStateTest('InitialMediaVideoWidth', 'videoWidth', 0);
-    createInitialMediaStateTest('InitialMediaVideoHeight', 'videoHeight', 0);
-    createInitialMediaStateTest(
+    createInitialMediaStateTest('1.1.1.1', 'InitialMediaDuration', 'duration', NaN);
+    createInitialMediaStateTest('1.1.2.1', 'InitialMediaVideoWidth', 'videoWidth', 0);
+    createInitialMediaStateTest('1.1.3.1', 'InitialMediaVideoHeight', 'videoHeight', 0);
+    createInitialMediaStateTest('1.1.4.1', 
         'InitialMediaReadyState', 'readyState', HTMLMediaElement.HAVE_NOTHING);
-    createInitialMediaStateTest('InitialMediaSrc', 'src', '', true);
-    createInitialMediaStateTest(
+    createInitialMediaStateTest('1.1.5.1', 'InitialMediaSrc', 'src', '', true);
+    createInitialMediaStateTest('1.1.6.1', 
         'InitialMediaCurrentSrc', 'currentSrc', '', true);
-    createInitialMediaStateTest(
+    createInitialMediaStateTest('1.9.3.1', 
         'InitialMediaDefaultPlaybackRate', 'defaultPlaybackRate', 1);
-    createInitialMediaStateTest('InitialMediaPlaybackRate', 'playbackRate', 1);
-    createInitialMediaStateTest('InitialMediaPaused', 'paused', true);
-    createInitialMediaStateTest('InitialMediaSeeking', 'seeking', false);
-    createInitialMediaStateTest('InitialMediaEnded', 'ended', false);
-    createInitialMediaStateTest(
+    createInitialMediaStateTest('1.9.4.1', 'InitialMediaPlaybackRate', 'playbackRate', 1);
+    createInitialMediaStateTest('1.9.6.1', 'InitialMediaPaused', 'paused', true);
+    createInitialMediaStateTest('1.9.7.1', 'InitialMediaSeeking', 'seeking', false);
+    createInitialMediaStateTest('1.9.8.1', 'InitialMediaEnded', 'ended', false);
+    createInitialMediaStateTest('1.9.11.1', 
         'InitialMediaBuffered.length', 'buffered.length', 0);
-    createInitialMediaStateTest(
+    createInitialMediaStateTest('1.9.12.1', 
         'InitialMediaPlayed.length', 'played.length', 0);
-    createInitialMediaStateTest(
+    createInitialMediaStateTest('1.9.13.1', 
         'InitialMediaSeekable.length', 'seekable.length', 0);
-    createInitialMediaStateTest(
+    createInitialMediaStateTest('1.9.14.1', 
         'InitialMediaNetworkState', 'networkState',
         HTMLMediaElement.NETWORK_LOADING);
   });
 
   describe('XHR', () => {
+    yts.test({id: '1.2.1.1'});
     it('XHRUint8Array', (done) => {
       const s = 'XHR DATA';
       const buf = new ArrayBuffer(s.length);
@@ -134,6 +136,7 @@ describe('MSE Conformance Tests', () => {
       xhr.send(view);
     }, 10_000);
 
+    yts.test({id: '1.2.2.1'});
     it('XHRAbort', (done) => {
       const N = 100;
       function startXHR(i: number) {
@@ -160,6 +163,7 @@ describe('MSE Conformance Tests', () => {
       startXHR(0);
     }, DEFAULT_TIMEOUT_MS);
 
+    yts.test({id: '1.2.3.1'});
     it('XHROpenState', () => {
       const xhr = new XMLHttpRequest();
       xhr.responseType = 'arraybuffer';
@@ -171,6 +175,7 @@ describe('MSE Conformance Tests', () => {
   });
 
   describe('MSE Core', () => {
+    yts.test({id: '1.3.1.1'});
     it('Presence', () => {
       expect(window.MediaSource)
           .withContext('MediaSource available')
@@ -179,6 +184,7 @@ describe('MSE Conformance Tests', () => {
       expect(ms).withContext('MediaSource instance created').toBeDefined();
     });
 
+    yts.test({id: '1.3.2.1'});
     it('Attach', (done) => {
       const ms = new MediaSource();
       ms.addEventListener('sourceopen', () => {
@@ -189,6 +195,7 @@ describe('MSE Conformance Tests', () => {
       video.load();
     }, 2_000);
 
+    yts.test({id: '1.3.3.1'});
     it('AddSourceBuffer', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -208,6 +215,7 @@ describe('MSE Conformance Tests', () => {
       }, {once: true});
     }, DEFAULT_TIMEOUT_MS);
 
+    yts.test({id: '1.3.4.1'});
     it('AddSBException', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -245,6 +253,7 @@ describe('MSE Conformance Tests', () => {
       }, {once: true});
     }, DEFAULT_TIMEOUT_MS);
 
+    yts.test({id: '1.3.5.1'});
     it('RemoveSourceBuffer', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -273,7 +282,8 @@ describe('MSE Conformance Tests', () => {
     }, DEFAULT_TIMEOUT_MS);
 
     function createInitialMSStateTest(
-        name: string, state: keyof MediaSource, expectedValue: string|number) {
+        id: string, name: string, state: keyof MediaSource, expectedValue: string|number) {
+      yts.test({id});
       it(name, (done) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -296,11 +306,12 @@ describe('MSE Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createInitialMSStateTest('InitialMSDuration', 'duration', NaN);
-    createInitialMSStateTest('InitialMSReadyState', 'readyState', 'open');
-    createInitialMSStateTest(
+    createInitialMSStateTest('1.3.6.1', 'InitialMSDuration', 'duration', NaN);
+    createInitialMSStateTest('1.3.7.1', 'InitialMSReadyState', 'readyState', 'open');
+    createInitialMSStateTest('A83B9D2E-C34F-4E5A-B6C7-D7D8E8F9A0B1', 
         'InitialMSActiveSourceBuffers', 'activeSourceBuffers', 0);
 
+    yts.test({id: '1.3.8.1'});
     it('Duration', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -311,6 +322,7 @@ describe('MSE Conformance Tests', () => {
       }, {once: true});
     }, DEFAULT_TIMEOUT_MS);
 
+    yts.test({id: '1.3.9.1'});
     it('MediaElementEvents', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -318,7 +330,8 @@ describe('MSE Conformance Tests', () => {
         const audioStream = AAC['Audio1MB'];
         const videoStream = VP9['Video1MB'];
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            playbackUtil.getMimeTypeWithTunnelMode(videoStream.mimetype));
         const videoXhr = xhrManager.createRequest(videoStream.src, () => {
           const onUpdate = () => {
             videoSb.removeEventListener('update', onUpdate);
@@ -353,6 +366,7 @@ describe('MSE Conformance Tests', () => {
       }, {once: true});
     }, DEFAULT_TIMEOUT_MS);
 
+    yts.test({id: '1.3.10.1'});
     it('MediaSourceEvents', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -361,7 +375,8 @@ describe('MSE Conformance Tests', () => {
         const audioStream = AAC['Audio1MB'];
         const videoStream = VP9['Video1MB'];
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            playbackUtil.getMimeTypeWithTunnelMode(videoStream.mimetype));
         const videoXhr = xhrManager.createRequest(videoStream.src, () => {
           videoSb.appendBuffer(videoXhr.getResponseData());
           videoSb.abort();
@@ -386,6 +401,7 @@ describe('MSE Conformance Tests', () => {
       }, {once: true});
     }, DEFAULT_TIMEOUT_MS);
 
+    yts.test({id: '1.3.11.1'});
     it('VideoBufferSize', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -445,6 +461,7 @@ describe('MSE Conformance Tests', () => {
       }, {once: true});
     }, EXTENDED_TIMEOUT_MS);
 
+    yts.test({id: '5DFCC861-CDA0-4C17-BC10-C852EC2EDABA'});
     it('VideoBufferSpeed', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -472,6 +489,7 @@ describe('MSE Conformance Tests', () => {
       }, {once: true});
     }, DEFAULT_TIMEOUT_MS);
 
+    yts.test({id: '1.3.12.1'});
     it('StartPlayWithoutData', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -503,8 +521,9 @@ describe('MSE Conformance Tests', () => {
     }, DEFAULT_TIMEOUT_MS);
 
     function createStartPlayAtNonZeroPositionTest(
-        testTitle: string, audioStream: StreamDef, audioSegments: number[],
+        id: string, testTitle: string, audioStream: StreamDef, audioSegments: number[],
         videoStream: StreamDef, videoSegments: number[], startAtSec: number) {
+      yts.test({id});
       it(testTitle, (done) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -574,13 +593,14 @@ describe('MSE Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createStartPlayAtNonZeroPositionTest(
+    createStartPlayAtNonZeroPositionTest('1.3.13.1', 
         'StartPlayAtTimeGt0H264+AAC', AAC['AudioNormal'], [1, 2],
         H264['VideoNormal'], [2, 3, 4], 12);
-    createStartPlayAtNonZeroPositionTest(
+    createStartPlayAtNonZeroPositionTest('1.3.14.1', 
         'StartPlayAtTimeGt0VP9+Opus', Opus['CarLow'], [1, 2],
         VP9['VideoNormal'], [2, 3, 4], 12);
 
+    yts.test({id: '1.3.15.1'});
     it('EventTimestamp', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -619,6 +639,7 @@ describe('MSE Conformance Tests', () => {
       }, {once: true});
     }, DEFAULT_TIMEOUT_MS);
 
+    yts.test({id: '1.3.16.1'});
     it('SeekTimeUpdate', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -669,6 +690,7 @@ describe('MSE Conformance Tests', () => {
       }, {once: true});
     }, DEFAULT_TIMEOUT_MS);
 
+    yts.test({id: '1.3.17.1'});
     it('AppendWindowStart', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -703,6 +725,7 @@ describe('MSE Conformance Tests', () => {
       }, {once: true});
     }, DEFAULT_TIMEOUT_MS);
 
+    yts.test({id: '1.3.18.1'});
     it('AppendWindowEnd', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -732,6 +755,7 @@ describe('MSE Conformance Tests', () => {
       }, {once: true});
     }, DEFAULT_TIMEOUT_MS);
 
+    yts.test({id: '1.3.25.1'});
     it('PlaybackRateChange', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -819,7 +843,8 @@ describe('MSE Conformance Tests', () => {
     }
 
     function createAvSyncAfterSwitch(
-        testTitle: string, audioStream: StreamDef) {
+        id: string, testTitle: string, audioStream: StreamDef) {
+      yts.test({id});
       it(testTitle, (done) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -896,10 +921,12 @@ describe('MSE Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createAvSyncAfterSwitch('AVSync.AAC', AAC['Audio44100']);
-    createAvSyncAfterSwitch('AVSync.Opus', Opus['Audio48000']);
+    createAvSyncAfterSwitch('1.3.26.1', 'AVSync.AAC', AAC['Audio44100']);
+    createAvSyncAfterSwitch('1.3.27.1', 'AVSync.Opus', Opus['Audio48000']);
 
-    function createInBufferSeekTest(testTitle: string, audioStream: StreamDef) {
+    function createInBufferSeekTest(
+        id: string, testTitle: string, audioStream: StreamDef) {
+      yts.test({id});
       it(testTitle, (done) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -908,7 +935,8 @@ describe('MSE Conformance Tests', () => {
           const seekTargetSecs = 5.066;
           const maxAllowedSeekMs = 300;
           const videoStream = VP9['VideoNormal'];
-          const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+          const videoSb = ms.addSourceBuffer(
+              playbackUtil.getMimeTypeWithTunnelMode(videoStream.mimetype));
           const audioSb = ms.addSourceBuffer(audioStream.mimetype);
           let startTime = performance.now();
           const audioXhr = xhrManager.createRequest(audioStream.src, () => {
@@ -947,12 +975,13 @@ describe('MSE Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createInBufferSeekTest('InBufferSeek', Opus['CarMed']);
-    createInBufferSeekTest('InBufferSeek (AAC)', AAC['AudioNormal']);
+    createInBufferSeekTest('35B259EC-E1AA-40A6-AE93-8AD8D79128C0', 'InBufferSeek', Opus['CarMed']);
+    createInBufferSeekTest('7F7C5D8B-6DDB-467F-B62E-4B79DB5C5DF1', 'InBufferSeek (AAC)', AAC['AudioNormal']);
 
     function createChangeTypeTest(
-        fromStream: StreamDef, toStream: StreamDef, suffix = '',
+        id: string, fromStream: StreamDef, toStream: StreamDef, suffix = '',
         fromSeconds = 2, toSeconds = 3) {
+      yts.test({id});
       it(`ChangeType.${fromStream.codec}.${toStream.codec}${suffix}`, (done) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -1029,37 +1058,38 @@ describe('MSE Conformance Tests', () => {
     }
 
     // Different Family Transitions (Optional - SHOULD)
-    createChangeTypeTest(AAC['AudioNormal'], Opus['CarMed']);
-    createChangeTypeTest(Opus['CarMed'], AAC['AudioNormal']);
-    createChangeTypeTest(H264['VideoNormal'], VP9['VideoNormal']);
-    createChangeTypeTest(H264['VideoNormal'], AV1['Bunny360p30fps']);
-    createChangeTypeTest(VP9['VideoNormal'], H264['VideoNormal']);
-    createChangeTypeTest(VP9['VideoNormal'], AV1['Bunny360p30fps']);
-    createChangeTypeTest(AV1['Bunny360p30fps'], H264['VideoNormal']);
-    createChangeTypeTest(AV1['Bunny360p30fps'], VP9['VideoNormal']);
+    createChangeTypeTest('1.3.28.1', AAC['AudioNormal'], Opus['CarMed']);
+    createChangeTypeTest('1.3.29.1', Opus['CarMed'], AAC['AudioNormal']);
+    createChangeTypeTest('1.3.19.1', H264['VideoNormal'], VP9['VideoNormal']);
+    createChangeTypeTest('1.3.20.1', H264['VideoNormal'], AV1['Bunny360p30fps']);
+    createChangeTypeTest('1.3.21.1', VP9['VideoNormal'], H264['VideoNormal']);
+    createChangeTypeTest('1.3.22.1', VP9['VideoNormal'], AV1['Bunny360p30fps']);
+    createChangeTypeTest('1.3.23.1', AV1['Bunny360p30fps'], H264['VideoNormal']);
+    createChangeTypeTest('1.3.24.1', AV1['Bunny360p30fps'], VP9['VideoNormal']);
 
     // Same Family Transitions (Mandatory - MUST)
     // VP9 Profile Transitions
-    createChangeTypeTest(VP9['VideoNormal'], VP9['HdrPqMed'], '.Profile0To2');
-    createChangeTypeTest(VP9['HdrPqMed'], VP9['VideoNormal'], '.Profile2To0');
+    createChangeTypeTest('1.3.30.1', VP9['VideoNormal'], VP9['HdrPqMed'], '.Profile0To2');
+    createChangeTypeTest('1.3.31.1', VP9['HdrPqMed'], VP9['VideoNormal'], '.Profile2To0');
 
     // AV1 Level Transitions
-    createChangeTypeTest(AV1['Bunny1080p60fps'], AV1['Sdr2160p60'], '.Level4.1To5.1');
-    createChangeTypeTest(AV1['Sdr2160p60'], AV1['Bunny1080p60fps'], '.Level5.1To4.1');
+    createChangeTypeTest('1.3.32.1', AV1['Bunny1080p60fps'], AV1['Sdr2160p60'], '.Level4.1To5.1');
+    createChangeTypeTest('1.3.33.1', AV1['Sdr2160p60'], AV1['Bunny1080p60fps'], '.Level5.1To4.1');
 
     // AV1 Bit Depth (SDR <-> HDR) Transitions
-    createChangeTypeTest(AV1['Bunny1080p60fps'], AV1['HdrPq1080p60'], '.8BitTo10Bit');
-    createChangeTypeTest(AV1['HdrPq1080p60'], AV1['Bunny1080p60fps'], '.10BitTo8Bit');
+    createChangeTypeTest('1.3.34.1', AV1['Bunny1080p60fps'], AV1['HdrPq1080p60'], '.8BitTo10Bit');
+    createChangeTypeTest('1.3.35.1', AV1['HdrPq1080p60'], AV1['Bunny1080p60fps'], '.10BitTo8Bit');
 
     // AAC Codec Transitions (AAC-LC <-> HE-AAC)
-    createChangeTypeTest(AAC['AudioShorts'], AAC['AudioLowExplicitHE'], '.LcToHeExplicit', -1, -1);
-    createChangeTypeTest(AAC['AudioLowExplicitHE'], AAC['AudioShorts'], '.HeToLcExplicit', -1, -1);
+    createChangeTypeTest('1.3.36.1', AAC['AudioShorts'], AAC['AudioLowExplicitHE'], '.LcToHeExplicit', -1, -1);
+    createChangeTypeTest('1.3.37.1', AAC['AudioLowExplicitHE'], AAC['AudioShorts'], '.HeToLcExplicit', -1, -1);
   });
 
   describe('MSE currentTime', () => {
     function createCurrentTimeAccuracyTest(
-        testTitle: string, videoStream: StreamDef, audioStream: StreamDef,
+        id: string, testTitle: string, videoStream: StreamDef, audioStream: StreamDef,
         isSpec: boolean) {
+      yts.test({id});
       it(testTitle, (done) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -1122,18 +1152,19 @@ describe('MSE Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createCurrentTimeAccuracyTest(
+    createCurrentTimeAccuracyTest('1.4.1.1', 
         'SFRAccuracy', H264['Webgl720p30fps'], AAC['AudioNormal'], false);
-    createCurrentTimeAccuracyTest(
+    createCurrentTimeAccuracyTest('1.4.2.1', 
         'HFRAccuracy', H264['Webgl720p60fps'], AAC['AudioNormal'], false);
-    createCurrentTimeAccuracyTest(
+    createCurrentTimeAccuracyTest('1.4.1.2', 
         'SFRSpecAccuracy', H264['Webgl720p30fps'], AAC['AudioNormal'], true);
-    createCurrentTimeAccuracyTest(
+    createCurrentTimeAccuracyTest('1.4.2.2', 
         'HFRSpecAccuracy', H264['Webgl720p60fps'], AAC['AudioNormal'], true);
 
     function createCurrentTimePausedAccuracyTest(
-        testTitle: string, videoStream: StreamDef, audioStream: StreamDef,
+        id: string, testTitle: string, videoStream: StreamDef, audioStream: StreamDef,
         maxDiffInS: number) {
+      yts.test({id});
       it(testTitle, (done) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -1200,23 +1231,24 @@ describe('MSE Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createCurrentTimePausedAccuracyTest(
+    createCurrentTimePausedAccuracyTest('1.4.3.1', 
         'SFRPausedAccuracy32ms', VP9['Webgl720p30fps'], AAC['AudioNormal'],
         0.032);
-    createCurrentTimePausedAccuracyTest(
+    createCurrentTimePausedAccuracyTest('1.4.3.2', 
         'SFRPausedAccuracy100ms', VP9['Webgl720p30fps'], AAC['AudioNormal'],
         0.100);
-    createCurrentTimePausedAccuracyTest(
+    createCurrentTimePausedAccuracyTest('1.4.4.1', 
         'HFRPausedAccuracy32ms', VP9['Webgl720p60fps'], AAC['AudioNormal'],
         0.032);
-    createCurrentTimePausedAccuracyTest(
+    createCurrentTimePausedAccuracyTest('1.4.4.2', 
         'HFRPausedAccuracy100ms', VP9['Webgl720p60fps'], AAC['AudioNormal'],
         0.100);
   });
 
   describe('MSE Formats', () => {
     function createSupportTest(
-        testTitle: string, mimetype: string, mandatory = true) {
+        id: string, testTitle: string, mimetype: string, mandatory = true) {
+      yts.test({id});
       it(testTitle, (done) => {
         checkMandatory(mandatory);
         const ms = new MediaSource();
@@ -1232,15 +1264,17 @@ describe('MSE Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createSupportTest('AACSupport', AAC_STREAMS.mimetype);
-    createSupportTest('H264Support', H264_STREAMS.mimetype);
-    createSupportTest('VP9Support', VP9_STREAMS.mimetype);
-    createSupportTest('OpusSupport', OPUS_STREAMS.mimetype);
-    createSupportTest('AV1Support', AV1_STREAMS.mimetype);
+    createSupportTest('1.5.1.1', 'AACSupport', AAC_STREAMS.mimetype);
+    createSupportTest('1.5.2.1', 'H264Support', H264_STREAMS.mimetype);
+    createSupportTest('1.5.3.1', 'VP9Support', VP9_STREAMS.mimetype);
+    createSupportTest('1.5.4.1', 'OpusSupport', OPUS_STREAMS.mimetype);
+    createSupportTest('1.5.5.1', 'AV1Support', AV1_STREAMS.mimetype);
   });
 
   describe('Media', () => {
-    function createFrameTest(testTitle: string, videoStream: StreamDef) {
+    function createFrameTest(
+        id: string, testTitle: string, videoStream: StreamDef) {
+      yts.test({id});
       it(testTitle, (done) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -1267,10 +1301,12 @@ describe('MSE Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createFrameTest('H264FrameGaps', H264['FrameGap']);
-    createFrameTest('H264FrameOverlaps', H264['FrameOverlap']);
+    createFrameTest('1.8.1.1', 'H264FrameGaps', H264['FrameGap']);
+    createFrameTest('1.8.2.1', 'H264FrameOverlaps', H264['FrameOverlap']);
 
-    function createHeAacTest(testTitle: string, audioStream: StreamDef) {
+    function createHeAacTest(
+        id: string, testTitle: string, audioStream: StreamDef) {
+      yts.test({id});
       it(testTitle, (done) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -1307,11 +1343,12 @@ describe('MSE Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createHeAacTest('HE-AAC/ExplicitSBR', AAC['AudioLowExplicitHE']);
-    createHeAacTest('HE-AAC/ImplicitSBR', AAC['AudioLowImplicitHE']);
+    createHeAacTest('1.8.3.1', 'HE-AAC/ExplicitSBR', AAC['AudioLowExplicitHE']);
+    createHeAacTest('1.8.4.1', 'HE-AAC/ImplicitSBR', AAC['AudioLowImplicitHE']);
   });
 
   describe('state', () => {
+    yts.test({id: '1.9.16.1'});
     it('paused', (done) => {
       video.addEventListener('error', (e) => {
         fail(String(e));
@@ -1324,6 +1361,7 @@ describe('MSE Conformance Tests', () => {
       done();
     }, DEFAULT_TIMEOUT_MS);
 
+    yts.test({id: '1.9.17.1'});
     it('onwaiting', (done) => {
       video.addEventListener('waiting', () => {
         expect(video.currentTime).withContext('video.currentTime').toBe(0);
@@ -1336,7 +1374,8 @@ describe('MSE Conformance Tests', () => {
     }, DEFAULT_TIMEOUT_MS);
 
     function createEventFiredTest(
-        testTitle: string, eventName: string, shouldPlay = false) {
+        id: string, testTitle: string, eventName: string, shouldPlay = false) {
+      yts.test({id});
       it(testTitle, (done) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -1360,10 +1399,11 @@ describe('MSE Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createEventFiredTest('canplay', 'canplay');
-    createEventFiredTest('progress', 'progress');
-    createEventFiredTest('timeupdate', 'timeupdate', true);
+    createEventFiredTest('1.9.18.1', 'canplay', 'canplay');
+    createEventFiredTest('1.9.19.1', 'progress', 'progress');
+    createEventFiredTest('1.9.21.1', 'timeupdate', 'timeupdate', true);
 
+    yts.test({id: '1.9.20.1'});
     it('autoplay', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -1384,6 +1424,7 @@ describe('MSE Conformance Tests', () => {
       }, {once: true});
     }, DEFAULT_TIMEOUT_MS);
 
+    yts.test({id: '1.9.22.1'});
     it('networkState', (done) => {
       const videoStream = VP9['VideoNormal'];
       expect(video.networkState)
@@ -1413,8 +1454,9 @@ describe('MSE Conformance Tests', () => {
 
   describe('timeupdate', () => {
     function createGranularityTest(
-        testTitle: string, playbackRate: number, isMax: boolean,
+        id: string, testTitle: string, playbackRate: number, isMax: boolean,
         threshold: number) {
+      yts.test({id});
       it(testTitle, (done) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -1475,40 +1517,41 @@ describe('MSE Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createGranularityTest('maxGranularityPlaybackRate0.25', 0.25, true, 0.28);
-    createGranularityTest('maxGranularityPlaybackRate0.50', 0.50, true, 0.28);
-    createGranularityTest('maxGranularityPlaybackRate0.75', 0.75, true, 0.28);
-    createGranularityTest('maxGranularityPlaybackRate1.00', 1.00, true, 0.28);
-    createGranularityTest('maxGranularityPlaybackRate1.25', 1.25, true, 0.28);
-    createGranularityTest('maxGranularityPlaybackRate1.50', 1.50, true, 0.28);
-    createGranularityTest('maxGranularityPlaybackRate1.75', 1.75, true, 0.28);
-    createGranularityTest('maxGranularityPlaybackRate2.00', 2.00, true, 0.28);
-    createGranularityTest('maxGranularityPlaybackRate2.25', 2.25, true, 0.28);
-    createGranularityTest('maxGranularityPlaybackRate2.50', 2.50, true, 0.28);
-    createGranularityTest('maxGranularityPlaybackRate2.75', 2.75, true, 0.28);
-    createGranularityTest('maxGranularityPlaybackRate3.00', 3.00, true, 0.28);
-    createGranularityTest('maxGranularityPlaybackRate3.25', 3.25, true, 0.28);
-    createGranularityTest('maxGranularityPlaybackRate3.50', 3.50, true, 0.28);
-    createGranularityTest('maxGranularityPlaybackRate3.75', 3.75, true, 0.28);
-    createGranularityTest('maxGranularityPlaybackRate4.00', 4.00, true, 0.28);
+    createGranularityTest('1.9.23.1', 'maxGranularityPlaybackRate0.25', 0.25, true, 0.28);
+    createGranularityTest('1.9.24.1', 'maxGranularityPlaybackRate0.50', 0.50, true, 0.28);
+    createGranularityTest('1.9.46.1', 'maxGranularityPlaybackRate0.75', 0.75, true, 0.28);
+    createGranularityTest('1.9.25.1', 'maxGranularityPlaybackRate1.00', 1.00, true, 0.28);
+    createGranularityTest('1.9.26.1', 'maxGranularityPlaybackRate1.25', 1.25, true, 0.28);
+    createGranularityTest('1.9.27.1', 'maxGranularityPlaybackRate1.50', 1.50, true, 0.28);
+    createGranularityTest('1.9.48.1', 'maxGranularityPlaybackRate1.75', 1.75, true, 0.28);
+    createGranularityTest('1.9.28.1', 'maxGranularityPlaybackRate2.00', 2.00, true, 0.28);
+    createGranularityTest('1.9.50.1', 'maxGranularityPlaybackRate2.25', 2.25, true, 0.28);
+    createGranularityTest('1.9.52.1', 'maxGranularityPlaybackRate2.50', 2.50, true, 0.28);
+    createGranularityTest('1.9.54.1', 'maxGranularityPlaybackRate2.75', 2.75, true, 0.28);
+    createGranularityTest('1.9.56.1', 'maxGranularityPlaybackRate3.00', 3.00, true, 0.28);
+    createGranularityTest('1.9.58.1', 'maxGranularityPlaybackRate3.25', 3.25, true, 0.28);
+    createGranularityTest('1.9.60.1', 'maxGranularityPlaybackRate3.50', 3.50, true, 0.28);
+    createGranularityTest('1.9.62.1', 'maxGranularityPlaybackRate3.75', 3.75, true, 0.28);
+    createGranularityTest('1.9.64.1', 'maxGranularityPlaybackRate4.00', 4.00, true, 0.28);
 
-    createGranularityTest('minGranularityPlaybackRate0.25', 0.25, false, 0.015);
-    createGranularityTest('minGranularityPlaybackRate0.50', 0.50, false, 0.015);
-    createGranularityTest('minGranularityPlaybackRate0.75', 0.75, false, 0.015);
-    createGranularityTest('minGranularityPlaybackRate1.00', 1.00, false, 0.015);
-    createGranularityTest('minGranularityPlaybackRate1.25', 1.25, false, 0.015);
-    createGranularityTest('minGranularityPlaybackRate1.50', 1.50, false, 0.015);
-    createGranularityTest('minGranularityPlaybackRate1.75', 1.75, false, 0.015);
-    createGranularityTest('minGranularityPlaybackRate2.00', 2.00, false, 0.015);
-    createGranularityTest('minGranularityPlaybackRate2.25', 2.25, false, 0.015);
-    createGranularityTest('minGranularityPlaybackRate2.50', 2.50, false, 0.015);
-    createGranularityTest('minGranularityPlaybackRate2.75', 2.75, false, 0.015);
-    createGranularityTest('minGranularityPlaybackRate3.00', 3.00, false, 0.015);
-    createGranularityTest('minGranularityPlaybackRate3.25', 3.25, false, 0.015);
-    createGranularityTest('minGranularityPlaybackRate3.50', 3.50, false, 0.015);
-    createGranularityTest('minGranularityPlaybackRate3.75', 3.75, false, 0.015);
-    createGranularityTest('minGranularityPlaybackRate4.00', 4.00, false, 0.015);
+    createGranularityTest('1.9.29.1', 'minGranularityPlaybackRate0.25', 0.25, false, 0.015);
+    createGranularityTest('1.9.30.1', 'minGranularityPlaybackRate0.50', 0.50, false, 0.015);
+    createGranularityTest('1.9.47.1', 'minGranularityPlaybackRate0.75', 0.75, false, 0.015);
+    createGranularityTest('1.9.31.1', 'minGranularityPlaybackRate1.00', 1.00, false, 0.015);
+    createGranularityTest('1.9.32.1', 'minGranularityPlaybackRate1.25', 1.25, false, 0.015);
+    createGranularityTest('1.9.33.1', 'minGranularityPlaybackRate1.50', 1.50, false, 0.015);
+    createGranularityTest('1.9.49.1', 'minGranularityPlaybackRate1.75', 1.75, false, 0.015);
+    createGranularityTest('1.9.34.1', 'minGranularityPlaybackRate2.00', 2.00, false, 0.015);
+    createGranularityTest('1.9.51.1', 'minGranularityPlaybackRate2.25', 2.25, false, 0.015);
+    createGranularityTest('1.9.53.1', 'minGranularityPlaybackRate2.50', 2.50, false, 0.015);
+    createGranularityTest('1.9.55.1', 'minGranularityPlaybackRate2.75', 2.75, false, 0.015);
+    createGranularityTest('1.9.57.1', 'minGranularityPlaybackRate3.00', 3.00, false, 0.015);
+    createGranularityTest('1.9.59.1', 'minGranularityPlaybackRate3.25', 3.25, false, 0.015);
+    createGranularityTest('1.9.61.1', 'minGranularityPlaybackRate3.50', 3.50, false, 0.015);
+    createGranularityTest('1.9.63.1', 'minGranularityPlaybackRate3.75', 3.75, false, 0.015);
+    createGranularityTest('1.9.65.1', 'minGranularityPlaybackRate4.00', 4.00, false, 0.015);
 
+    yts.test({id: '1.9.35.1'});
     it('progressing', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -1547,6 +1590,7 @@ describe('MSE Conformance Tests', () => {
       }, {once: true});
     }, DEFAULT_TIMEOUT_MS);
 
+    yts.test({id: '1.9.37.1'});
     it('duration on timeupdate', (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -1577,7 +1621,9 @@ describe('MSE Conformance Tests', () => {
       }, {once: true});
     }, DEFAULT_TIMEOUT_MS);
 
-    function createPlaybackRateTest(testTitle: string, playbackRate: number) {
+    function createPlaybackRateTest(
+        id: string, testTitle: string, playbackRate: number) {
+      yts.test({id});
       it(testTitle, (done) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -1634,21 +1680,21 @@ describe('MSE Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createPlaybackRateTest('PlaybackRate0.25', 0.25);
-    createPlaybackRateTest('PlaybackRate0.50', 0.50);
-    createPlaybackRateTest('PlaybackRate0.75', 0.75);
-    createPlaybackRateTest('PlaybackRate1.00', 1.00);
-    createPlaybackRateTest('PlaybackRate1.25', 1.25);
-    createPlaybackRateTest('PlaybackRate1.50', 1.50);
-    createPlaybackRateTest('PlaybackRate1.75', 1.75);
-    createPlaybackRateTest('PlaybackRate2.00', 2.00);
-    createPlaybackRateTest('PlaybackRate2.25', 2.25);
-    createPlaybackRateTest('PlaybackRate2.50', 2.50);
-    createPlaybackRateTest('PlaybackRate2.75', 2.75);
-    createPlaybackRateTest('PlaybackRate3.00', 3.00);
-    createPlaybackRateTest('PlaybackRate3.25', 3.25);
-    createPlaybackRateTest('PlaybackRate3.50', 3.50);
-    createPlaybackRateTest('PlaybackRate3.75', 3.75);
-    createPlaybackRateTest('PlaybackRate4.00', 4.00);
+    createPlaybackRateTest('1.9.23.1', 'PlaybackRate0.25', 0.25);
+    createPlaybackRateTest('1.9.24.1', 'PlaybackRate0.50', 0.50);
+    createPlaybackRateTest('1.9.44.1', 'PlaybackRate0.75', 0.75);
+    createPlaybackRateTest('1.9.25.1', 'PlaybackRate1.00', 1.00);
+    createPlaybackRateTest('1.9.26.1', 'PlaybackRate1.25', 1.25);
+    createPlaybackRateTest('1.9.27.1', 'PlaybackRate1.50', 1.50);
+    createPlaybackRateTest('1.9.45.1', 'PlaybackRate1.75', 1.75);
+    createPlaybackRateTest('1.9.28.1', 'PlaybackRate2.00', 2.00);
+    createPlaybackRateTest('1.9.50.1', 'PlaybackRate2.25', 2.25);
+    createPlaybackRateTest('1.9.52.1', 'PlaybackRate2.50', 2.50);
+    createPlaybackRateTest('1.9.54.1', 'PlaybackRate2.75', 2.75);
+    createPlaybackRateTest('1.9.56.1', 'PlaybackRate3.00', 3.00);
+    createPlaybackRateTest('1.9.58.1', 'PlaybackRate3.25', 3.25);
+    createPlaybackRateTest('1.9.60.1', 'PlaybackRate3.50', 3.50);
+    createPlaybackRateTest('1.9.62.1', 'PlaybackRate3.75', 3.75);
+    createPlaybackRateTest('1.9.64.1', 'PlaybackRate4.00', 4.00);
   });
 });

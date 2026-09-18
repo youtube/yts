@@ -67,12 +67,13 @@ describe('EME Conformance Tests', () => {
             stream.get('height') as number,
             stream.get('fps') as number,
             stream.get('spherical') as string,
-            ),
+        ),
     );
   }
 
   describe('Widevine', () => {
     function createEncryptedCodecTest(
+        id: string,
         encStream: StreamDef,
         otherStream: StreamDef,
         desc = '',
@@ -86,6 +87,7 @@ describe('EME Conformance Tests', () => {
       const testName = `Widevine${encStream.codec}${desc}${
           util.makeCapitalName(encStream.mediatype)}`;
 
+      yts.test({id});
       it(testName, (done) => {
         checkMandatory(mandatory);
         activeStream = setupMse(video, videoStream, audioStream);
@@ -109,27 +111,33 @@ describe('EME Conformance Tests', () => {
     }
 
     createEncryptedCodecTest(
+        '3.1.1.1',
         H264['VideoSmallCenc'],
         AAC['AudioNormal'],
     );
     createEncryptedCodecTest(
+        '3.1.2.1',
         AAC['AudioSmallCenc'],
         H264['VideoNormal'],
     );
     createEncryptedCodecTest(
+        '3.1.3.1',
         Opus['SintelEncrypted'],
         VP9['VideoNormal'],
     );
     createEncryptedCodecTest(
+        '3.1.4.1',
         VP9['VideoHighEnc'],
         Opus['CarMed'],
     );
     createEncryptedCodecTest(
+        '3.1.5.1',
         VP9['VideoHighSubSampleEnc'],
         Opus['CarMed'],
         'Subsample',
     );
 
+    yts.test({id: '3.1.6.1'});
     it('WidevineH264MultiMediaKeySessions', (done) => {
       const videoStream = H264['VideoMultiKeyCenc'];
       const audioStream = AAC['AudioNormal'];
@@ -157,8 +165,12 @@ describe('EME Conformance Tests', () => {
       });
     }, DEFAULT_TIMEOUT_MS);
 
-    function createWidevineLicenseDelayTest(videoStream: StreamDef) {
+    function createWidevineLicenseDelayTest(
+        id: string,
+        videoStream: StreamDef,
+    ) {
       const audioStream = AAC['AudioNormal'];
+      yts.test({id});
       it(`WidevineLicenseDelay${videoStream.codec}Video`, (done) => {
         activeStream = setupMse(video, videoStream, audioStream);
         setupEme(emeHandler, video, [videoStream], LicenseManager.WIDEVINE);
@@ -179,9 +191,10 @@ describe('EME Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createWidevineLicenseDelayTest(H264['VideoStreamYTCenc']);
-    createWidevineLicenseDelayTest(VP9['VideoHighSubSampleEnc']);
+    createWidevineLicenseDelayTest('3.1.7.1', H264['VideoStreamYTCenc']);
+    createWidevineLicenseDelayTest('3.1.8.1', VP9['VideoHighSubSampleEnc']);
 
+    yts.test({id: '3.1.10.2'});
     it('setServerCertificate', (done) => {
       const videoStream = VP9['DrmL3NoHDCP360p30fpsEnc'];
       const audioStream = AAC['AudioNormal'];
@@ -194,6 +207,7 @@ describe('EME Conformance Tests', () => {
       done();
     });
 
+    yts.test({id: 'D88CE76F-8804-41B9-9AD1-E4490AEA5D1D'});
     it('WidevineH264ClearMiddleVideo', (done) => {
       const videoStream = H264['VideoClearMiddleCenc'];
       const audioStream = AAC['AudioClearMiddleCenc'];
@@ -231,6 +245,7 @@ describe('EME Conformance Tests', () => {
       canPlayType(mimeType: string, keySystem: string): string;
     }
 
+    yts.test({id: 'C4E86A9F-E224-4D2D-B2E8-7D3C9B7A8F1E'});
     it('canPlayType.keySystem', () => {
       const mp4Format = playbackUtil.createVideoFormatStr(
           'mp4', 'avc1.42E01E', null, null, null, null, '');
@@ -255,6 +270,7 @@ describe('EME Conformance Tests', () => {
           .toBeTrue();
     });
 
+    yts.test({id: 'D3B07384-D113-4B6E-9F2A-2C8B6B7D9F0A'});
     it('Widevine Support', async () => {
       const config = [
         {
@@ -283,6 +299,7 @@ describe('EME Conformance Tests', () => {
       expect(access.keySystem).toBe(WIDEVINE_KEY_SYSTEM);
     });
 
+    yts.test({id: 'F4C18495-E224-4C7F-A03B-3D9C7C8EAF1B'});
     it('Negative Widevine Support', async () => {
       const config = [
         {
@@ -305,6 +322,7 @@ describe('EME Conformance Tests', () => {
       }
     });
 
+    yts.test({id: 'E5D8B8A5-F335-4D7F-B03B-4E2D7C8EBF2C'});
     it('getMetrics', async () => {
       const opts = [{
         initDataTypes: ['cenc', 'sinf', 'keyids'],
@@ -360,6 +378,7 @@ describe('EME Conformance Tests', () => {
   });
 
   describe('General', () => {
+    yts.test({id: '3.3.1.1'});
     it('EncryptedEventData', (done) => {
       const videoStream = H264['VideoSmallCenc'];
 
@@ -393,7 +412,7 @@ describe('EME Conformance Tests', () => {
     function createCapabilities(
         mimetype: string,
         encryptionScheme: string|null,
-        ): MediaKeySystemMediaCapability[] {
+    ): MediaKeySystemMediaCapability[] {
       return [
         {
           contentType: mimetype,
@@ -403,6 +422,7 @@ describe('EME Conformance Tests', () => {
     }
 
     function createEncryptionSchemeTest(
+        id: string,
         videoStream: StreamDef|null,
         videoEncryptionScheme: string|null,
         audioStream: StreamDef|null,
@@ -431,6 +451,7 @@ describe('EME Conformance Tests', () => {
             appendToTestName(audioEncryptionScheme)}`;
       }
 
+      yts.test({id});
       it(testName, (done) => {
         checkMandatory(mandatory);
 
@@ -507,90 +528,114 @@ describe('EME Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createEncryptionSchemeTest(H264['VideoStreamYTCenc'], 'cenc', null, null);
-    createEncryptionSchemeTest(H264['VideoStreamYTCenc'], null, null, null);
     createEncryptionSchemeTest(
+        '3.5.1.1', H264['VideoStreamYTCenc'], 'cenc', null, null);
+    createEncryptionSchemeTest(
+        '3.5.2.1', H264['VideoStreamYTCenc'], null, null, null);
+    createEncryptionSchemeTest(
+        '3.5.4.1',
         H264['VideoStreamYTCenc'],
         'invalid99',
         null,
         null,
     );
     createEncryptionSchemeTest(
+        '3.5.5.1',
         VP9['DrmL3NoHDCP240p30fpsEnc'],
         'cenc',
         null,
         null,
     );
     createEncryptionSchemeTest(
+        '3.5.6.1',
         VP9['DrmL3NoHDCP240p30fpsEnc'],
         null,
         null,
         null,
     );
-    createEncryptionSchemeTest(VP9['DrmCbcs1080p60fps'], 'cbcs', null, null);
     createEncryptionSchemeTest(
+        '3.5.7.1', VP9['DrmCbcs1080p60fps'], 'cbcs', null, null);
+    createEncryptionSchemeTest(
+        '3.5.8.1',
         VP9['DrmL3NoHDCP240p30fpsEnc'],
         'invalid99',
         null,
         null,
     );
-    createEncryptionSchemeTest(AV1['SencSdr1080p30'], 'cbcs', null, null);
-    createEncryptionSchemeTest(AV1['SencSdr1080p30'], null, null, null);
-    createEncryptionSchemeTest(AV1['SencSdr1080p30'], 'invalid99', null, null);
     createEncryptionSchemeTest(
+        '3.5.9.1', AV1['SencSdr1080p30'], 'cbcs', null, null);
+    createEncryptionSchemeTest(
+        '3.5.10.1', AV1['SencSdr1080p30'], null, null, null);
+    createEncryptionSchemeTest(
+        '3.5.11.1', AV1['SencSdr1080p30'], 'invalid99', null, null);
+    createEncryptionSchemeTest(
+        '3.5.12.1',
         null,
         null,
         AAC['AudioSmallCenc'],
         'cenc',
     );
-    createEncryptionSchemeTest(null, null, AAC['AudioSmallCenc'], null);
-    createEncryptionSchemeTest(null, null, AAC['DrmCbcs'], 'cbcs');
     createEncryptionSchemeTest(
+        '3.5.13.1', null, null, AAC['AudioSmallCenc'], null);
+    createEncryptionSchemeTest(
+        '3.5.14.1', null, null, AAC['DrmCbcs'], 'cbcs');
+    createEncryptionSchemeTest(
+        '3.5.15.1',
         null,
         null,
         AAC['AudioSmallCenc'],
         'invalid99',
     );
     createEncryptionSchemeTest(
+        '3.5.16.1',
         null,
         null,
         Opus['SintelEncrypted'],
         'cenc',
     );
-    createEncryptionSchemeTest(null, null, Opus['SintelEncrypted'], null);
     createEncryptionSchemeTest(
+        '3.5.17.1', null, null, Opus['SintelEncrypted'], null);
+    createEncryptionSchemeTest(
+        '3.5.19.1',
         null,
         null,
         Opus['SintelEncrypted'],
         'invalid99',
     );
-    createEncryptionSchemeTest(null, null, AC3['DrmCbcs'], 'cbcs');
-    createEncryptionSchemeTest(null, null, EAC3['DrmCbcs'], 'cbcs');
     createEncryptionSchemeTest(
+        '3.5.18.1', null, null, AC3['DrmCbcs'], 'cbcs');
+    createEncryptionSchemeTest(
+        '3.5.3.1', null, null, EAC3['DrmCbcs'], 'cbcs');
+    createEncryptionSchemeTest(
+        '3.5.20.1',
         H264['VideoStreamYTCenc'],
         'cenc',
         AAC['AudioSmallCenc'],
         'cenc',
     );
     createEncryptionSchemeTest(
+        '3.5.21.1',
         VP9['VideoHighEnc'],
         'cenc',
         Opus['SintelEncrypted'],
         'cenc',
     );
     createEncryptionSchemeTest(
+        '3.5.22.1',
         VP9['DrmCbcs1080p60fps'],
         'cbcs',
         AAC['DrmCbcs'],
         'cbcs',
     );
     createEncryptionSchemeTest(
+        '3.5.23.1',
         AV1['SencSdr1080p30'],
         'cbcs',
         AAC['DrmCbcs'],
         'cbcs',
     );
     createEncryptionSchemeTest(
+        '3.5.24.1',
         AV1['SencSdr1080p30'],
         'cbcs',
         AAC['AudioSmallCenc'],
@@ -600,6 +645,7 @@ describe('EME Conformance Tests', () => {
 
   describe('Widevine AV1', () => {
     function createWidevineAV1Test(
+        id: string,
         videoStream: StreamDef,
         mandatory = true,
         additionalName = '',
@@ -615,6 +661,7 @@ describe('EME Conformance Tests', () => {
               'transferFunction')}.${videoStream.get('resolution')}.${
           Math.round(videoStream.get('fps') as number)}fps${additionalName}`;
 
+      yts.test({id});
       it(testName, (done) => {
         checkMandatory(mandatory);
         activeStream = setupMse(video, videoStream, audioStream);
@@ -636,88 +683,115 @@ describe('EME Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createWidevineAV1Test(AV1['SencSdr144p30'], true);
-    createWidevineAV1Test(AV1['SencSdr240p30'], true);
-    createWidevineAV1Test(AV1['SencSdr360p30'], true);
-    createWidevineAV1Test(AV1['SencSdr480p30'], true);
-    createWidevineAV1Test(AV1['SencSdr720p30'], true);
-    createWidevineAV1Test(AV1['SencSdr720p60'], true);
-    createWidevineAV1Test(AV1['SencSdr1080p30'], true);
-    createWidevineAV1Test(AV1['SencSdr1080p60'], true);
-    createWidevineAV1Test(AV1['SencSdr1440p30'], util.isAv1GtFHD());
-    createWidevineAV1Test(AV1['SencSdr1440p60'], util.isAv1GtFHD());
-    createWidevineAV1Test(AV1['SencSdr2160p30'], false);
-    createWidevineAV1Test(AV1['SencSdr2160p60'], false);
-    createWidevineAV1Test(AV1['SencSdr4320p30'], false);
+    createWidevineAV1Test('3.6.1.1', AV1['SencSdr144p30'], true);
+    createWidevineAV1Test('3.6.2.1', AV1['SencSdr240p30'], true);
+    createWidevineAV1Test('3.6.3.1', AV1['SencSdr360p30'], true);
+    createWidevineAV1Test('3.6.4.1', AV1['SencSdr480p30'], true);
+    createWidevineAV1Test('3.6.5.1', AV1['SencSdr720p30'], true);
+    createWidevineAV1Test('3.6.6.1', AV1['SencSdr720p60'], true);
+    createWidevineAV1Test('3.6.7.1', AV1['SencSdr1080p30'], true);
+    createWidevineAV1Test('3.6.8.1', AV1['SencSdr1080p60'], true);
+    createWidevineAV1Test('3.6.9.1', AV1['SencSdr1440p30'], util.isAv1GtFHD());
+    createWidevineAV1Test('3.6.10.1', AV1['SencSdr1440p60'], util.isAv1GtFHD());
+    createWidevineAV1Test('3.6.11.1', AV1['SencSdr2160p30'], false);
+    createWidevineAV1Test('3.6.12.1', AV1['SencSdr2160p60'], false);
+    createWidevineAV1Test('3.6.13.1', AV1['SencSdr4320p30'], false);
 
     createWidevineAV1Test(
+        '3.6.11.2',
         AV1['SencSdr2160p30'], util.isAv1GtFHD(), '(required)');
     createWidevineAV1Test(
+        '3.6.12.2',
         AV1['SencSdr2160p60'], util.isAv1GtFHD(), '(required)');
     createWidevineAV1Test(
+        '3.6.13.2',
         AV1['SencSdr4320p30'], util.isAv1Gt4K(), '(required)');
 
     createWidevineAV1Test(
+        '3.7.1.1',
         AV1['SencHdrHlg144p30'], playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.7.2.1',
         AV1['SencHdrHlg240p30'], playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.7.3.1',
         AV1['SencHdrHlg360p30'], playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.7.4.1',
         AV1['SencHdrHlg480p30'], playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.7.5.1',
         AV1['SencHdrHlg720p24'], playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.7.6.1',
         AV1['SencHdrHlg720p60'], playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.7.7.1',
         AV1['SencHdrHlg1080p24'], playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.7.8.1',
         AV1['SencHdrHlg1080p60'], playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.7.9.1',
         AV1['SencHdrHlg1440p24'],
         util.isAv1GtFHD() && playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.7.10.1',
         AV1['SencHdrHlg1440p60'],
         util.isAv1GtFHD() && playbackUtil.isHdrSupported());
-    createWidevineAV1Test(AV1['SencHdrHlg2160p24'], false);
-    createWidevineAV1Test(AV1['SencHdrHlg2160p60'], false);
+    createWidevineAV1Test('3.7.11.1', AV1['SencHdrHlg2160p24'], false);
+    createWidevineAV1Test('3.7.12.1', AV1['SencHdrHlg2160p60'], false);
 
     createWidevineAV1Test(
+        '3.7.11.2',
         AV1['SencHdrHlg2160p24'],
         util.isAv1GtFHD() && playbackUtil.isHdrSupported(), '(required)');
     createWidevineAV1Test(
+        '3.7.12.2',
         AV1['SencHdrHlg2160p60'],
         util.isAv1GtFHD() && playbackUtil.isHdrSupported(), '(required)');
 
     createWidevineAV1Test(
+        '3.8.1.1',
         AV1['SencHdrPq144p30'], playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.8.2.1',
         AV1['SencHdrPq240p30'], playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.8.3.1',
         AV1['SencHdrPq360p30'], playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.8.4.1',
         AV1['SencHdrPq480p30'], playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.8.5.1',
         AV1['SencHdrPq720p24'], playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.8.6.1',
         AV1['SencHdrPq720p60'], playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.8.7.1',
         AV1['SencHdrPq1080p24'], playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.8.8.1',
         AV1['SencHdrPq1080p60'], playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.8.9.1',
         AV1['SencHdrPq1440p24'],
         util.isAv1GtFHD() && playbackUtil.isHdrSupported());
     createWidevineAV1Test(
+        '3.8.10.1',
         AV1['SencHdrPq1440p60'],
         util.isAv1GtFHD() && playbackUtil.isHdrSupported());
-    createWidevineAV1Test(AV1['SencHdrPq2160p24'], false);
-    createWidevineAV1Test(AV1['SencHdrPq2160p60'], false);
+    createWidevineAV1Test('3.8.11.1', AV1['SencHdrPq2160p24'], false);
+    createWidevineAV1Test('3.8.12.1', AV1['SencHdrPq2160p60'], false);
 
     createWidevineAV1Test(
+        '3.8.11.2',
         AV1['SencHdrPq2160p24'],
         util.isAv1GtFHD() && playbackUtil.isHdrSupported(), '(required)');
     createWidevineAV1Test(
+        '3.8.12.2',
         AV1['SencHdrPq2160p60'],
         util.isAv1GtFHD() && playbackUtil.isHdrSupported(), '(required)');
 
@@ -725,12 +799,14 @@ describe('EME Conformance Tests', () => {
 
   describe('Widevine IAMF (Optional)', () => {
     function createWidevineIamfTest(
+        id: string,
         audioStream: StreamDef,
         mandatory = false,
         additionalName = '',
     ) {
       const testName = `WidevineIamf${additionalName}`;
 
+      yts.test({id});
       it(testName, (done) => {
         const videoStream = H264['VideoNormal'];
         mandatory = mandatory && isStreamTypeSupported(audioStream);
@@ -755,6 +831,7 @@ describe('EME Conformance Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createWidevineIamfTest(Iamf['IamfEncrypted'], false, 'Encrypted');
+    createWidevineIamfTest(
+        '3.9.1.1', Iamf['IamfEncrypted'], false, 'Encrypted');
   });
 });

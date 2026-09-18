@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-import type {StreamInfo} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
+import {isAndroidTv} from 'google3/third_party/javascript/yts/test_utils/cobalt';
+import type {PlaybackOptions, StreamInfo} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
 import {objectUrlFromSafeSource, unwrapUrl} from 'safevalues';
 
 import {BaseStreamHandler} from './base_stream_handler';
@@ -47,6 +48,7 @@ const STREAM_HANDLER_MAP = {
  * @param audioInfo Optional audio stream configuration.
  * @param stopTime Point where streaming terminates.
  * @param onSourceObjects Lifecycle callback execution handler.
+ * @param options Optional playback options.
  * @return Future resolving after processing sequences finalized.
  */
 export function streamVideoByChunksV2(
@@ -60,11 +62,12 @@ export function streamVideoByChunksV2(
         videoSbs: SourceBuffer[],
         audioSb?: SourceBuffer,
         ) => void,
+    options?: PlaybackOptions,
     ): StreamPromise<void> {
   let isStopped = false;
   const activeHandlers: BaseStreamHandler[] = [];
 
-  const mainPromise = new Promise<void>((resolve) => {
+  const mainPromise = new Promise<void>((resolve, reject) => {
     console.log(`Streaming ${handlerType} video by chunks`);
     const HandlerClass = STREAM_HANDLER_MAP[handlerType];
     const mediaSource = new MediaSource();
@@ -79,51 +82,62 @@ export function streamVideoByChunksV2(
             return;
           }
 
-          const audioSb = audioInfo ?
-              mediaSource.addSourceBuffer(audioInfo.mimetype) :
-              undefined;
-          const audioPromise = audioSb ?
-              appendContentToBuffer(audioSb, audioInfo!.src) :
-              Promise.resolve();
-
-
-          const videoSbs: SourceBuffer[] = [];
-          const videoPromises: Array<Promise<void>> = [];
-
-          for (const videoInfo of videoInfos) {
-            if (!videoInfo) continue;
-            const videoSb = mediaSource.addSourceBuffer(videoInfo.mimetype);
-            videoSbs.push(videoSb);
-            const videoHandler = new HandlerClass(
-                videoElement,
-                videoInfo,
-                videoSb,
-                mediaSource,
-                stopTime,
-            );
-            activeHandlers.push(videoHandler);
-            videoPromises.push(videoHandler.handleStreaming());
-          }
-
-          if (onSourceObjects) {
-            onSourceObjects(mediaSource, videoSbs, audioSb);
-          }
-
-          // Handle case where stop() was called in the async gap before
-          // sourceopen finished
-          if (isStopped) {
-            for (const h of activeHandlers) h.stop();
-          }
-
           try {
+            const audioSb = audioInfo ?
+                mediaSource.addSourceBuffer(audioInfo.mimetype) :
+                undefined;
+            const audioPromise = audioSb ?
+                appendContentToBuffer(audioSb, audioInfo!.src) :
+                Promise.resolve();
+
+
+            const videoSbs: SourceBuffer[] = [];
+            const videoPromises: Array<Promise<void>> = [];
+
+            for (const videoInfo of videoInfos) {
+              if (!videoInfo) continue;
+              let mimetype = videoInfo.mimetype;
+              const disableTunnel =
+                  window.location.search.includes('disable_tunnel=true') ||
+                  Boolean(options?.disableTunnel);
+              if (isAndroidTv() && !disableTunnel &&
+                  Boolean(MediaSource?.isTypeSupported?.(mimetype + ';tunnelmode=true'))) {
+                mimetype += ';tunnelmode=true';
+                console.log('Upgrading video stream to tunnel mode:', mimetype);
+              }
+              const videoSb = mediaSource.addSourceBuffer(mimetype);
+              videoSbs.push(videoSb);
+              const videoHandler = new HandlerClass(
+                  videoElement,
+                  videoInfo,
+                  videoSb,
+                  mediaSource,
+                  stopTime,
+              );
+              activeHandlers.push(videoHandler);
+              videoPromises.push(videoHandler.handleStreaming());
+            }
+
+            if (onSourceObjects) {
+              onSourceObjects(mediaSource, videoSbs, audioSb);
+            }
+
+            // Handle case where stop() was called in the async gap before
+            // sourceopen finished
+            if (isStopped) {
+              for (const h of activeHandlers) h.stop();
+            }
+
             await Promise.all([audioPromise, ...videoPromises]);
             console.log(`All streaming promises for ${handlerType} resolved`);
             if (mediaSource.readyState === 'open') mediaSource.endOfStream();
           } catch (e) {
-            logError(e, `streamVideoByChunksV2 Promise.all (${handlerType})`);
+            logError(e, `streamVideoByChunksV2 error (${handlerType})`);
             if (mediaSource.readyState === 'open') {
               mediaSource.endOfStream('network');
             }
+            reject(e);
+            return;
           }
 
           resolve();

@@ -24,6 +24,7 @@ describe('Functional Tests', () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
     );
 
+    yts.test({id: '24FDCA61-9DEA-4DE6-8129-BF54FDB3C0B2'});
     it('Has Advertising ID', async () => {
       const system = h5vcc?.system;
       const advertisingId = system?.getAdvertisingId
@@ -47,6 +48,7 @@ describe('Functional Tests', () => {
       }
     });
 
+    yts.test({id: 'F15BC4E3-E94B-4F6E-9AF6-A3D04F5329B7'});
     it('Advertising ID format is correct', async () => {
       const system = h5vcc?.system;
       const advertisingId = system?.getAdvertisingId

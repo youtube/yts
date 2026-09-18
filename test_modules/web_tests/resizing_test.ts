@@ -163,6 +163,7 @@ describe('Functional Tests', () => {
       util.removeCobaltVideo(video);
     }
 
+    yts.test({id: '74EFF032-006C-46CB-AE49-5592434917BE'});
     it(
       'Resizing',
       async () => {
@@ -171,6 +172,7 @@ describe('Functional Tests', () => {
       TEST_TIMEOUT * util.SECOND,
     );
 
+    yts.test({id: '1517CD6D-D93D-4235-A8FD-DA6EDFFCE326'});
     it(
       'Resizing 2024+',
       async () => {

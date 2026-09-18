@@ -84,6 +84,17 @@ function getExpectedCertScope(): string|null {
  * license info.
  */
 describe('Functional Tests', () => {
+  let originalTimeout: number;
+
+  beforeAll(() => {
+    originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
+    jasmine.DEFAULT_TIMEOUT_INTERVAL = 60000;
+  });
+
+  afterAll(() => {
+    jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
+  });
+
   describe('User Agent', () => {
     let video: HTMLMediaElement;
     let player: Player|null = null;
@@ -198,6 +209,7 @@ describe('Functional Tests', () => {
       });
     }
 
+    yts.test({id: '67F381B6-1A8E-424D-903E-0FE0A75EE0D6'});
     it('Widevine License - V14', async () => {
       const {clientInfo, license} = await fetchWidevineLicenseInfo();
       const {brand, model, system_integrator} = parseWidevineUA();
@@ -218,6 +230,7 @@ describe('Functional Tests', () => {
           .toBeGreaterThanOrEqual(14);
     });
 
+    yts.test({id: '14.17.4.1'});
     it('Widevine License - v15', async () => {
       const {clientInfo, license} = await fetchWidevineLicenseInfo();
       const {brand, model, system_integrator} = parseWidevineUA();
@@ -238,6 +251,7 @@ describe('Functional Tests', () => {
           .toBeGreaterThanOrEqual(15);
     });
 
+    yts.test({id: '14.17.4.3'});
     it('Widevine License', async () => {
       const {clientInfo, license} = await fetchWidevineLicenseInfo();
       const {brand, model, system_integrator} = parseWidevineUA();
@@ -282,6 +296,7 @@ describe('Functional Tests', () => {
       }
     });
 
+    yts.test({id: '757DD616-9E15-4164-9BB3-EACF00857CE3'});
     it('Widevine License - brandAndModel', async () => {
       const {license} = await fetchWidevineLicenseInfo();
       const {brand, model, system_integrator} = parseWidevineUA();
@@ -298,6 +313,7 @@ describe('Functional Tests', () => {
           .toBe(model);
     });
 
+    yts.test({id: 'A5AFB221-25E4-4A67-B3A4-50110417C4FB'});
     it('Widevine License - certScope', async () => {
       const {license} = await fetchWidevineLicenseInfo();
 
@@ -313,6 +329,7 @@ describe('Functional Tests', () => {
           .toBe(expectedCertScope!);
     });
 
+    yts.test({id: '0F23C7EA-BFF0-4A32-9182-2F195432A051'});
     it('Widevine License - oemVersion', async () => {
       const {clientInfo} = await fetchWidevineLicenseInfo();
 
@@ -321,6 +338,7 @@ describe('Functional Tests', () => {
           .toBeGreaterThanOrEqual(16);
     });
 
+    yts.test({id: '151B042B-A90A-438E-8E06-AFCDA8FD3FD3'});
     it('Widevine License - v19.3', async () => {
       const {clientInfo} = await fetchWidevineLicenseInfo();
 

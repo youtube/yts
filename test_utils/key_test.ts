@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {ExpectedKey, keysMatch, ReceivedKey, keyToStr} from './key';
+import {ExpectedKey, keyToStr, keysMatch, micKey, ReceivedKey} from './key';
 
 describe('key utils', () => {
   const expectedEnter: ExpectedKey = {
@@ -78,6 +78,9 @@ describe('key utils', () => {
   });
 
   describe('keyToStr', () => {
+    it('formats micKey correctly', () => {
+      expect(keyToStr(micKey)).toBe('Microphone / Voice (MicrophoneToggle, 0x3002)');
+    });
 
     it('formats ExpectedKey correctly', () => {
       expect(keyToStr(expectedEnter)).toBe('Enter/OK (Enter, 0x0d)');

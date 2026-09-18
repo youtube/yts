@@ -39,6 +39,7 @@ function checkWebSpeechSupport(): boolean {
 
 describe('Functional Tests', () => {
   describe('EnumerateDevices', () => {
+    yts.test({id: '14.16.1.1'});
     it('EnumerateDevices', async () => {
       if (!navigator.mediaDevices?.enumerateDevices) {
         fail('enumerateDevices API is not supported');
@@ -61,6 +62,7 @@ describe('Functional Tests', () => {
           .toBeTrue();
     });
 
+    yts.test({id: '14.16.2.1'});
     it('No Mic', async () => {
       if (!navigator.mediaDevices?.enumerateDevices) {
         fail('enumerateDevices API is not supported');
@@ -74,6 +76,7 @@ describe('Functional Tests', () => {
   });
 
   describe('On-screen Keyboard', () => {
+    yts.test({id: '14.24.1.1'});
     it('No keyboard', () => {
       expect(extendedWindow.onScreenKeyboard)
           .withContext('window.onScreenKeyboard')
@@ -82,6 +85,7 @@ describe('Functional Tests', () => {
   });
 
   describe('Assorted', () => {
+    yts.test({id: '14.12.1.1'});
     it('WebSpeech API', async () => {
       const hasAudioInput = await checkAudioInputDevice();
       if (!hasAudioInput) {
@@ -94,6 +98,7 @@ describe('Functional Tests', () => {
           .toBeTrue();
     });
 
+    yts.test({id: 'BFAB8332-5B9B-45C7-80A0-2A54B33EA3A5'});
     it('MediaRecorder API', () => {
       expect(extendedWindow.MediaRecorder)
           .withContext('MediaRecorder should be supported')

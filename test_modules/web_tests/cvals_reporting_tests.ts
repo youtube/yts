@@ -19,6 +19,7 @@ import {h5vcc} from 'google3/third_party/javascript/yts/yts_common/h5vcc';
 import 'jasmine';
 
 describe('Functional Tests', () => {
+  yts.test({id: '9E44F707-076A-47D2-8E7B-E8E7C72A7D14'});
   it('CPU Utilization Reporting', async () => {
     if (!h5vcc?.cVal) {
       fail('Unable to fetch CPU utilization - h5vcc.cVal is not defined');
@@ -52,6 +53,7 @@ describe('Functional Tests', () => {
     }
   });
 
+  yts.test({id: '778E3B2E-A27C-4E2F-970E-7D5892755F45'});
   it('Memory Utilization Reporting', async () => {
     if (!h5vcc?.cVal) {
       fail('Unable to fetch CPU utilization - h5vcc.cVal is not defined');

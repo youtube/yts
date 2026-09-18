@@ -73,6 +73,7 @@ function getCssInterfaceInstance(
 }
 
 interface DomCssTestSpec {
+  id: string; // e.g., '17.1.1.1'
   name: string; // e.g., 'CSSFontFaceRule.style'
   cssObjectType: CssOMConstructor; // e.g., CSSFontFaceRule constructor
   attribute: string; // e.g., 'style'
@@ -84,6 +85,7 @@ function generateDomCssInterfaceTests(
 ): void {
   describe(categoryName, () => {
     specs.forEach((spec) => {
+      yts.test({id: spec.id});
       it(spec.name, () => {
         const testInstance = getCssInterfaceInstance(spec.cssObjectType);
 
@@ -136,6 +138,7 @@ describe('DOM CSS Tests', () => {
 
   generateDomCssInterfaceTests('CSS Font', [
     {
+      id: '17.1.1.1',
       name: 'CSSFontFaceRule.style',
       cssObjectType: CSSFontFaceRule,
       attribute: 'style',
@@ -144,16 +147,19 @@ describe('DOM CSS Tests', () => {
 
   generateDomCssInterfaceTests('CSS Media Rule', [
     {
+      id: '17.3.1.1',
       name: 'CSSMediaRule.cssRules',
       cssObjectType: CSSMediaRule,
       attribute: 'cssRules',
     },
     {
+      id: '17.3.3.1',
       name: 'CSSMediaRule.insertRule',
       cssObjectType: CSSMediaRule,
       attribute: 'insertRule',
     },
     {
+      id: '17.3.4.1',
       name: 'CSSMediaRule.media',
       cssObjectType: CSSMediaRule,
       attribute: 'media',
@@ -161,13 +167,15 @@ describe('DOM CSS Tests', () => {
   ]);
 
   generateDomCssInterfaceTests('CSS Rule', [
-    {name: 'CSSRule.cssText', cssObjectType: CSSRule, attribute: 'cssText'},
+    {id: '17.5.1.1', name: 'CSSRule.cssText', cssObjectType: CSSRule, attribute: 'cssText'},
     {
+      id: '17.5.2.1',
       name: 'CSSRule.parentRule',
       cssObjectType: CSSRule,
       attribute: 'parentRule',
     },
     {
+      id: '17.5.3.1',
       name: 'CSSRule.parentStyleSheet',
       cssObjectType: CSSRule,
       attribute: 'parentStyleSheet',
@@ -175,8 +183,9 @@ describe('DOM CSS Tests', () => {
   ]);
 
   generateDomCssInterfaceTests('CSS Rule List', [
-    {name: 'CSSRuleList.item', cssObjectType: CSSRuleList, attribute: 'item'},
+    {id: '17.6.1.1', name: 'CSSRuleList.item', cssObjectType: CSSRuleList, attribute: 'item'},
     {
+      id: '17.6.2.1',
       name: 'CSSRuleList.length',
       cssObjectType: CSSRuleList,
       attribute: 'length',
@@ -185,36 +194,43 @@ describe('DOM CSS Tests', () => {
 
   generateDomCssInterfaceTests('CSS Style Declaration', [
     {
+      id: '17.7.1.1',
       name: 'CSSStyleDeclaration.cssText',
       cssObjectType: CSSStyleDeclaration,
       attribute: 'cssText',
     },
     {
+      id: '17.7.4.1',
       name: 'CSSStyleDeclaration.getPropertyValue',
       cssObjectType: CSSStyleDeclaration,
       attribute: 'getPropertyValue',
     },
     {
+      id: '17.7.5.1',
       name: 'CSSStyleDeclaration.item',
       cssObjectType: CSSStyleDeclaration,
       attribute: 'item',
     },
     {
+      id: '17.7.6.1',
       name: 'CSSStyleDeclaration.length',
       cssObjectType: CSSStyleDeclaration,
       attribute: 'length',
     },
     {
+      id: '17.7.7.1',
       name: 'CSSStyleDeclaration.parentRule',
       cssObjectType: CSSStyleDeclaration,
       attribute: 'parentRule',
     },
     {
+      id: '17.7.8.1',
       name: 'CSSStyleDeclaration.removeProperty',
       cssObjectType: CSSStyleDeclaration,
       attribute: 'removeProperty',
     },
     {
+      id: '17.7.9.1',
       name: 'CSSStyleDeclaration.setProperty',
       cssObjectType: CSSStyleDeclaration,
       attribute: 'setProperty',
@@ -223,11 +239,13 @@ describe('DOM CSS Tests', () => {
 
   generateDomCssInterfaceTests('CSS Style Rule', [
     {
+      id: '17.8.1.1',
       name: 'CSSStyleRule.selectorText',
       cssObjectType: CSSStyleRule,
       attribute: 'selectorText',
     },
     {
+      id: '17.8.2.1',
       name: 'CSSStyleRule.style',
       cssObjectType: CSSStyleRule,
       attribute: 'style',
@@ -236,11 +254,13 @@ describe('DOM CSS Tests', () => {
 
   generateDomCssInterfaceTests('CSS Style Sheet', [
     {
+      id: '17.9.1.1',
       name: 'CSSStyleSheet.cssRules',
       cssObjectType: CSSStyleSheet,
       attribute: 'cssRules',
     },
     {
+      id: '17.9.3.1',
       name: 'CSSStyleSheet.insertRule',
       cssObjectType: CSSStyleSheet,
       attribute: 'insertRule',

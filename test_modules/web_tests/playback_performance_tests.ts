@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 
+import {isAndroidTv} from 'google3/third_party/javascript/yts/test_utils/cobalt';
 import {EMEHandler} from 'google3/third_party/javascript/yts/test_utils/eme/eme_handler';
 import {LicenseManager} from 'google3/third_party/javascript/yts/test_utils/eme/license_manager';
 import {setupEme} from 'google3/third_party/javascript/yts/test_utils/eme/setup_eme';
 import * as util from 'google3/third_party/javascript/yts/test_utils/legacy_yts_utils';
 import {setupMse} from 'google3/third_party/javascript/yts/test_utils/mse/setup_mse';
-import {VideoPerformanceMetrics} from 'google3/third_party/javascript/yts/test_utils/mse/video_performance';
+import {PerfTestUtil} from 'google3/third_party/javascript/yts/test_utils/perf_test_util';
 import * as playbackUtil from 'google3/third_party/javascript/yts/test_utils/playback_util';
 import {StreamPromise} from 'google3/third_party/javascript/yts/test_utils/streaming/stream_promise';
 import type {StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
@@ -34,10 +35,9 @@ const VIDEO_STOP_TIME = 7;
 const FRAME_DROP_EVALUATION_INTERVAL_SEC = 7;
 const HIGH_BITRATE_VIDEO_STOP_TIME = 10;
 const DRM_VIDEO_STOP_TIME = DRM_VIDEO_START_TIME + VIDEO_STOP_TIME;
-// Default time to stop adding more data to the buffer.
-const DEFAULT_BUFFER_STOP_TIME = 15;
 const DEFAULT_TIMEOUT_MS = 60_000;
 const EXTENDED_TIMEOUT_MS = 120_000;
+const SANITY_PASS_DURATION_SEC = 3;
 // Playback speeds to test for VSP.
 const PLAYBACK_SPEEDS_1X_ONLY = [1];
 const PLAYBACK_SPEEDS_2X = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
@@ -55,334 +55,6 @@ const PLAYBACK_SPEEDS_4X = [
 
 // The active stream, if any.
 let activeStream: StreamPromise<void>|undefined;
-
-/**
- * Helper class to update status and do assertion for the performance tests.
- */
-class PerfTestUtil {
-  private readonly videoPerfMetrics: VideoPerformanceMetrics;
-  private readonly history: Array<{time: number; dropped: number}> = [];
-
-  private startWallTimeMs?: number;
-  private startVideoTimeSec?: number;
-
-  // Throttle console logs to avoid spamming the test log.
-  private logThrottleCounter = 0;
-  private readonly LOG_THROTTLE_RATE = 4;
-
-  constructor(video: HTMLVideoElement) {
-    this.videoPerfMetrics = new VideoPerformanceMetrics(video);
-    if (!this.videoPerfMetrics.supportsVideoPerformanceMetrics()) {
-      fail(`UserAgent needs to support
-          'video.getVideoPlaybackQuality' or the combined
-          'video.webkitDecodedFrameCount'
-          and 'video.webkitDroppedFrameCount' to execute this test.`);
-    }
-  }
-
-  getCurrentTime() {
-    return this.videoPerfMetrics.getCurrentTime();
-  }
-
-  getTotalDecodedFrames() {
-    return this.videoPerfMetrics.getTotalDecodedVideoFrames();
-  }
-
-  getTotalDroppedFrames() {
-    return this.videoPerfMetrics.getDroppedVideoFrames();
-  }
-
-  updateVideoPerfMetricsStatus() {
-    const dropped = this.getTotalDroppedFrames();
-    const decoded = this.getTotalDecodedFrames();
-    const currentTime = this.getCurrentTime();
-    this.history.push({time: currentTime, dropped});
-    yts.addMetric('dropped_frames', dropped);
-    yts.addMetric('decoded_frames', decoded);
-    this.logVideoPerfMetricsStatus();
-  }
-
-  logVideoPerfMetricsStatus() {
-    if (this.logThrottleCounter++ % this.LOG_THROTTLE_RATE) {
-      return;
-    }
-    const dropped = this.getTotalDroppedFrames();
-    const decoded = this.getTotalDecodedFrames();
-    const currentTime = this.getCurrentTime().toFixed(2);
-    console.log(
-      `t=${currentTime}s, decoded_frames=${decoded}, dropped_frames=${dropped}`,
-    );
-  }
-
-  assertAtLeastOneFrameDecoded() {
-    const totalDecodedFrames = this.getTotalDecodedFrames();
-    console.log('Total decoded frames: ', totalDecodedFrames);
-    if (totalDecodedFrames <= 0) {
-      fail('UserAgent was unable to render any frames.');
-    }
-  }
-
-  assertMaxDroppedFrames(maxDroppedFrames: number) {
-    const totalDroppedFrames = this.getTotalDroppedFrames();
-    console.log('Total dropped frames: ', totalDroppedFrames);
-    expect(totalDroppedFrames)
-      .withContext('Total dropped frames')
-      .toBeLessThanOrEqual(maxDroppedFrames);
-  }
-
-  assertMaxDroppedFramesPerInterval(
-    maxDropsPerInterval = 1,
-    intervalDurationSec = 7.0,
-  ) {
-    let maxObservedInInterval = 0;
-    let worstWindow = {start: 0, end: 0, timeDelta: 0};
-    let j = 0;
-
-    for (let i = 0; i < this.history.length; i++) {
-      while (
-        j + 1 < this.history.length &&
-        this.history[j + 1].time - this.history[i].time <= intervalDurationSec
-      ) {
-        j++;
-      }
-      const dropDelta = this.history[j].dropped - this.history[i].dropped;
-      if (dropDelta > maxObservedInInterval) {
-        maxObservedInInterval = dropDelta;
-        worstWindow = {
-          start: this.history[i].time,
-          end: this.history[j].time,
-          timeDelta: this.history[j].time - this.history[i].time,
-        };
-      }
-    }
-
-    console.log(
-      `Max dropped frames observed in any <=${intervalDurationSec}s interval: ${maxObservedInInterval}`,
-    );
-
-    expect(maxObservedInInterval)
-      .withContext(
-        `Max dropped frames observed in window [${worstWindow.start.toFixed(
-          2,
-        )}s - ${worstWindow.end.toFixed(
-          2,
-        )}s] (timeDelta=${worstWindow.timeDelta.toFixed(
-          2,
-        )}s <= ${intervalDurationSec}s)`,
-      )
-      .toBeLessThanOrEqual(maxDropsPerInterval);
-  }
-
-  isTrackingStarted(): boolean {
-    return this.startWallTimeMs !== undefined;
-  }
-
-  startTracking() {
-    this.startWallTimeMs = performance.now();
-    this.startVideoTimeSec = this.getCurrentTime();
-    console.log('Start rate tracking at currentTime=', this.startVideoTimeSec);
-  }
-
-  assertPlaybackRate(expectedRate: number) {
-    if (this.startWallTimeMs === undefined || this.startVideoTimeSec === undefined) {
-      fail('Playback rate tracking was not started.');
-      return;
-    }
-    const endWallTimeMs = performance.now();
-    const endVideoTimeSec = this.getCurrentTime();
-    console.log('Stop rate tracking at currentTime=', endVideoTimeSec);
-
-    const elapsedWallTimeSec = (endWallTimeMs - this.startWallTimeMs) / 1000;
-    const elapsedVideoTimeSec = endVideoTimeSec - this.startVideoTimeSec;
-
-    if (elapsedWallTimeSec <= 0) {
-      fail('Elapsed wall time is zero or negative.');
-      return;
-    }
-
-    const rawMeasuredRate = elapsedVideoTimeSec / elapsedWallTimeSec;
-    const measuredRate = Math.round(rawMeasuredRate * 1000) / 1000;
-
-    console.log(`Measured playback rate: ${measuredRate.toFixed(3)}x`);
-
-    /*
-    const margin = 0.249;
-    const errorValue = Math.abs(measuredRate - expectedRate);
-    if (errorValue > margin) {
-      fail(
-          `Measured playback rate (${measuredRate.toFixed(3)}x) is more than ${
-              margin}x away from the requested rate (${
-              expectedRate}x). Frame drop results are invalid.`,
-      );
-    }
-    */
-  }
-}
-
-function* getNextStreamPair(audioStream: StreamDef, videoStreams: StreamDef[]) {
-  for (const [index, videoStream] of videoStreams.entries()) {
-    verifyStream(videoStream, index);
-    console.log(
-      `Playing next stream: ${videoStream.src} (${videoStream.mimetype})`,
-    );
-    yield {audioStream, videoStream};
-  }
-}
-
-function createTotalVideoFramesValidationTest(
-  videoStream: StreamDef,
-  frames: number,
-) {
-  it(
-      'TotalVideoFrames',
-      (done) => {
-        const video = playbackUtil.getVideoElement()!;
-        const audioStream = AAC['Audio1MB'];
-
-        const perfTestUtil = new PerfTestUtil(video);
-
-        function onTimeUpdate() {
-          perfTestUtil.updateVideoPerfMetricsStatus();
-          const decodedFrames = perfTestUtil.getTotalDecodedFrames();
-          // Note that the audio is longer than the video, so the media will
-          // keep playing even after all frames have been decoded, unless we
-          // manually pause it.
-          if (video.currentTime >= 10 || decodedFrames >= frames) {
-            video.removeEventListener('timeupdate', onTimeUpdate);
-            video.pause();
-            console.log(`Validating that total decoded frames is ${frames}`);
-            expect(perfTestUtil.getTotalDecodedFrames())
-                .withContext('playbackQuality.totalVideoFrames')
-                .toBe(frames);
-            done();
-          }
-        }
-        video.addEventListener('timeupdate', onTimeUpdate);
-        playbackUtil.listenForErrors(video, 'video', true);
-
-        // It's okay to use a simple MediaSource because the video size is ~1MB.
-        video.src =
-            playbackUtil.createMediaSourceUrl([audioStream, videoStream]);
-        console.log('video.src=', video.src);
-        video.play();
-        console.log('video.play()');
-      },
-      DEFAULT_TIMEOUT_MS,
-  );
-}
-
-function createFrameDropValidationTest(videoStreams: StreamDef[]) {
-  it(
-      'FrameDrop',
-      (done) => {
-        const video = playbackUtil.getVideoElement()!;
-        const perfTestUtil = new PerfTestUtil(video);
-        const audioStream = AAC['AudioNormal'];
-        const streamGenerator = getNextStreamPair(audioStream, videoStreams);
-        let playTimeoutId = 0;
-        let isSwitching = false;
-
-        function onError(error: unknown) {
-          if (error instanceof Error && error.name === 'AbortError') {
-            // Ignore abort errors as all it means is that we are already
-            // switching to the next stream.
-            return;
-          }
-
-          let msg: string;
-          if (error instanceof MediaError) {
-            msg = `Code ${error.code}: ${error.message}`;
-          } else if (error instanceof Error) {
-            msg = error.message;
-          } else {
-            msg = String(error);
-          }
-          isSwitching = false;
-          console.log('Switching to next stream due to error: ', msg);
-          playNextSrc(2.0);
-        }
-
-        /**
-         * Plays the next stream in the streamGenerator. If the video is paused,
-         * it will be played at the given playbackRate. Otherwise, the playback
-         * rate will be set to 1.0.
-         */
-        function playNextSrc(playbackRate = 1.0) {
-          if (isSwitching) {
-            // Don't switch to the next stream if we're already switching.
-            return;
-          }
-          isSwitching = true;
-          clearTimeout(playTimeoutId);
-          video.removeEventListener('timeupdate', onTimeUpdate);
-          video.src = '';
-          video.load();
-          const next = streamGenerator.next();
-          if (next.done) {
-            fail('None of the high FPS video streams are supported!');
-            done();
-            return;
-          }
-          const {audioStream, videoStream} = next.value;
-
-          // Stop the previous stream before starting a new one.
-          activeStream?.stop();
-          activeStream = setupMse(
-              video, videoStream, audioStream, DEFAULT_BUFFER_STOP_TIME);
-          activeStream.catch(onError);
-
-          console.log('video.src set');
-          video.playbackRate = playbackRate;
-          console.log('video.playbackRate=', video.playbackRate);
-          video.addEventListener('timeupdate', onTimeUpdate);
-          const promise = video.play();
-          if (promise) {
-            promise
-                .then(() => {
-                  isSwitching = false;
-                })
-                .catch(onError);
-          } else {
-            isSwitching = false;
-            playbackUtil.listenForErrors(video, 'video', false, onError);
-          }
-          console.log('video.play()');
-
-          playTimeoutId = setTimeout(() => {
-            if (video.paused) {
-              console.log('Video did not play after 5 seconds.');
-              isSwitching = false;
-              playNextSrc(2.0);
-            }
-          }, 5000);
-        }
-
-        function onTimeUpdate() {
-          clearTimeout(playTimeoutId);
-          perfTestUtil.updateVideoPerfMetricsStatus();
-          const droppedFrames = perfTestUtil.getTotalDroppedFrames();
-          if (video.currentTime >= 10) {
-            video.removeEventListener('timeupdate', onTimeUpdate);
-            video.pause();
-            perfTestUtil.assertAtLeastOneFrameDecoded();
-            if (droppedFrames >= 2) {
-              console.log('Validated that dropped frames API is working.');
-              done();
-            } else {
-              console.log(
-                  'Could not validate dropped frames API (no frames dropped).',
-              );
-              playNextSrc(2);
-            }
-          }
-        }
-
-        playbackUtil.listenForErrors(video, 'video', false, onError);
-        playNextSrc();
-      },
-      EXTENDED_TIMEOUT_MS,
-  );
-}
 
 function createPlaybackPerfTest(
   testName: string,
@@ -407,6 +79,12 @@ function createPlaybackPerfTest(
           0)
     );
   };
+
+  const isTunnelSupported = isAndroidTv() &&
+      typeof MediaSource !== 'undefined' &&
+      Boolean(MediaSource.isTypeSupported?.(
+          videoStream.mimetype + ';tunnelmode=true')) &&
+      !window.location.search.includes('disable_tunnel=true');
 
   const timeoutMs =
     playbackRate === 0.25 ? EXTENDED_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
@@ -441,81 +119,197 @@ function createPlaybackPerfTest(
         yts.markOptional();
       }
 
-      const video = playbackUtil.getVideoElement()!;
       const audioStream = AAC['AudioNormal'];
-      const perfTestUtil = new PerfTestUtil(video);
-      let emeHandler: EMEHandler | undefined;
 
-      if (useDrm) {
-        emeHandler = new EMEHandler();
-        setupEme(emeHandler, video, [videoStream], LicenseManager.WIDEVINE);
-      }
+      // ====================================================================
+      // PASS 1: Primary Performance Evaluation (Runs in Tunnel Mode if supported)
+      // ====================================================================
+      function runPass1() {
+        const video = playbackUtil.getVideoElement()!;
+        const perfTestUtil = new PerfTestUtil(video);
+        let emeHandler: EMEHandler | undefined;
 
-      function onTimeUpdate(e: Event) {
-        if (emeHandler && video.currentTime < 10) {
-          if (video.currentTime > 0 && video.seekable?.length &&
-              video.seekable.end(0) > DRM_VIDEO_START_TIME) {
-            console.log(
-              `Seeking to DRM_VIDEO_START_TIME (${DRM_VIDEO_START_TIME}s)`,
-            );
-            video.currentTime = DRM_VIDEO_START_TIME;
+        if (useDrm) {
+          emeHandler = new EMEHandler();
+          setupEme(emeHandler, video, [videoStream], LicenseManager.WIDEVINE);
+        }
+
+        function onPass1TimeUpdate() {
+          if (emeHandler && video.currentTime < 10) {
+            if (
+              video.currentTime > 0 &&
+              video.seekable?.length &&
+              video.seekable.end(0) > DRM_VIDEO_START_TIME
+            ) {
+              console.log(
+                `Seeking to DRM_VIDEO_START_TIME (${DRM_VIDEO_START_TIME}s)`,
+              );
+              video.currentTime = DRM_VIDEO_START_TIME;
+            }
+            return;
           }
-          return;
+
+          if (!perfTestUtil.isTrackingStarted()) {
+            perfTestUtil.startTracking();
+            return;
+          }
+
+          perfTestUtil.updateVideoPerfMetricsStatus();
+
+          const isEndOfTest = !video.paused && video.currentTime >= stopTime;
+          const isEmeHealthy = !emeHandler || !emeHandler?.keyUnusable;
+          if (isEndOfTest && isEmeHealthy) {
+            console.log('Pass 1 playback completed');
+            video.removeEventListener('timeupdate', onPass1TimeUpdate);
+            video.pause();
+            expect(video.playbackRate)
+              .withContext('playbackRate')
+              .toBe(playbackRate);
+            perfTestUtil.assertPlaybackRate(playbackRate);
+            assertTest(perfTestUtil);
+
+            const completePass1 = async () => {
+              if (activeStream) {
+                activeStream.stop();
+                activeStream = undefined;
+              }
+              if (emeHandler) {
+                await emeHandler.dispose();
+                emeHandler = undefined;
+              }
+
+              if (isTunnelSupported) {
+                console.log(
+                  'Tunnel mode supported. Tearing down video DOM for Non-Tunnel fallback sanity pass...',
+                );
+                playbackUtil.cleanupVideoElement();
+                playbackUtil.initializeVideoElement();
+                runPass2NonTunnelSanity();
+              } else {
+                done();
+              }
+            };
+            completePass1();
+          }
         }
 
-        if (!perfTestUtil.isTrackingStarted()) {
-          perfTestUtil.startTracking();
-          return;
-        }
-
-        perfTestUtil.updateVideoPerfMetricsStatus();
-
-        const isEndOfTest = !video.paused && video.currentTime >= stopTime;
-        const isEmeHealthy = !emeHandler || !emeHandler?.keyUnusable;
-        if (isEndOfTest && isEmeHealthy) {
-          console.log('Playback stopped');
-          video.removeEventListener('timeupdate', onTimeUpdate);
-          video.pause();
-          expect(video.playbackRate)
-            .withContext('playbackRate')
-            .toBe(playbackRate);
-          perfTestUtil.assertPlaybackRate(playbackRate);
-          assertTest(perfTestUtil);
+        function onPass1Error(error: unknown) {
+          video.removeEventListener('timeupdate', onPass1TimeUpdate);
+          let msg: string;
+          if (error instanceof MediaError) {
+            msg = `Code ${error.code}: ${error.message}`;
+          } else if (error instanceof Error) {
+            msg = error.message;
+          } else {
+            msg = String(error);
+          }
+          fail('Error during Pass 1 playback: ' + msg);
           if (emeHandler) {
             emeHandler.dispose().then(done);
           } else {
             done();
           }
         }
-      }
-      video.addEventListener('timeupdate', onTimeUpdate);
 
-      function onError(error: unknown) {
-        video.removeEventListener('timeupdate', onTimeUpdate);
-        let msg: string;
-        if (error instanceof MediaError) {
-          msg = `Code ${error.code}: ${error.message}`;
-        } else if (error instanceof Error) {
-          msg = error.message;
-        } else {
-          msg = String(error);
-        }
-        fail('Error during playback: ' + msg);
-        if (emeHandler) {
-          emeHandler.dispose().then(done);
-        } else {
-          done();
-        }
+        video.addEventListener('timeupdate', onPass1TimeUpdate);
+        activeStream = setupMse(video, videoStream, audioStream, stopTime);
+        activeStream.catch(onPass1Error);
+
+        console.log('video.src set for Pass 1');
+        video.playbackRate = playbackRate;
+        console.log('video.playbackRate=', video.playbackRate);
+        playbackUtil.playAndHandleErrors(video, onPass1Error);
       }
 
-      // Use setupMse to allow proper buffering of large files.
-      activeStream = setupMse(video, videoStream, audioStream, stopTime);
-      activeStream.catch(onError);
+      // ====================================================================
+      // PASS 2: Non-Tunnel Fallback Playback Sanity Pass
+      // ====================================================================
+      function runPass2NonTunnelSanity() {
+        console.log('Starting Pass 2 Non-Tunnel Fallback Sanity Pass...');
+        const newVideo = playbackUtil.getVideoElement()!;
+        let emeHandler2: EMEHandler | undefined;
+        const pass2StopTime = useDrm ?
+            DRM_VIDEO_START_TIME + SANITY_PASS_DURATION_SEC :
+            SANITY_PASS_DURATION_SEC;
 
-      console.log('video.src set');
-      video.playbackRate = playbackRate;
-      console.log('video.playbackRate=', video.playbackRate);
-      playbackUtil.playAndHandleErrors(video, onError);
+        if (useDrm) {
+          emeHandler2 = new EMEHandler();
+          setupEme(emeHandler2, newVideo, [videoStream], LicenseManager.WIDEVINE);
+        }
+
+        function onPass2TimeUpdate() {
+          if (emeHandler2 && newVideo.currentTime < 10) {
+            if (
+              newVideo.currentTime > 0 &&
+              newVideo.seekable?.length &&
+              newVideo.seekable.end(0) > DRM_VIDEO_START_TIME
+            ) {
+              console.log(
+                `Pass 2: Seeking to DRM_VIDEO_START_TIME (${DRM_VIDEO_START_TIME}s)`,
+              );
+              newVideo.currentTime = DRM_VIDEO_START_TIME;
+            }
+            return;
+          }
+
+          if (!newVideo.paused && newVideo.currentTime >= pass2StopTime) {
+            console.log(
+              'Non-tunnel fallback pass completed successfully without crash.',
+            );
+            newVideo.removeEventListener('timeupdate', onPass2TimeUpdate);
+            newVideo.pause();
+
+            const finishPass2 = async () => {
+              if (activeStream) {
+                activeStream.stop();
+                activeStream = undefined;
+              }
+              if (emeHandler2) {
+                await emeHandler2.dispose();
+                emeHandler2 = undefined;
+              }
+              done();
+            };
+            finishPass2();
+          }
+        }
+
+        function onPass2Error(error: unknown) {
+          newVideo.removeEventListener('timeupdate', onPass2TimeUpdate);
+          let msg: string;
+          if (error instanceof MediaError) {
+            msg = `Code ${error.code}: ${error.message}`;
+          } else if (error instanceof Error) {
+            msg = error.message;
+          } else {
+            msg = String(error);
+          }
+          fail('Error during Pass 2 Non-Tunnel fallback playback: ' + msg);
+          if (emeHandler2) {
+            emeHandler2.dispose().then(done);
+          } else {
+            done();
+          }
+        }
+
+        newVideo.addEventListener('timeupdate', onPass2TimeUpdate);
+        activeStream = setupMse(
+          newVideo,
+          videoStream,
+          audioStream,
+          pass2StopTime,
+          undefined,
+          undefined,
+          {disableTunnel: true},
+        );
+        activeStream.catch(onPass2Error);
+
+        console.log('newVideo.src set for Pass 2 (disableTunnel: true)');
+        newVideo.playbackRate = playbackRate;
+        playbackUtil.playAndHandleErrors(newVideo, onPass2Error);
+      }
+
+      runPass1();
     },
     timeoutMs,
   );
@@ -555,98 +349,49 @@ function getPlaybackPerfTestName(
   return bitrate ? name.concat(`bitrate@${bitrate}`) : name;
 }
 
-function createPlaybackPerfTestSuite(
+function createPlaybackPerfTestCategory(
     streamDefs: StreamDef[],
-    category: string,
     stopTime: number,
     useDrm = false,
     playbackSpeeds: number[] = PLAYBACK_SPEEDS_4X,
 ) {
-  describe('Media Playback Quality', () => {
-    beforeEach(() => {
-      activeStream = undefined;
-      playbackUtil.initializeVideoElement();
-    });
-
-    afterEach(() => {
-      activeStream?.stop();
-      playbackUtil.cleanupVideoElement();
-    });
-
-    /**
-     * Validates that the device accurately reports total video frames and dropped
-     * frames.
-     *
-     * - TotalVideoFrames: Checks if reported total frames match the known count.
-     * - FrameDrop: Ensures the device reports dropped frames when the system
-     *   is overloaded (e.g. high FPS playback).
-     */
-    createTotalVideoFramesValidationTest(H264['Video1MB'], 25);
-    createFrameDropValidationTest([
-      H264['Webgl1080p240fps'],
-      H264['Webgl1080p60fps'],
-      VP9['Webgl2160p60fps'],
-      AV1['Video118KHDRPQSkyAndOcean701Av1Hdr3840x2160Fps60BitrateKbps314582k'],
-      H264['Video4299H2641920x1080Fps60BitrateKbps23006k'],
-      VP9['Video7303Vp91920x1080Fps60BitrateKbps15126k'],
-    ]);
+  beforeEach(() => {
+    activeStream = undefined;
+    playbackUtil.initializeVideoElement();
   });
 
-  describe(category, () => {
-    beforeEach(() => {
-      activeStream = undefined;
-      playbackUtil.initializeVideoElement();
-    });
+  afterEach(() => {
+    activeStream?.stop();
+    playbackUtil.cleanupVideoElement();
+  });
 
-    afterEach(() => {
-      activeStream?.stop();
-      playbackUtil.cleanupVideoElement();
-    });
+  for (const [index, videoStream] of streamDefs.entries()) {
+    playbackUtil.verifyStream(videoStream, index);
 
-    for (const [index, videoStream] of streamDefs.entries()) {
-      verifyStream(videoStream, index);
+    for (const playbackSpeed of playbackSpeeds) {
+      const assertion =
+        playbackSpeed !== 1
+          ? variableSpeedPlaybackTestAssertion
+          : defaultTestAssertion;
 
-      for (const playbackSpeed of playbackSpeeds) {
-        const assertion =
-          playbackSpeed !== 1
-            ? variableSpeedPlaybackTestAssertion
-            : defaultTestAssertion;
-
-        const streamRes = videoStream.get('resolution') as string;
-        if (
-          util.compareResolutions(streamRes, '720p') < 0 &&
-          playbackSpeed !== 1
-        ) {
-          continue;
-        }
-
-        const testName = getPlaybackPerfTestName(videoStream, playbackSpeed);
-        createPlaybackPerfTest(
-          testName,
-          videoStream,
-          playbackSpeed,
-          stopTime,
-          assertion,
-          useDrm,
-        );
+      const streamRes = videoStream.get('resolution') as string;
+      if (
+        util.compareResolutions(streamRes, '720p') < 0 &&
+        playbackSpeed !== 1
+      ) {
+        continue;
       }
-    }
-  });
-}
 
-/**
- * Checks that the videoStream is defined. Without this check, the code
- * will throw an exception that Jasmine will just swallow.
- *
- * This error occurs when you use a key that is not in a video stream
- * dictionary, e.g. AV1['notavideo']
- */
-function verifyStream(videoStream: StreamDef, index: number) {
-  if (videoStream === undefined) {
-    const msg = `Test definition error: videoStream at index ${index} is undefined!`;
-    console.error(msg);
-    // This too will be swallowed by Jasmine
-    throw new Error(msg);
+      const testName = getPlaybackPerfTestName(videoStream, playbackSpeed);
+      createPlaybackPerfTest(
+        testName,
+        videoStream,
+        playbackSpeed,
+        stopTime,
+        assertion,
+        useDrm,
+      );
+    }
   }
 }
 
@@ -675,11 +420,12 @@ describe('VP9 SFR Tests', () => {
     VP9['Shorts313'],
     VP9['Shorts598'],
   ];
-  createPlaybackPerfTestSuite(
-    vp9StreamDefs,
-    'VP9 SFR Playback Performance',
-    VIDEO_STOP_TIME,
-  );
+  describe('VP9 SFR Playback Performance', () => {
+    createPlaybackPerfTestCategory(
+      vp9StreamDefs,
+      VIDEO_STOP_TIME,
+    );
+  });
 });
 
 describe('H264 SFR Tests', () => {
@@ -705,11 +451,12 @@ describe('H264 SFR Tests', () => {
     H264['Shorts160'],
     H264['Shorts597'],
   ];
-  createPlaybackPerfTestSuite(
-    h264StreamDefs,
-    'H264 SFR Playback Performance',
-    VIDEO_STOP_TIME,
-  );
+  describe('H264 SFR Playback Performance', () => {
+    createPlaybackPerfTestCategory(
+      h264StreamDefs,
+      VIDEO_STOP_TIME,
+    );
+  });
 });
 
 describe('AV1 SFR Tests', () => {
@@ -729,11 +476,12 @@ describe('AV1 SFR Tests', () => {
     AV1['Sports2160p30fps'],
     AV1['Sdr4320p30fps'],
   ];
-  createPlaybackPerfTestSuite(
-    av1StreamDefs,
-    'AV1 SFR Playback Performance',
-    VIDEO_STOP_TIME,
-  );
+  describe('AV1 SFR Playback Performance', () => {
+    createPlaybackPerfTestCategory(
+      av1StreamDefs,
+      VIDEO_STOP_TIME,
+    );
+  });
 });
 
 describe('HFR Tests', () => {
@@ -759,13 +507,14 @@ describe('HFR Tests', () => {
     VP9['Shorts308'],
     VP9['Shorts315'],
   ];
-  createPlaybackPerfTestSuite(
-      hfrStreamDefs,
-      'HFR Playback Performance',
-      VIDEO_STOP_TIME,
-      false,
-      PLAYBACK_SPEEDS_2X,
-  );
+  describe('HFR Playback Performance', () => {
+    createPlaybackPerfTestCategory(
+        hfrStreamDefs,
+        VIDEO_STOP_TIME,
+        false,
+        PLAYBACK_SPEEDS_2X,
+    );
+  });
 });
 
 describe('VP9 Widevine SFR Tests', () => {
@@ -789,12 +538,13 @@ describe('VP9 Widevine SFR Tests', () => {
     VP9['Sintel2kEnc'],
     VP9['Sintel4kEnc'],
   ];
-  createPlaybackPerfTestSuite(
-    widevineVP9StreamDefs,
-    'VP9 Widevine SFR Playback Performance',
-    DRM_VIDEO_STOP_TIME,
-    true,
-  );
+  describe('VP9 Widevine SFR Playback Performance', () => {
+    createPlaybackPerfTestCategory(
+      widevineVP9StreamDefs,
+      DRM_VIDEO_STOP_TIME,
+      true,
+    );
+  });
 });
 
 describe('H264 Widevine SFR Tests', () => {
@@ -817,12 +567,13 @@ describe('H264 Widevine SFR Tests', () => {
     H264['DrmL3NoHDCP1080p30fpsMqCenc'],
     H264['DrmL3NoHDCP1080p30fpsHqCenc'],
   ];
-  createPlaybackPerfTestSuite(
-    widevineH264StreamDefs,
-    'H264 Widevine SFR Playback Performance',
-    DRM_VIDEO_STOP_TIME,
-    true,
-  );
+  describe('H264 Widevine SFR Playback Performance', () => {
+    createPlaybackPerfTestCategory(
+      widevineH264StreamDefs,
+      DRM_VIDEO_STOP_TIME,
+      true,
+    );
+  });
 });
 
 describe('Widevine HFR Tests', () => {
@@ -841,13 +592,14 @@ describe('Widevine HFR Tests', () => {
     H264['DrmL3NoHDCP1080p60fpsCenc'],
     H264['DrmL3NoHDCP1080p60fpsMqCenc'],
   ];
-  createPlaybackPerfTestSuite(
-      widevineHfrStreamDefs,
-      'Widevine HFR Playback Performance',
-      DRM_VIDEO_STOP_TIME,
-      true,
-      PLAYBACK_SPEEDS_2X,
-  );
+  describe('Widevine HFR Playback Performance', () => {
+    createPlaybackPerfTestCategory(
+        widevineHfrStreamDefs,
+        DRM_VIDEO_STOP_TIME,
+        true,
+        PLAYBACK_SPEEDS_2X,
+    );
+  });
 });
 
 describe('High Bitrate Tests', () => {
@@ -999,13 +751,14 @@ describe('High Bitrate Tests', () => {
     AV1['AV18K60FPS100MBPSHDRHLG'],
     AV1['AV18K60FPS100MBPSHDRPQ'],
   ];
-  createPlaybackPerfTestSuite(
-      highBitrateStreamDefs,
-      'High Bitrate Playback Performance',
-      HIGH_BITRATE_VIDEO_STOP_TIME,
-      false,
-      PLAYBACK_SPEEDS_1X_ONLY,
-  );
+  describe('High Bitrate Playback Performance', () => {
+    createPlaybackPerfTestCategory(
+        highBitrateStreamDefs,
+        HIGH_BITRATE_VIDEO_STOP_TIME,
+        false,
+        PLAYBACK_SPEEDS_1X_ONLY,
+    );
+  });
 });
 
 describe('High Bitrate Widevine Tests', () => {
@@ -1028,11 +781,12 @@ describe('High Bitrate Widevine Tests', () => {
     AV1['SencHfrHdrHlg4320p60'],
     AV1['SencHfrHdrPq4320p60'],
   ];
-  createPlaybackPerfTestSuite(
-      highBitrateDrmStreamDefs,
-      'High Bitrate Playback Performance',
-      DRM_VIDEO_STOP_TIME,
-      true,
-      PLAYBACK_SPEEDS_1X_ONLY,
-  );
+  describe('High Bitrate Playback Performance', () => {
+    createPlaybackPerfTestCategory(
+        highBitrateDrmStreamDefs,
+        DRM_VIDEO_STOP_TIME,
+        true,
+        PLAYBACK_SPEEDS_1X_ONLY,
+    );
+  });
 });

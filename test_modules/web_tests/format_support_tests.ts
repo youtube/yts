@@ -70,7 +70,7 @@ describe('Format Support Tests', () => {
    */
   function monitorPlayback(done: DoneFn, duration: number) {
     let timeUpdateCount = 0;
-    video.addEventListener('timeupdate', function onTimeUpdate() {
+    const onTimeUpdate = () => {
       playbackUtil.logPlaybackProgress(video, timeUpdateCount++);
       if (!video.paused && video.currentTime >= duration) {
         video.removeEventListener('timeupdate', onTimeUpdate);
@@ -80,7 +80,8 @@ describe('Format Support Tests', () => {
             .toBeGreaterThanOrEqual(duration);
         done();
       }
-    });
+    };
+    video.addEventListener('timeupdate', onTimeUpdate);
 
     playbackUtil.playAndHandleErrors(video, (msg) => {
       fail(msg);
@@ -109,6 +110,7 @@ describe('Format Support Tests', () => {
   }
 
   describe('Support', () => {
+    yts.test({id: '20.1.1.2'});
     it('isTypeSupported cryptoblockformat', () => {
       const invalidType = playbackUtil.createVideoFormatStr(
           'webm', vp9Codec.getVp9CodecString(), 1280, 720, 23.976, null,
@@ -128,6 +130,7 @@ describe('Format Support Tests', () => {
           .toBeTrue();
     });
 
+    yts.test({id: '20.1.2.1'});
     it('isTypeSupported Extensions', () => {
       const baselineVideoType = playbackUtil.createVideoFormatStr(
           'mp4', 'avc1.4d401e', 640, 360, 30, null, 'bitrate=300000');
@@ -161,6 +164,7 @@ describe('Format Support Tests', () => {
           .toBeFalse();
     });
 
+    yts.test({id: '20.1.3.1'});
     it('isTypeSupported AV1 Codec', () => {
       const av1Str1 = 'video/mp4; codecs="av1"';
       console.log('Calling isTypeSupported with: ' + av1Str1);
@@ -191,12 +195,14 @@ describe('Format Support Tests', () => {
      * @param mandatory Whether the test is mandatory. Defaults to true.
      */
     function createHfrSupportTest(
+        id: string,
         format: string,
         container: string,
         codec: string,
         fps: number,
         mandatory = true,
     ) {
+      yts.test({id});
       it(`${format} ${fps}fps Support`, () => {
         checkMandatory(mandatory);
         const maxSupported = getMaxSupportedWindow(format);
@@ -224,15 +230,16 @@ describe('Format Support Tests', () => {
       });
     }
 
-    createHfrSupportTest('H.264', 'mp4', 'avc1.4d401e', 60);
-    createHfrSupportTest('VP9', 'webm', vp9Codec.getVp9CodecString(), 60);
-    createHfrSupportTest('AV1', 'mp4', av1Codec.getAv1CodecString(), 60, false);
-    createHfrSupportTest('H.264', 'mp4', 'avc1.4d401e', 120, false);
-    createHfrSupportTest(
+    createHfrSupportTest('20.1.1.1', 'H.264', 'mp4', 'avc1.4d401e', 60);
+    createHfrSupportTest('20.1.5.2', 'VP9', 'webm', vp9Codec.getVp9CodecString(), 60);
+    createHfrSupportTest('20.1.6.1', 'AV1', 'mp4', av1Codec.getAv1CodecString(), 60, false);
+    createHfrSupportTest('20.1.1.1', 'H.264', 'mp4', 'avc1.4d401e', 120, false);
+    createHfrSupportTest('20.1.5.2',
         'VP9', 'webm', vp9Codec.getVp9CodecString(), 120, false);
-    createHfrSupportTest(
+    createHfrSupportTest('20.1.6.1',
         'AV1', 'mp4', av1Codec.getAv1CodecString(), 120, false);
 
+    yts.test({id: '20.1.10.2'});
     it('isTypeSupported EOTF Support', () => {
       checkMandatory(playbackUtil.isHdrSupported());
       const smpte2084Type = playbackUtil.createVideoFormatStr(
@@ -261,6 +268,7 @@ describe('Format Support Tests', () => {
           .toBeFalse();
     });
 
+    yts.test({id: '20.1.11.2'});
     it('VP9.2 SMPTE2084 Support', () => {
       checkMandatory(playbackUtil.isHdrSupported());
       const vp9SMPTEStr = playbackUtil.createVideoFormatStr(
@@ -272,6 +280,7 @@ describe('Format Support Tests', () => {
           .toBeTrue();
     });
 
+    yts.test({id: '20.1.12.2'});
     it('VP9.2 ARIB STD-B67 Support', () => {
       checkMandatory(playbackUtil.isHdrSupported());
       const vp9ARIBStr = playbackUtil.createVideoFormatStr(
@@ -293,11 +302,14 @@ describe('Format Support Tests', () => {
      * @param mandatory Whether the test is mandatory. Defaults to true.
      */
     function createMediaFormatTest(
+  id: string,
+
         name: string,
         stream: string,
         codec: string,
         mandatory = true,
     ) {
+      yts.test({id});
       it(name, () => {
         checkMandatory(mandatory);
         const typeStr = `${stream}; codecs="${codec}"`;
@@ -308,82 +320,82 @@ describe('Format Support Tests', () => {
       });
     }
 
-    createMediaFormatTest('MP4 + H.264', 'video/mp4', 'avc1.4d401e');
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.1.1', 'MP4 + H.264', 'video/mp4', 'avc1.4d401e');
+    createMediaFormatTest('20.2.2.2',
         'WebM + VP9 Short-Form', 'video/webm', vp9Codec.getVp9CodecString());
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.24.1',
         'WebM + VP9 Medium-Form', 'video/webm',
         vp9Codec.getVp9CodecString(undefined, 'M'));
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.25.1',
         'WebM + VP9 Long-Form', 'video/webm',
         vp9Codec.getVp9CodecString(undefined, 'L'));
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.3.2',
         'WebM + VP9 Profile 2 HLG Medium-Form', 'video/webm',
         vp9Codec.getVp9CodecString(vp9Codec.HLG_VP9_METADATA, 'M'),
         playbackUtil.isHdrSupported());
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.21.1',
         'WebM + VP9 Profile 2 HLG Long-Form', 'video/webm',
         vp9Codec.getVp9CodecString(vp9Codec.HLG_VP9_METADATA, 'L'),
         playbackUtil.isHdrSupported());
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.22.1',
         'WebM + VP9 Profile 2 PQ Medium-Form', 'video/webm',
         vp9Codec.getVp9CodecString(vp9Codec.PQ_VP9_METADATA, 'M'),
         playbackUtil.isHdrSupported());
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.23.1',
         'WebM + VP9 Profile 2 PQ Long-Form', 'video/webm',
         vp9Codec.getVp9CodecString(vp9Codec.PQ_VP9_METADATA, 'L'),
         playbackUtil.isHdrSupported());
-    createMediaFormatTest('WebM + Opus', 'audio/webm', 'opus', false);
-    createMediaFormatTest('MP4 + AC3', 'audio/mp4', 'ac-3', false);
-    createMediaFormatTest('MP4 + EAC3', 'audio/mp4', 'ec-3', false);
+    createMediaFormatTest('20.2.4.1', 'WebM + Opus', 'audio/webm', 'opus', false);
+    createMediaFormatTest('20.2.5.1', 'MP4 + AC3', 'audio/mp4', 'ac-3', false);
+    createMediaFormatTest('20.2.6.1', 'MP4 + EAC3', 'audio/mp4', 'ec-3', false);
 
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.7.1',
         'MP4 + AV1 (Level 4.1 8-bit BT.709 Short-Form Codec)', 'video/mp4',
         av1Codec.getAv1CodecString({level: '4.1'}));
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.16.1',
         'MP4 + AV1 (Level 4.1 8-bit BT.709 Long-Form Codec)', 'video/mp4',
         av1Codec.getAv1CodecString({level: '4.1'}, true));
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.8.1',
         'MP4 + AV1 (Level 5.1 8-bit BT.709 Short-Form Codec)', 'video/mp4',
         av1Codec.getAv1CodecString({level: '5.1'}), util.isAv1GtFHD());
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.17.1',
         'MP4 + AV1 (Level 5.1 8-bit BT.709 Long-Form Codec)', 'video/mp4',
         av1Codec.getAv1CodecString({level: '5.1'}, true), util.isAv1GtFHD());
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.9.1',
         'MP4 + AV1 (Level 5.1 10-bit BT.709 Short-Form Codec)', 'video/mp4',
         av1Codec.getAv1CodecString({level: '5.1', bitDepth: 10}),
         util.isAv1GtFHD() && playbackUtil.isHdrSupported());
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.18.1',
         'MP4 + AV1 (Level 5.1 10-bit BT.709 Long-Form Codec)', 'video/mp4',
         av1Codec.getAv1CodecString({level: '5.1', bitDepth: 10}, true),
         util.isAv1GtFHD() && playbackUtil.isHdrSupported());
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.12.1',
         'MP4 + AV1 (Level 5.1 10-bit HLG)', 'video/mp4',
         av1Codec.getHlgAv1CodecString({level: '5.1'}),
         util.isAv1GtFHD() && playbackUtil.isHdrSupported());
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.13.1',
         'MP4 + AV1 (Level 5.1 10-bit PQ)', 'video/mp4',
         av1Codec.getPqAv1CodecString({level: '5.1'}),
         util.isAv1GtFHD() && playbackUtil.isHdrSupported());
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.10.1',
         'MP4 + AV1 (Level 6.0 8-bit BT.709 Short-Form Codec)', 'video/mp4',
         av1Codec.getAv1CodecString({level: '6.0'}), util.isAv1Gt4K());
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.19.1',
         'MP4 + AV1 (Level 6.0 8-bit BT.709 Long-Form Codec)', 'video/mp4',
         av1Codec.getAv1CodecString({level: '6.0'}, true), util.isAv1Gt4K());
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.11.1',
         'MP4 + AV1 (Level 6.0 10-bit BT.709 Short-Form Codec)', 'video/mp4',
         av1Codec.getAv1CodecString({level: '6.0', bitDepth: 10}),
         util.isAv1Gt4K() && playbackUtil.isHdrSupported());
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.20.1',
         'MP4 + AV1 (Level 6.0 10-bit BT.709 Long-Form Codec)', 'video/mp4',
         av1Codec.getAv1CodecString({level: '6.0', bitDepth: 10}, true),
         util.isAv1Gt4K() && playbackUtil.isHdrSupported());
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.14.1',
         'MP4 + AV1 (Level 6.0 10-bit HLG)', 'video/mp4',
         av1Codec.getHlgAv1CodecString({level: '6.0'}),
         util.isAv1Gt4K() && playbackUtil.isHdrSupported());
-    createMediaFormatTest(
+    createMediaFormatTest('20.2.15.1',
         'MP4 + AV1 (Level 6.0 10-bit PQ)', 'video/mp4',
         av1Codec.getPqAv1CodecString({level: '6.0'}),
         util.isAv1Gt4K() && playbackUtil.isHdrSupported());
@@ -396,18 +408,21 @@ describe('Format Support Tests', () => {
      * @param videoStream Definition of the video stream.
      */
     function createLiveTest(
+  id: string,
+
         name: string,
         videoStream: StreamDef,
         stopTime: number,
     ) {
+      yts.test({id});
       it(name, (done) => {
         activeStream = setupMse(
             video, videoStream, AAC['AudioForVP9Live'] as StreamDef, stopTime);
         monitorPlayback(done, stopTime);
       }, DEFAULT_TIMEOUT_MS);
     }
-    createLiveTest('Playback', VP9['VideoLive'] as StreamDef, 14);
-    createLiveTest('PartialSegmentPlayback', VP9['VideoLive'] as StreamDef, 3);
+    createLiveTest('20.3.1.1', 'Playback', VP9['VideoLive'] as StreamDef, 14);
+    createLiveTest('20.3.2.1', 'PartialSegmentPlayback', VP9['VideoLive'] as StreamDef, 3);
   });
 
   describe('VP9 HDR', () => {
@@ -415,7 +430,7 @@ describe('Format Support Tests', () => {
      * Creates a test for a 10-bit VP9 HDR stream.
      * @param videoStream Definition of the VP9 video stream.
      */
-    function create10BitVp9Test(videoStream: StreamDef) {
+    function create10BitVp9Test(id: string, videoStream: StreamDef) {
       const fps = videoStream.get('fps') as number;
       const resolution = videoStream.get('resolution') as string;
       const transfer = videoStream.get('transferFunction') as string;
@@ -427,6 +442,7 @@ describe('Format Support Tests', () => {
         audioStream = AAC['AudioMeridian'] as StreamDef;
       }
 
+      yts.test({id});
       it(name, (done) => {
         checkMandatory(mandatory);
         activeStream =
@@ -435,22 +451,43 @@ describe('Format Support Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    const vp9HdrStreams = [
-      VP9['HdrHlgUltralow'],   VP9['HdrHlgLow'],      VP9['HdrHlgMed'],
-      VP9['HdrHlgHigh'],       VP9['HdrHlg720p'],     VP9['HdrHlg1080p'],
-      VP9['HdrHlg2k'],         VP9['HdrHlg4k'],       VP9['HdrHlgUltralowHfr'],
-      VP9['HdrHlgLowHfr'],     VP9['HdrHlgMedHfr'],   VP9['HdrHlgHighHfr'],
-      VP9['HdrHlg720pHfr'],    VP9['HdrHlg1080pHfr'], VP9['HdrHlg2kHfr'],
-      VP9['HdrHlg4kHfr'],      VP9['HdrPqUltralow'],  VP9['HdrPqLow'],
-      VP9['HdrPqMed'],         VP9['HdrPqHigh'],      VP9['HdrPq720p'],
-      VP9['HdrPq1080p'],       VP9['HdrPq2k'],        VP9['HdrPq4k'],
-      VP9['HdrPqUltralowHfr'], VP9['HdrPqLowHfr'],    VP9['HdrPqMedHfr'],
-      VP9['HdrPqHighHfr'],     VP9['HdrPq720pHfr'],   VP9['HdrPq1080pHfr'],
-      VP9['HdrPq2kHfr'],       VP9['HdrPq4kHfr']
+    const vp9HdrStreams: Array<{id: string; stream: StreamDef}> = [
+      {id: '20.4.1.1', stream: VP9['HdrHlgUltralow'] as StreamDef},
+      {id: '20.4.2.1', stream: VP9['HdrHlgLow'] as StreamDef},
+      {id: '20.4.3.1', stream: VP9['HdrHlgMed'] as StreamDef},
+      {id: '20.4.4.1', stream: VP9['HdrHlgHigh'] as StreamDef},
+      {id: '20.4.5.1', stream: VP9['HdrHlg720p'] as StreamDef},
+      {id: '20.4.6.1', stream: VP9['HdrHlg1080p'] as StreamDef},
+      {id: '20.4.7.1', stream: VP9['HdrHlg2k'] as StreamDef},
+      {id: '20.4.8.1', stream: VP9['HdrHlg4k'] as StreamDef},
+      {id: '20.4.9.1', stream: VP9['HdrHlgUltralowHfr'] as StreamDef},
+      {id: '20.4.10.1', stream: VP9['HdrHlgLowHfr'] as StreamDef},
+      {id: '20.4.11.1', stream: VP9['HdrHlgMedHfr'] as StreamDef},
+      {id: '20.4.12.1', stream: VP9['HdrHlgHighHfr'] as StreamDef},
+      {id: '20.4.13.1', stream: VP9['HdrHlg720pHfr'] as StreamDef},
+      {id: '20.4.14.1', stream: VP9['HdrHlg1080pHfr'] as StreamDef},
+      {id: '20.4.15.1', stream: VP9['HdrHlg2kHfr'] as StreamDef},
+      {id: '20.4.16.1', stream: VP9['HdrHlg4kHfr'] as StreamDef},
+      {id: '20.4.17.1', stream: VP9['HdrPqUltralow'] as StreamDef},
+      {id: '20.4.18.1', stream: VP9['HdrPqLow'] as StreamDef},
+      {id: '20.4.19.1', stream: VP9['HdrPqMed'] as StreamDef},
+      {id: '20.4.20.1', stream: VP9['HdrPqHigh'] as StreamDef},
+      {id: '20.4.21.1', stream: VP9['HdrPq720p'] as StreamDef},
+      {id: '20.4.22.1', stream: VP9['HdrPq1080p'] as StreamDef},
+      {id: '20.4.23.1', stream: VP9['HdrPq2k'] as StreamDef},
+      {id: '20.4.24.1', stream: VP9['HdrPq4k'] as StreamDef},
+      {id: '20.4.25.1', stream: VP9['HdrPqUltralowHfr'] as StreamDef},
+      {id: '20.4.26.1', stream: VP9['HdrPqLowHfr'] as StreamDef},
+      {id: '20.4.27.1', stream: VP9['HdrPqMedHfr'] as StreamDef},
+      {id: '20.4.28.1', stream: VP9['HdrPqHighHfr'] as StreamDef},
+      {id: '20.4.29.1', stream: VP9['HdrPq720pHfr'] as StreamDef},
+      {id: '20.4.30.1', stream: VP9['HdrPq1080pHfr'] as StreamDef},
+      {id: '20.4.31.1', stream: VP9['HdrPq2kHfr'] as StreamDef},
+      {id: '20.4.32.1', stream: VP9['HdrPq4kHfr'] as StreamDef},
     ];
 
-    for (let i = 0; i < vp9HdrStreams.length; i++) {
-      create10BitVp9Test(vp9HdrStreams[i] as StreamDef);
+    for (const item of vp9HdrStreams) {
+      create10BitVp9Test(item.id, item.stream);
     }
   });
 
@@ -462,10 +499,13 @@ describe('Format Support Tests', () => {
      * @param mandatory Whether the test is mandatory. Defaults to true.
      */
     function createMimeTypeTest(
+  id: string,
+
         name: string,
         mimetype: string,
         mandatory = true,
     ) {
+      yts.test({id});
       it(`${name}Support`, () => {
         checkMandatory(mandatory);
         console.log('Calling isTypeSupported with: ' + mimetype);
@@ -475,23 +515,23 @@ describe('Format Support Tests', () => {
       });
     }
 
-    createMimeTypeTest('AAC', AAC_STREAMS.mimetype);
-    createMimeTypeTest('H264', H264_STREAMS.mimetype);
-    createMimeTypeTest('VP9 Short-Form', VP9_STREAMS.mimetype);
+    createMimeTypeTest('20.5.1.1', 'AAC', AAC_STREAMS.mimetype);
+    createMimeTypeTest('20.5.2.1', 'H264', H264_STREAMS.mimetype);
+    createMimeTypeTest('20.2.2.2', 'VP9 Short-Form', VP9_STREAMS.mimetype);
     createMimeTypeTest(
-        'VP9 Medium-Form',
+        '20.2.24.1', 'VP9 Medium-Form',
         'video/webm; codecs="' + vp9Codec.getVp9CodecString(undefined, 'M') +
             '"');
     createMimeTypeTest(
-        'VP9 Long-Form',
+        '20.2.25.1', 'VP9 Long-Form',
         'video/webm; codecs="' + vp9Codec.getVp9CodecString(undefined, 'L') +
             '"');
-    createMimeTypeTest('Opus', OPUS_STREAMS.mimetype);
-    createMimeTypeTest('AC3', AC3_STREAMS.mimetype, false);
-    createMimeTypeTest('EAC3', EAC3_STREAMS.mimetype, false);
-    createMimeTypeTest('AV1 Short-Form', AV1_STREAMS.mimetype);
+    createMimeTypeTest('20.2.4.1', 'Opus', OPUS_STREAMS.mimetype);
+    createMimeTypeTest('20.2.5.1', 'AC3', AC3_STREAMS.mimetype, false);
+    createMimeTypeTest('20.2.6.1', 'EAC3', EAC3_STREAMS.mimetype, false);
+    createMimeTypeTest('20.5.9.1', 'AV1 Short-Form', AV1_STREAMS.mimetype);
     createMimeTypeTest(
-        'AV1 Long-Form',
+        '20.5.10.1', 'AV1 Long-Form',
         'video/mp4; codecs="' + av1Codec.getAv1CodecString({}, true) + '"');
   });
 
@@ -503,7 +543,10 @@ describe('Format Support Tests', () => {
      * @param mandatory Whether the test is mandatory. Defaults to true.
      */
     function createAudio51Test(
+  id: string,
+
         name: string, audioStream: StreamDef, mandatory = true) {
+      yts.test({id});
       it(name, (done) => {
         const stopTime = 2;
         checkMandatory(mandatory);
@@ -512,10 +555,10 @@ describe('Format Support Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    createAudio51Test('Opus 5.1', Opus['Audio51'] as StreamDef, false);
-    createAudio51Test('AAC 5.1', AAC['Audio51'] as StreamDef);
-    createAudio51Test('AC3 5.1', AC3['Audio51'] as StreamDef, util.isGtFHD());
-    createAudio51Test('EAC3 5.1', EAC3['Audio51'] as StreamDef, util.isGtFHD());
+    createAudio51Test('20.6.3.1', 'Opus 5.1', Opus['Audio51'] as StreamDef, false);
+    createAudio51Test('20.6.4.1', 'AAC 5.1', AAC['Audio51'] as StreamDef);
+    createAudio51Test('20.6.5.1', 'AC3 5.1', AC3['Audio51'] as StreamDef, util.isGtFHD());
+    createAudio51Test('20.6.6.1', 'EAC3 5.1', EAC3['Audio51'] as StreamDef, util.isGtFHD());
   });
 
   describe('AV1', () => {
@@ -523,7 +566,7 @@ describe('Format Support Tests', () => {
      * Creates a playback test for an AV1 SDR stream.
      * @param videoStream Definition of the AV1 SDR video stream.
      */
-    function createAv1SdrTest(videoStream: StreamDef) {
+    function createAv1SdrTest(id: string, videoStream: StreamDef) {
       const fps = videoStream.get('fps') as number;
       const resolution = videoStream.get('resolution') as string;
       const name = `AV1.8Bit.BT709.${resolution}${fps}`;
@@ -532,6 +575,7 @@ describe('Format Support Tests', () => {
       const av1Level = Number(av1Metadata.level);
       const mandatory = av1Level < 5.0 || util.isAv1Gt4K();
 
+      yts.test({id});
       it(name, (done) => {
         checkMandatory(mandatory);
         activeStream = setupMse(
@@ -545,7 +589,7 @@ describe('Format Support Tests', () => {
      * Creates a playback test for an AV1 HDR stream.
      * @param videoStream Definition of the AV1 HDR video stream.
      */
-    function createAv1HdrTest(videoStream: StreamDef) {
+    function createAv1HdrTest(id: string, videoStream: StreamDef) {
       const fps = videoStream.get('fps') as number;
       const resolution = videoStream.get('resolution') as string;
       const transfer = videoStream.get('transferFunction') as string;
@@ -566,6 +610,7 @@ describe('Format Support Tests', () => {
         mandatory = isHdr && util.isAv1Gt4K();
       }
 
+      yts.test({id});
       it(name, (done) => {
         checkMandatory(mandatory);
         activeStream = setupMse(
@@ -575,30 +620,170 @@ describe('Format Support Tests', () => {
       }, DEFAULT_TIMEOUT_MS);
     }
 
-    const av1SdrStreams = [
-      AV1['Sdr144p'], AV1['Sdr240p'], AV1['Sdr360p'], AV1['Sdr480p'],
-      AV1['Sdr720p30'], AV1['Sdr720p60'], AV1['Sdr1080p30'], AV1['Sdr1080p60'],
-      AV1['Sdr1440p30'], AV1['Sdr1440p60'], AV1['Sdr2160p30'],
-      AV1['Sdr2160p60'], AV1['Sdr4320p30']
+    const av1SdrStreams: Array<{id: string; stream: StreamDef}> = [
+      {id: '20.7.1.1', stream: AV1['Sdr144p'] as StreamDef},
+      {id: '20.7.2.1', stream: AV1['Sdr240p'] as StreamDef},
+      {id: '20.7.3.1', stream: AV1['Sdr360p'] as StreamDef},
+      {id: '20.7.4.1', stream: AV1['Sdr480p'] as StreamDef},
+      {id: '20.7.5.1', stream: AV1['Sdr720p30'] as StreamDef},
+      {id: '20.7.6.1', stream: AV1['Sdr720p60'] as StreamDef},
+      {id: '20.7.7.1', stream: AV1['Sdr1080p30'] as StreamDef},
+      {id: '20.7.8.1', stream: AV1['Sdr1080p60'] as StreamDef},
+      {id: '20.7.9.1', stream: AV1['Sdr1440p30'] as StreamDef},
+      {id: '20.7.10.1', stream: AV1['Sdr1440p60'] as StreamDef},
+      {id: '20.7.11.1', stream: AV1['Sdr2160p30'] as StreamDef},
+      {id: '20.7.12.1', stream: AV1['Sdr2160p60'] as StreamDef},
+      {id: '20.7.13.1', stream: AV1['Sdr4320p30'] as StreamDef},
     ];
 
-    const av1HdrStreams = [
-      AV1['HdrHlg144p'],    AV1['HdrHlg240p'],    AV1['HdrHlg360p'],
-      AV1['HdrHlg480p'],    AV1['HdrHlg720p24'],  AV1['HdrHlg720p60'],
-      AV1['HdrHlg1080p24'], AV1['HdrHlg1080p60'], AV1['HdrHlg1440p24'],
-      AV1['HdrHlg1440p60'], AV1['HdrHlg2160p24'], AV1['HdrHlg2160p60'],
-      AV1['HdrPq144p'],     AV1['HdrPq240p'],     AV1['HdrPq360p'],
-      AV1['HdrPq480p'],     AV1['HdrPq720p24'],   AV1['HdrPq720p60'],
-      AV1['HdrPq1080p24'],  AV1['HdrPq1080p60'],  AV1['HdrPq1440p24'],
-      AV1['HdrPq1440p60'],  AV1['HdrPq2160p24'],  AV1['HdrPq2160p60']
+    const av1HdrStreams: Array<{id: string; stream: StreamDef}> = [
+      {id: '20.7.14.1', stream: AV1['HdrHlg144p'] as StreamDef},
+      {id: '20.7.15.1', stream: AV1['HdrHlg240p'] as StreamDef},
+      {id: '20.7.16.1', stream: AV1['HdrHlg360p'] as StreamDef},
+      {id: '20.7.17.1', stream: AV1['HdrHlg480p'] as StreamDef},
+      {id: '20.7.18.1', stream: AV1['HdrHlg720p24'] as StreamDef},
+      {id: '20.7.19.1', stream: AV1['HdrHlg720p60'] as StreamDef},
+      {id: '20.7.20.1', stream: AV1['HdrHlg1080p24'] as StreamDef},
+      {id: '20.7.21.1', stream: AV1['HdrHlg1080p60'] as StreamDef},
+      {id: '20.7.22.1', stream: AV1['HdrHlg1440p24'] as StreamDef},
+      {id: '20.7.23.1', stream: AV1['HdrHlg1440p60'] as StreamDef},
+      {id: '20.7.24.1', stream: AV1['HdrHlg2160p24'] as StreamDef},
+      {id: '20.7.25.1', stream: AV1['HdrHlg2160p60'] as StreamDef},
+      {id: '20.7.26.1', stream: AV1['HdrPq144p'] as StreamDef},
+      {id: '20.7.27.1', stream: AV1['HdrPq240p'] as StreamDef},
+      {id: '20.7.28.1', stream: AV1['HdrPq360p'] as StreamDef},
+      {id: '20.7.29.1', stream: AV1['HdrPq480p'] as StreamDef},
+      {id: '20.7.30.1', stream: AV1['HdrPq720p24'] as StreamDef},
+      {id: '20.7.31.1', stream: AV1['HdrPq720p60'] as StreamDef},
+      {id: '20.7.32.1', stream: AV1['HdrPq1080p24'] as StreamDef},
+      {id: '20.7.33.1', stream: AV1['HdrPq1080p60'] as StreamDef},
+      {id: '20.7.34.1', stream: AV1['HdrPq1440p24'] as StreamDef},
+      {id: '20.7.35.1', stream: AV1['HdrPq1440p60'] as StreamDef},
+      {id: '20.7.36.1', stream: AV1['HdrPq2160p24'] as StreamDef},
+      {id: '20.7.37.1', stream: AV1['HdrPq2160p60'] as StreamDef},
     ];
 
-    for (let i = 0; i < av1SdrStreams.length; i++) {
-      createAv1SdrTest(av1SdrStreams[i] as StreamDef);
+    for (const item of av1SdrStreams) {
+      createAv1SdrTest(item.id, item.stream);
     }
 
-    for (let i = 0; i < av1HdrStreams.length; i++) {
-      createAv1HdrTest(av1HdrStreams[i] as StreamDef);
+    for (const item of av1HdrStreams) {
+      createAv1HdrTest(item.id, item.stream);
     }
   });
+
+  describe('Tunnel Mode', () => {
+    /**
+     * Creates a test checking the support of a specific media format in tunnel mode.
+     * @param id The test case sequence ID.
+     * @param name Test name.
+     * @param stream The stream MIME type prefix (e.g., 'video/mp4').
+     * @param codec The codec string.
+     * @param mandatory Whether the test is mandatory. Defaults to true.
+     */
+    function createTunnelModeFormatTest(
+        id: string,
+        name: string,
+        stream: string,
+        codec: string,
+        mandatory = true,
+    ) {
+      yts.test({id});
+      it(name, () => {
+        checkMandatory(mandatory);
+        const tunnelType = `${stream}; codecs="${codec}"; tunnelmode=true`;
+        console.log('Calling isTypeSupported with: ' + tunnelType);
+        expect(MediaSource.isTypeSupported(tunnelType))
+            .withContext(`MediaSource.isTypeSupported("${tunnelType}")`)
+            .toBe(true);
+      });
+    }
+
+    createTunnelModeFormatTest(
+        '20.8.1.1', 'MP4 + H.264', 'video/mp4', 'avc1.4d401e');
+    createTunnelModeFormatTest(
+        '20.8.2.1', 'WebM + VP9 Short-Form', 'video/webm',
+        vp9Codec.getVp9CodecString());
+    createTunnelModeFormatTest(
+        '20.8.3.1', 'WebM + VP9 Medium-Form', 'video/webm',
+        vp9Codec.getVp9CodecString(undefined, 'M'));
+    createTunnelModeFormatTest(
+        '20.8.4.1', 'WebM + VP9 Long-Form', 'video/webm',
+        vp9Codec.getVp9CodecString(undefined, 'L'));
+    createTunnelModeFormatTest(
+        '20.8.5.1', 'WebM + VP9 Profile 2 HLG Medium-Form', 'video/webm',
+        vp9Codec.getVp9CodecString(vp9Codec.HLG_VP9_METADATA, 'M'),
+        playbackUtil.isHdrSupported());
+    createTunnelModeFormatTest(
+        '20.8.6.1', 'WebM + VP9 Profile 2 HLG Long-Form', 'video/webm',
+        vp9Codec.getVp9CodecString(vp9Codec.HLG_VP9_METADATA, 'L'),
+        playbackUtil.isHdrSupported());
+    createTunnelModeFormatTest(
+        '20.8.7.1', 'WebM + VP9 Profile 2 PQ Medium-Form', 'video/webm',
+        vp9Codec.getVp9CodecString(vp9Codec.PQ_VP9_METADATA, 'M'),
+        playbackUtil.isHdrSupported());
+    createTunnelModeFormatTest(
+        '20.8.8.1', 'WebM + VP9 Profile 2 PQ Long-Form', 'video/webm',
+        vp9Codec.getVp9CodecString(vp9Codec.PQ_VP9_METADATA, 'L'),
+        playbackUtil.isHdrSupported());
+
+    createTunnelModeFormatTest(
+        '20.8.9.1', 'MP4 + AV1 (Level 4.1 8-bit BT.709 Short-Form Codec)',
+        'video/mp4', av1Codec.getAv1CodecString({level: '4.1'}));
+    createTunnelModeFormatTest(
+        '20.8.10.1', 'MP4 + AV1 (Level 4.1 8-bit BT.709 Long-Form Codec)',
+        'video/mp4', av1Codec.getAv1CodecString({level: '4.1'}, true));
+    createTunnelModeFormatTest(
+        '20.8.11.1', 'MP4 + AV1 (Level 5.1 8-bit BT.709 Short-Form Codec)',
+        'video/mp4', av1Codec.getAv1CodecString({level: '5.1'}),
+        util.isAv1GtFHD());
+    createTunnelModeFormatTest(
+        '20.8.12.1', 'MP4 + AV1 (Level 5.1 8-bit BT.709 Long-Form Codec)',
+        'video/mp4', av1Codec.getAv1CodecString({level: '5.1'}, true),
+        util.isAv1GtFHD());
+    createTunnelModeFormatTest(
+        '20.8.13.1', 'MP4 + AV1 (Level 5.1 10-bit BT.709 Short-Form Codec)',
+        'video/mp4', av1Codec.getAv1CodecString({level: '5.1', bitDepth: 10}),
+        util.isAv1GtFHD() && playbackUtil.isHdrSupported());
+    createTunnelModeFormatTest(
+        '20.8.14.1', 'MP4 + AV1 (Level 5.1 10-bit BT.709 Long-Form Codec)',
+        'video/mp4',
+        av1Codec.getAv1CodecString({level: '5.1', bitDepth: 10}, true),
+        util.isAv1GtFHD() && playbackUtil.isHdrSupported());
+    createTunnelModeFormatTest(
+        '20.8.15.1', 'MP4 + AV1 (Level 5.1 10-bit HLG)', 'video/mp4',
+        av1Codec.getHlgAv1CodecString({level: '5.1'}),
+        util.isAv1GtFHD() && playbackUtil.isHdrSupported());
+    createTunnelModeFormatTest(
+        '20.8.16.1', 'MP4 + AV1 (Level 5.1 10-bit PQ)', 'video/mp4',
+        av1Codec.getPqAv1CodecString({level: '5.1'}),
+        util.isAv1GtFHD() && playbackUtil.isHdrSupported());
+    createTunnelModeFormatTest(
+        '20.8.17.1', 'MP4 + AV1 (Level 6.0 8-bit BT.709 Short-Form Codec)',
+        'video/mp4', av1Codec.getAv1CodecString({level: '6.0'}),
+        util.isAv1Gt4K());
+    createTunnelModeFormatTest(
+        '20.8.18.1', 'MP4 + AV1 (Level 6.0 8-bit BT.709 Long-Form Codec)',
+        'video/mp4', av1Codec.getAv1CodecString({level: '6.0'}, true),
+        util.isAv1Gt4K());
+    createTunnelModeFormatTest(
+        '20.8.19.1', 'MP4 + AV1 (Level 6.0 10-bit BT.709 Short-Form Codec)',
+        'video/mp4', av1Codec.getAv1CodecString({level: '6.0', bitDepth: 10}),
+        util.isAv1Gt4K() && playbackUtil.isHdrSupported());
+    createTunnelModeFormatTest(
+        '20.8.20.1', 'MP4 + AV1 (Level 6.0 10-bit BT.709 Long-Form Codec)',
+        'video/mp4',
+        av1Codec.getAv1CodecString({level: '6.0', bitDepth: 10}, true),
+        util.isAv1Gt4K() && playbackUtil.isHdrSupported());
+    createTunnelModeFormatTest(
+        '20.8.21.1', 'MP4 + AV1 (Level 6.0 10-bit HLG)', 'video/mp4',
+        av1Codec.getHlgAv1CodecString({level: '6.0'}),
+        util.isAv1Gt4K() && playbackUtil.isHdrSupported());
+    createTunnelModeFormatTest(
+        '20.8.22.1', 'MP4 + AV1 (Level 6.0 10-bit PQ)', 'video/mp4',
+        av1Codec.getPqAv1CodecString({level: '6.0'}),
+        util.isAv1Gt4K() && playbackUtil.isHdrSupported());
+  });
 });
+
+

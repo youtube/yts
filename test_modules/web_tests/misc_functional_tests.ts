@@ -16,7 +16,7 @@
  */
 
 import {asUnsafeAny, extendedPerformance, is4k, is8k, isGt4K, isGtFHD} from 'google3/third_party/javascript/yts/test_utils/legacy_yts_utils';
-import {createMediaSourceUrlFromSource, isHdrSupported} from 'google3/third_party/javascript/yts/test_utils/playback_util';
+import {createMediaSourceUrlFromSource, getMimeTypeWithTunnelMode, isHdrSupported} from 'google3/third_party/javascript/yts/test_utils/playback_util';
 import {AAC, AV1, H264, VP9} from 'google3/third_party/javascript/yts/test_utils/streams/media_streams';
 import {h5vcc} from 'google3/third_party/javascript/yts/yts_common/h5vcc';
 
@@ -62,6 +62,7 @@ describe('Functional Tests', () => {
       }
     }
 
+    yts.test({id: '14.18.1.1'});
     it('CPU System Memory', () => {
       let sizeMB: number;
       if (isGt4K()) {
@@ -74,6 +75,7 @@ describe('Functional Tests', () => {
       testCpuSystemMemoryWithFallback(sizeMB);
     });
 
+    yts.test({id: '2DB25455-99CD-4591-B223-7938261362F3'});
     it('CPU System Memory 2027', () => {
       let sizeMB: number;
       if (isGt4K()) {
@@ -86,6 +88,7 @@ describe('Functional Tests', () => {
       testCpuSystemMemory(sizeMB);
     });
 
+    yts.test({id: '14.18.2.1'});
     it('JavaScript Memory Allocation', () => {
       const size = 80;  // MB
       const a = new ArrayBuffer(size * 1024 * 1024);
@@ -94,6 +97,7 @@ describe('Functional Tests', () => {
   });
 
   describe('Assorted', () => {
+    yts.test({id: '14.9.2.1'});
     it('ECMA262-5 Strict Mode', () => {
       const obj = {};
       Object.defineProperty(obj, 'readOnly', {value: 1, writable: false});
@@ -103,12 +107,14 @@ describe('Functional Tests', () => {
       }).toThrowError(TypeError);
     });
 
+    yts.test({id: '14.9.3.1'});
     it('RequestAnimationFrame', () => {
       expect('requestAnimationFrame' in window)
           .withContext('window.requestAnimationFrame should exist')
           .toBeTrue();
     });
 
+    yts.test({id: '14.9.4.1'});
     it('JavaScript Date Object', () => {
       const dateObj = new Date(Date.parse('2012-11-01T14:12:09.000Z'));
       const dateObjFormatted = dateObj.getUTCDate() + '/' +
@@ -119,6 +125,7 @@ describe('Functional Tests', () => {
           .toBeTrue();
     });
 
+    yts.test({id: '14.9.7.1'});
     it('Window Size', () => {
       const EXPECTED_WINDOW_SIZES =
           ['1280x720', '1920x1080', '2560x1440', '3840x2160', '7680x4320'];
@@ -189,6 +196,7 @@ describe('Functional Tests', () => {
       });
     }
 
+    yts.test({id: '14.19.1.1'});
     it('Source Buffer Size', async () => {
       const ms = new MediaSource();
       const videoStream = getVideoSrc();
@@ -201,7 +209,7 @@ describe('Functional Tests', () => {
           await new Promise<[SourceBuffer, SourceBuffer]>((resolve) => {
             ms.addEventListener('sourceopen', () => {
               resolve([
-                ms.addSourceBuffer(videoStream.mimetype),
+                ms.addSourceBuffer(getMimeTypeWithTunnelMode(videoStream.mimetype)),
                 ms.addSourceBuffer(audioStream.mimetype)
               ]);
             }, {once: true});
@@ -285,6 +293,6 @@ describe('Functional Tests', () => {
         window.URL.revokeObjectURL(video.src);
       }
       document.body.removeChild(video);
-    });
+    }, 60000);
   });
 });

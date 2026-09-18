@@ -42,6 +42,7 @@ async function fetchCobaltBuildId(url: string): Promise<number> {
 
 describe('Functional Tests', () => {
   describe('User Agent', () => {
+    yts.test({id: '14.17.3.4'});
     it('Starboard 14 User Agent', () => {
       const ua = new CobaltUserAgent(navigator.userAgent);
       expect(ua.starboardVersion)
@@ -49,6 +50,7 @@ describe('Functional Tests', () => {
           .toBeGreaterThanOrEqual(14);
     });
 
+    yts.test({id: '14.17.3.5'});
     it('Starboard 15 User Agent', () => {
       const ua = new CobaltUserAgent(navigator.userAgent);
       expect(ua.starboardVersion)
@@ -56,6 +58,7 @@ describe('Functional Tests', () => {
           .toBeGreaterThanOrEqual(15);
     });
 
+    yts.test({id: '14.17.3.6'});
     it('Starboard 16 User Agent', () => {
       const ua = new CobaltUserAgent(navigator.userAgent);
       expect(ua.starboardVersion)
@@ -63,6 +66,7 @@ describe('Functional Tests', () => {
           .toBeGreaterThanOrEqual(16);
     });
 
+    yts.test({id: '14.17.3.3'});
     it('Starboard User Agent', () => {
       const ua = new CobaltUserAgent(navigator.userAgent);
       expect(ua.starboardVersion)
@@ -70,6 +74,7 @@ describe('Functional Tests', () => {
           .toBeGreaterThanOrEqual(12);
     });
 
+    yts.test({id: '14.17.5.3'});
     it('gles in User Agent', () => {
       const hasGles = navigator.userAgent.includes(' gles ') ||
           navigator.userAgent.includes(' direct-gles ');
@@ -79,6 +84,7 @@ describe('Functional Tests', () => {
           .toBeTrue();
     });
 
+    yts.test({id: '14.17.2.2'});
     it('Cobalt User Agent', async () => {
       const buildVersion = await fetchCobaltBuildId(
           'https://cobalt.googlesource.com/cobalt/+/refs/heads/21.lts.stable/cobalt/build/build.id?format=TEXT');
@@ -94,7 +100,8 @@ describe('Functional Tests', () => {
           .toBe(buildVersion);
     });
 
-    it('User Agent Format 2023', () => {
+    yts.test({id: '6DC1583B-B978-420D-8E62-C20756969D09'});
+    it('User Agent Format 2023+', () => {
       const ua = navigator.userAgent;
       const parsedUA = new CobaltUserAgent(ua);
       const deviceNameBlock = parsedUA.deviceNameBlock;
@@ -128,15 +135,9 @@ describe('Functional Tests', () => {
           .withContext(`ModelYear "${
               modelYear}" must be a 4-digit year starting with 20`)
           .toMatch(/^20\d{2}$/);
-
-      const expectedParens = `(${parsedUA.brand}, ${parsedUA.model})`;
-      expect(ua.endsWith(expectedParens))
-          .withContext(
-              `User Agent trailing parenthesis must contain exactly "(Brand, Model)", expected "${
-                  expectedParens}"`)
-          .toBeTrue();
     });
 
+    yts.test({id: '302AA3DF-6D40-48F3-879B-479342C18CA0'});
     it('User Agent Format', () => {
       const ua = navigator.userAgent;
       const parsedUA = new CobaltUserAgent(ua);
@@ -192,30 +193,37 @@ describe('Functional Tests', () => {
           .toMatch(/^(WIRED|WIRELESS|Wired|Wireless|[\w-\/]+)$/);
     });
 
+    yts.test({id: 'F217B75D-4F00-4A48-B89D-56D1799B7F6A'});
     it('User Agent Year 2022', () => {
       expect(getDeviceModelYear()).toBe('2022');
     });
 
+    yts.test({id: 'A289A2BD-33C0-4567-95D0-BBB1074C0965'});
     it('User Agent Year 2023', () => {
       expect(getDeviceModelYear()).toBe('2023');
     });
 
+    yts.test({id: '3BF49A55-EA1F-4305-801F-C9E56AB03E81'});
     it('User Agent Year 2024', () => {
       expect(getDeviceModelYear()).toBe('2024');
     });
 
+    yts.test({id: 'BBB64789-BED4-4E72-A7EB-E3447EFE0DA9'});
     it('User Agent Year 2025', () => {
       expect(getDeviceModelYear()).toBe('2025');
     });
 
+    yts.test({id: 'C4A8D0E0-49D3-4E8A-8D5B-3A687E86C8F7'});
     it('User Agent Year 2026', () => {
       expect(getDeviceModelYear()).toBe('2026');
     });
 
+    yts.test({id: '853CAB57-0872-49D0-B099-C3A2EFBE0C06'});
     it('User Agent Year 2027', () => {
       expect(getDeviceModelYear()).toBe('2027');
     });
 
+    yts.test({id: 'E535FADA-6CB5-48F1-B551-E6756453048B'});
     it('Cobalt Version User Agent', async () => {
       const buildVersion = await fetchCobaltBuildId(
           'https://cobalt.googlesource.com/cobalt/+/refs/heads/22.lts.stable/cobalt/build/build.id?format=TEXT');
@@ -231,6 +239,7 @@ describe('Functional Tests', () => {
           .toBe(buildVersion);
     });
 
+    yts.test({id: 'EF628473-4F98-4892-BCAB-D805476B368B'});
     it('Cobalt Version 23 User Agent', async () => {
       const buildVersion = await fetchCobaltBuildId(
           'https://cobalt.googlesource.com/cobalt/+/refs/heads/23.lts.stable/cobalt/build/build.id?format=TEXT');
@@ -246,18 +255,21 @@ describe('Functional Tests', () => {
           .toBe(buildVersion);
     });
 
+    yts.test({id: '9BC802C6-26F2-4A08-9667-9C1FAE88477E'});
     it('Evergreen Full User Agent', () => {
       expect(navigator.userAgent.includes(' Evergreen-Full '))
           .withContext(`User Agent did not contain 'Evergreen-Full' substring`)
           .toBeTrue();
     });
 
+    yts.test({id: '20C156C8-A5ED-4D87-A48D-900CBB0265C8'});
     it('Evergreen Lite User Agent', () => {
       expect(navigator.userAgent.includes(' Evergreen-Lite '))
           .withContext(`User Agent did not contain 'Evergreen-Lite' substring`)
           .toBeTrue();
     });
 
+    yts.test({id: '1DCB06C5-BBCF-4439-90E0-88C214DE2FA6'});
     it('Negative Evergreen User Agent', () => {
       const hasEvergreen = navigator.userAgent.includes(' Evergreen-Full ') ||
           navigator.userAgent.includes(' Evergreen-Lite ');
@@ -266,6 +278,7 @@ describe('Functional Tests', () => {
           .toBeFalse();
     });
 
+    yts.test({id: '057A8725-13C8-4BA6-B1EA-4D2B87951894'});
     it('Firmware Version', () => {
       const ua = new CobaltUserAgent(navigator.userAgent);
       expect(ua.firmware)

@@ -18,7 +18,7 @@
 import {createMediaSourceUrl} from 'google3/third_party/javascript/yts/test_utils/playback_util';
 import * as mp4Stream from 'google3/third_party/javascript/yts/test_utils/streaming/playback_mp4_stream';
 import {StreamPromise, toStreamPromise} from 'google3/third_party/javascript/yts/test_utils/streaming/stream_promise';
-import type {StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
+import type {PlaybackOptions, StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
 
 
 const BUFFER_SAFETY_MARGIN_SEC = 5;
@@ -34,6 +34,7 @@ const MP4_CODECS = ['H264', 'AV1', 'AAC', 'AC3', 'EAC3', 'Iamf'];
  * @param numVideoStreams Optional times to duplicate the video stream.
  * @param onSourceObjects Optional callback for MediaSource and SourceBuffer
  *     objects.
+ * @param options Optional playback options.
  */
 export function setupMse(
     video: HTMLVideoElement,
@@ -46,17 +47,18 @@ export function setupMse(
         videoSbs: SourceBuffer[],
         audioSb?: SourceBuffer,
         ) => void,
+    options?: PlaybackOptions,
     ): StreamPromise<void> {
   if (!videoStream) {
     if (!audioStream) {
       return toStreamPromise(
           Promise.reject(new Error('At least one stream must be provided!')));
     }
-    video.src = createMediaSourceUrl([audioStream]);
+    video.src = createMediaSourceUrl([audioStream], options);
     return toStreamPromise(Promise.resolve());
   }
 
-  const infoList = [];
+  const infoList: StreamDef[] = [];
   for (let i = 0; i < numVideoStreams; i++) {
     infoList.push(videoStream);
   }
@@ -73,5 +75,7 @@ export function setupMse(
       audioStream ?? undefined,
       stopTime + BUFFER_SAFETY_MARGIN_SEC,
       onSourceObjects,
+      options,
   );
 }
+

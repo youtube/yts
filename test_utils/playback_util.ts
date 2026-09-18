@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+import {isAndroidTv} from 'google3/third_party/javascript/yts/test_utils/cobalt';
 import {CobaltVideoElement} from 'google3/third_party/javascript/yts/test_utils/cobalt_video_element';
 import * as av1Codec from 'google3/third_party/javascript/yts/test_utils/codecs/av1_codec';
 import * as vp9Codec from 'google3/third_party/javascript/yts/test_utils/codecs/vp9_codec';
@@ -96,20 +97,51 @@ export function cleanupVideoElement(): void {
   }
 }
 
+/** Options for playback and stream configuration. */
+export interface PlaybackOptions {
+  disableTunnel?: boolean;
+}
+
+/**
+ * Returns the MIME type with ';tunnelmode=true' appended if running on Android TV
+ * and tunnel mode is supported by the device and not explicitly disabled.
+ */
+export function getMimeTypeWithTunnelMode(
+    mimetype: string,
+    options?: PlaybackOptions,
+): string {
+  if (!mimetype.startsWith('video/')) {
+    return mimetype;
+  }
+  const disableTunnel =
+      window.location.search.includes('disable_tunnel=true') ||
+      Boolean(options?.disableTunnel);
+  if (isAndroidTv() && !disableTunnel &&
+      Boolean(MediaSource?.isTypeSupported?.(mimetype + ';tunnelmode=true'))) {
+    const tunnelMimeType = mimetype + ';tunnelmode=true';
+    console.log('Upgrading video stream to tunnel mode:', tunnelMimeType);
+    return tunnelMimeType;
+  }
+  return mimetype;
+}
+
 /**
  * Creates SafeUrl given content info.
  *
  * @param contentInfo Array of content info.
+ * @param options Optional playback options.
  */
 export function createMediaSourceUrl(
   contentInfo: Array<{mimetype: string; src: string}>,
+  options?: PlaybackOptions,
 ) {
   const mediaSource = new MediaSource();
   mediaSource.addEventListener('sourceopen', async () => {
     const promises = [];
     for (const conteInfo of contentInfo) {
+      const mimetype = getMimeTypeWithTunnelMode(conteInfo.mimetype, options);
       promises.push(appendContentToBuffer(
-          mediaSource.addSourceBuffer(conteInfo.mimetype),
+          mediaSource.addSourceBuffer(mimetype),
           conteInfo.src,
           ));
     }
@@ -753,4 +785,17 @@ export function getMaxAV1SupportedWindow(maxResolution = [99999, 99999]) {
     maxResolution = maxWindow;
   }
   return maxResolution;
+}
+
+/**
+ * Checks that the videoStream is defined. Without this check, the code
+ * will throw an exception that Jasmine will just swallow.
+ */
+export function verifyStream(videoStream: unknown, index: number) {
+  if (videoStream === undefined) {
+    const msg =
+        `Test definition error: videoStream at index ${index} is undefined!`;
+    console.error(msg);
+    throw new Error(msg);
+  }
 }

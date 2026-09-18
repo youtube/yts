@@ -16,6 +16,7 @@
  */
 
 import * as fs from 'fs';
+import * as path from 'path';
 
 import {getConfig} from './config';
 
@@ -62,6 +63,11 @@ class Log {
    * file. This work even when verbose is false.
    */
   verboseOutputFile?: string;
+
+  /**
+   * Path to output directory for logs and screenshots.
+   */
+  outputDir?: string;
 
   /**
    * Applies ANSI style format to the given string. Noop if log.colors was set
@@ -112,6 +118,10 @@ class Log {
 
   enable(overrides?: ConsoleOverrides) {
     if (log.verboseOutputFile) {
+      const dir = path.dirname(log.verboseOutputFile);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, {recursive: true});
+      }
       fs.writeFileSync(log.verboseOutputFile, '');
     }
     listenConsole('log', undefined, overrides);

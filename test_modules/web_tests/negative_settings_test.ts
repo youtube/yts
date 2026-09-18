@@ -44,6 +44,7 @@ describe('Functional Tests', () => {
       };
     };
 
+    yts.test({id: '743C4817-5F1B-4B28-8C3B-37D7C7F5AD91'});
     it('Negative TTS', () => {
       console.log('Checking window.h5vcc.accessibility.textToSpeech');
       expect(h5vcc?.accessibility?.textToSpeech)
@@ -58,6 +59,7 @@ describe('Functional Tests', () => {
         .toBeFalsy();
     });
 
+    yts.test({id: '037B8897-4F97-40DA-BACB-355ED9E5E728'});
     it('Negative Captions', () => {
       console.log(
         'Checking window.navigator.systemCaptionSettings.supportsIsEnabled',
@@ -72,6 +74,7 @@ describe('Functional Tests', () => {
         .toBeFalsy();
     });
 
+    yts.test({id: '4C455ED9-A0A9-4A0B-BD67-279EED5899A1'});
     it('Negative Background Mode', () => {
       console.log(
         'Checking h5vcc.system.userOnExitStrategy is not 1 (aka USER_ON_EXIT_STRATEGY_MINIMIZE)',
@@ -81,6 +84,7 @@ describe('Functional Tests', () => {
         .not.toEqual(ExitStrategy.USER_ON_EXIT_STRATEGY_MINIMIZE);
     });
 
+    yts.test({id: 'E52DE07F-0339-4DCF-AF88-4D9B2D994BC3'});
     it('Negative IFA', async () => {
       console.log('Checking window.h5vcc.system.advertisingId is not set');
       expect(h5vcc?.system?.advertisingId)
@@ -90,6 +94,7 @@ describe('Functional Tests', () => {
   });
 
   describe('Voice Service', () => {
+    yts.test({id: '41C03CC5-A8EE-4016-ACF8-D5A940569179'});
     it('Negative Soft Mic', async () => {
       console.log('Checking Soft Mic Support via H5vccPlatformService');
       const micSupport = await getMicSupport();

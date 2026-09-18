@@ -21,6 +21,7 @@ import 'jasmine';
 
 describe('MSE Codec Tests', () => {
   describe('MSE (Opus)', () => {
+    yts.test({id: 'A2BE414B-173F-46E5-BCEB-4B1FE2437644'});
     it(
       'plays opus ultra high',
       (done) => {

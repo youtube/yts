@@ -15,36 +15,45 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview Tests for screen diagonal and touch screen size reporting.
+ */
+
 import {getScreenDiagonal} from 'google3/third_party/javascript/yts/test_utils/cobalt';
 
 describe('Functional Tests', () => {
   describe('Assorted', () => {
     // Checks to make sure screen diagonal API returns a positive number
+    yts.test({id: 'C21596B8-2031-44EC-8C27-B73AE26B070D'});
     it('Screen Size', async () => {
       const diagonal = await getScreenSize();
-
-      if (diagonal <= 0) {
+      if (diagonal !== null && diagonal <= 0) {
         fail(`Screen diagonal is reported as ${diagonal}`);
       }
     });
 
-    // Checks to make sure screen diagonal API returns a value of
-    // at least 5.5" for touch devices
+    // Checks to make sure screen diagonal is >= 5.5 inches for touch devices
+    yts.test({id: '28D35BA0-3DEB-47F6-ABAA-BEF79C754C57'});
     it('Touch Screen Size', async () => {
       const diagonal = await getScreenSize();
-
-      if (diagonal < 5.5) {
+      if (diagonal !== null && diagonal < 5.5) {
         fail(
-            `Screen diagonal is reported as ${
-                diagonal}, which is less than the 5.5 inches required for touch devices.`,
+            `Screen diagonal is reported as ${diagonal}, which is less than ` +
+            `the 5.5 inches required for touch devices.`,
         );
       }
     });
 
-    async function getScreenSize() {
-      const diagonal = await getScreenDiagonal();
-      console.log(`Screen diagonal value: ${diagonal}`);
-      return diagonal;
+    async function getScreenSize(): Promise<number | null> {
+      try {
+        const diagonal = await getScreenDiagonal();
+        console.log(`Screen diagonal value: ${diagonal}`);
+        return diagonal;
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : String(e);
+        fail(message);
+        return null;
+      }
     }
   });
 });

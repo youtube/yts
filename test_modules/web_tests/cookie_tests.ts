@@ -48,6 +48,7 @@ function clearTestCookies() {
 
 describe('Functional Tests', () => {
   describe('Cookie', () => {
+    yts.test({id: '14.22.1.1'});
     it('Set Cookie', () => {
       try {
         for (const cookie of VALID_COOKIES) {
@@ -75,6 +76,7 @@ describe('Functional Tests', () => {
       }
     });
 
+    yts.test({id: '14.22.2.1'});
     it('Set Expired Cookie', () => {
       try {
         for (const cookie of VALID_COOKIES) {
@@ -107,6 +109,7 @@ describe('Functional Tests', () => {
       }
     });
 
+    yts.test({id: '14.22.3.1'});
     it('Min Cookie Storage', () => {
       const count = 50;
       const cookie_size = 4000;
@@ -137,6 +140,7 @@ describe('Functional Tests', () => {
       }
     });
 
+    yts.test({id: '14.22.4.1'});
     it('Max Cookie Storage', () => {
       const count = 150;
       const cookie_size = 4000;

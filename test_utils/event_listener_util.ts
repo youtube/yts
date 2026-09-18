@@ -60,3 +60,21 @@ export function removeVisibilityListeners() {
 
   listenersDefined = false;
 }
+
+/**
+ * Returns a detailed name for the given event.
+ */
+export function getDetailedEventName(e: Event): string {
+  if (e.type === 'blur') {
+    return 'window.onblur';
+  } else if (e.type === 'focus') {
+    return 'window.onfocus';
+  } else if (e.type === 'freeze') {
+    return 'document.onfreeze';
+  } else if (e.type === 'resume') {
+    return 'document.onresume';
+  } else if (e.type === 'visibilitychange') {
+    return `document.onvisibilitychange: ${document.visibilityState}`;
+  }
+  return e.type;
+}

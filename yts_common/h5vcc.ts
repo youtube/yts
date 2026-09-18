@@ -82,7 +82,7 @@ export declare interface H5vcc {
     resetExperimentState(): Promise<void>;
     getActiveExperimentIds(): number[];
     /** Returns the state of an active feature (not latest feature). */
-    getFeature(featureName: string): string;
+    getFeature(featureName: string): Promise<string>;
     /** Returns the value of an active feature parameter (not latest feature parameter). */
     getFeatureParam(featureParamName: string): string;
   };
@@ -110,6 +110,8 @@ export declare interface H5vcc {
     exit?: () => void;
     /** Returns screen diagonal value in inches. */
     getScreenDiagonal?: () => Promise<number>;
+    /** Returns the user's TV friendly name. */
+    getFriendlyName?: () => Promise<string>;
   };
   crashLog?: {
     /** Registers a Watchdog client with Cobalt; removed in Cobalt 26. */
@@ -167,9 +169,23 @@ export declare interface H5vcc {
     clearCookies: () => void;
     clearCrashpadDatabase: () => void;
   };
+  nativeStability?: {
+    getPendingReports: () => Promise<NativeStabilityReport[]>;
+    acknowledgeReports: (reportUuids: string[]) => Promise<void>;
+  };
   settings?: {
     set?: (key: string, value: number) => boolean;
   };
+}
+
+/**
+ * H5VCC Native Stability report.
+ */
+export declare interface NativeStabilityReport {
+  nativeStabilityEventUuid: string;
+  reportType: string;
+  isRecovered?: boolean;
+  eventTimeSec?: number;
 }
 
 /**

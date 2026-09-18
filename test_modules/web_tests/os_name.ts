@@ -42,6 +42,7 @@ const VALID_OS_NAMES = [
 
 describe('Functional Tests', () => {
   describe('User Agent', () => {
+    yts.test({id: 'D3119283-6CD2-4ACF-AA76-1E1A42E0D36E'});
     it('OS Name', () => {
       const ua = new CobaltUserAgent(navigator.userAgent);
       const osNameAndVersion = ua.osNameAndVersion;

@@ -31,8 +31,9 @@ interface MemoryInfo {
 
 describe('DOM chardata, window & Miscellaneous Tests', () => {
   describe('CharacterData', () => {
-    const specs = ['data'];
-    specs.forEach((spec) => {
+    const specs = [{id: '19.1.2.1', spec: 'data'}];
+    specs.forEach(({spec, id}) => {
+      yts.test({id});
       it(`CharacterData.${spec}`, () => {
         const element = document.createTextNode('Test');
         expect(hasDomProperty(element, spec))
@@ -44,13 +45,14 @@ describe('DOM chardata, window & Miscellaneous Tests', () => {
 
   describe('NamedNodeMap', () => {
     const specs = [
-      'getNamedItem',
-      'item',
-      'length',
-      'removeNamedItem',
-      'setNamedItem',
+      {id: '19.2.1.1', spec: 'getNamedItem'},
+      {id: '19.2.3.1', spec: 'item'},
+      {id: '19.2.4.1', spec: 'length'},
+      {id: '19.2.5.1', spec: 'removeNamedItem'},
+      {id: '19.2.7.1', spec: 'setNamedItem'},
     ];
-    specs.forEach((spec) => {
+    specs.forEach(({spec, id}) => {
+      yts.test({id});
       it(`NamedNodeMap.${spec}`, () => {
         const element = document.documentElement.attributes;
         expect(hasDomProperty(element, spec))
@@ -62,25 +64,26 @@ describe('DOM chardata, window & Miscellaneous Tests', () => {
 
   describe('Node', () => {
     const bodyNodeSpecs = [
-      'appendChild',
-      'attributes',
-      'childNodes',
-      'cloneNode',
-      'firstChild',
-      'hasChildNodes',
-      'insertBefore',
-      'lastChild',
-      'nextSibling',
-      'nodeName',
-      'nodeType',
-      'nodeValue',
-      'ownerDocument',
-      'parentNode',
-      'previousSibling',
-      'removeChild',
-      'replaceChild',
+      {id: '19.3.1.1', spec: 'appendChild'},
+      {id: '19.3.2.1', spec: 'attributes'},
+      {id: '19.3.3.1', spec: 'childNodes'},
+      {id: '19.3.4.1', spec: 'cloneNode'},
+      {id: '19.3.5.1', spec: 'firstChild'},
+      {id: '19.3.7.1', spec: 'hasChildNodes'},
+      {id: '19.3.8.1', spec: 'insertBefore'},
+      {id: '19.3.9.1', spec: 'lastChild'},
+      {id: '19.3.10.1', spec: 'nextSibling'},
+      {id: '19.3.11.1', spec: 'nodeName'},
+      {id: '19.3.12.1', spec: 'nodeType'},
+      {id: '19.3.13.1', spec: 'nodeValue'},
+      {id: '19.3.15.1', spec: 'ownerDocument'},
+      {id: '19.3.16.1', spec: 'parentNode'},
+      {id: '19.3.17.1', spec: 'previousSibling'},
+      {id: '19.3.18.1', spec: 'removeChild'},
+      {id: '19.3.19.1', spec: 'replaceChild'},
     ];
-    bodyNodeSpecs.forEach((spec) => {
+    bodyNodeSpecs.forEach(({spec, id}) => {
+      yts.test({id});
       it(`Node.${spec}`, () => {
         expect(hasDomProperty(document.body, spec))
           .withContext(`Node missing property '${spec}' on document.body.`)
@@ -88,14 +91,16 @@ describe('DOM chardata, window & Miscellaneous Tests', () => {
       });
     });
 
+    yts.test({id: '19.3.20.1'});
     it('Node.getElementById', () => {
       expect(hasDomProperty(document, 'getElementById'))
         .withContext(`Node missing property 'getElementById' on document.`)
         .toBe(true);
     });
 
-    const docElementSpecs = ['localName'];
-    docElementSpecs.forEach((spec) => {
+    const docElementSpecs = [{id: '19.3.21.1', spec: 'localName'}];
+    docElementSpecs.forEach(({spec, id}) => {
+      yts.test({id});
       it(`Node.${spec}`, () => {
         expect(hasDomProperty(document.documentElement, spec))
           .withContext(
@@ -108,17 +113,18 @@ describe('DOM chardata, window & Miscellaneous Tests', () => {
 
   describe('window', () => {
     const windowSpecs = [
-      'addEventListener',
-      'clearInterval',
-      'clearTimeout',
-      'location',
-      'navigator',
-      'close',
-      'removeEventListener',
-      'setInterval',
-      'setTimeout',
+      {id: '19.5.1.1', spec: 'addEventListener'},
+      {id: '19.5.2.1', spec: 'clearInterval'},
+      {id: '19.5.3.1', spec: 'clearTimeout'},
+      {id: '19.5.4.1', spec: 'location'},
+      {id: '19.5.5.1', spec: 'navigator'},
+      {id: '19.5.6.1', spec: 'close'},
+      {id: '19.5.7.1', spec: 'removeEventListener'},
+      {id: '19.5.8.1', spec: 'setInterval'},
+      {id: '19.5.9.1', spec: 'setTimeout'},
     ];
-    windowSpecs.forEach((spec) => {
+    windowSpecs.forEach(({spec, id}) => {
+      yts.test({id});
       it(`window.${spec}`, () => {
         expect(hasDomProperty(window, spec))
           .withContext(`window missing property '${spec}'.`)
@@ -126,8 +132,13 @@ describe('DOM chardata, window & Miscellaneous Tests', () => {
       });
     });
 
-    const eventSpecs = ['keydown', 'keypress', 'keyup'];
-    eventSpecs.forEach((event) => {
+    const eventSpecs = [
+      {id: '19.5.10.1', event: 'keydown'},
+      {id: '19.5.11.1', event: 'keypress'},
+      {id: '19.5.12.1', event: 'keyup'},
+    ];
+    eventSpecs.forEach(({event, id}) => {
+      yts.test({id});
       it(`window.${event}`, () => {
         expect('on' + event in window)
           .withContext(`window missing event 'on${event}'.`)
@@ -135,6 +146,7 @@ describe('DOM chardata, window & Miscellaneous Tests', () => {
       });
     });
 
+    yts.test({id: '19.5.13.1'});
     it('Window.onerror stack trace', (done) => {
       const errorHandler = (e: ErrorEvent) => {
         window.removeEventListener('error', errorHandler);
@@ -157,6 +169,7 @@ describe('DOM chardata, window & Miscellaneous Tests', () => {
       }, 500);
     });
 
+    yts.test({id: '19.5.14.1'});
     it('Window.devicePixelRatio', () => {
       let validDevicePixelRatios: number[];
       let hardwareDeviceCategory: string;
@@ -195,6 +208,7 @@ describe('DOM chardata, window & Miscellaneous Tests', () => {
     const memory = (window.performance as Performance & {memory: MemoryInfo})
       ?.memory;
 
+    yts.test({id: '19.6.1.1'});
     it('totalJSHeapSize', () => {
       if (!memory) {
         fail('performance.memory is not supported.');
@@ -207,6 +221,7 @@ describe('DOM chardata, window & Miscellaneous Tests', () => {
       );
     });
 
+    yts.test({id: '19.6.2.1'});
     it('usedJSHeapSize', () => {
       if (!memory) {
         fail('performance.memory is not supported.');
@@ -219,24 +234,29 @@ describe('DOM chardata, window & Miscellaneous Tests', () => {
   });
 
   describe('Assorted', () => {
+    yts.test({id: '19.7.2.1'});
     it('NodeList.length', () => {
       expect(
         hasDomProperty(document.documentElement.childNodes, 'length'),
       ).toBe(true);
     });
+    yts.test({id: '19.7.5.1'});
     it('ProcessingInstruction.data', () => {
       expect(hasDomProperty(document.body.firstChild!, 'data')).toBe(true);
     });
+    yts.test({id: '19.7.9.1'});
     it('ViewCSS.getComputedStyle', () => {
       expect(hasDomProperty(window, 'getComputedStyle')).toBe(true);
     });
   });
 
   describe('CreateEvent', () => {
+    yts.test({id: '19.8.1.1'});
     it('UIEvents.initUIEvent', () => {
       const event = document.createEvent('UIEvents');
       expect(hasDomProperty(event, 'initUIEvent')).toBe(true);
     });
+    yts.test({id: '19.8.2.1'});
     it('MouseEvents.initMouseEvent', () => {
       const event = document.createEvent('MouseEvents');
       expect(hasDomProperty(event, 'initMouseEvent')).toBe(true);

@@ -19,6 +19,7 @@ import {asUnsafeAny, expandUrl, getMediaPath} from 'google3/third_party/javascri
 
 describe('Functional Tests', () => {
   describe('URL Length', () => {
+    yts.test({id: '14.4.2.1'});
     it('ImageSrcURLLength', (done) => {
       const imgElement = document.createElement('img');
       const url = expandUrl(getMediaPath('qual-e/pass.jpg') + '?q=', 'a');
@@ -35,6 +36,7 @@ describe('Functional Tests', () => {
       document.body.appendChild(imgElement);
     });
 
+    yts.test({id: '14.4.3.1'});
     it('VideoSrcURLLength - mp4', (done) => {
       const video = document.createElement('video');
       const randChar =
@@ -59,6 +61,7 @@ describe('Functional Tests', () => {
       video.play();
     });
 
+    yts.test({id: '14.4.4.1'});
     it('XHRURLLength', (done) => {
       const xmlHttp = new XMLHttpRequest();
       const url = expandUrl(getMediaPath('qual-e/pass.png') + '?q=', 'a');
@@ -78,6 +81,7 @@ describe('Functional Tests', () => {
   });
 
   describe('Security', () => {
+    yts.test({id: '14.5.1.1'});
     it('CORS', () => {
       expect(
           'XMLHttpRequest' in window &&
@@ -89,6 +93,7 @@ describe('Functional Tests', () => {
   });
 
   describe('HTTP', () => {
+    yts.test({id: '14.7.1.1'});
     it('HTTPS', (done) => {
       const sslImg = document.createElement('img');
       sslImg.onload = () => {
@@ -104,12 +109,14 @@ describe('Functional Tests', () => {
       document.body.appendChild(sslImg);
     });
 
+    yts.test({id: '14.7.2.1'});
     it('XMLHTTPRequest', () => {
       expect(new XMLHttpRequest())
           .withContext('XMLHttpRequest should be instantiable')
           .toBeDefined();
     });
 
+    yts.test({id: '14.7.3.1'});
     it('XMLHTTPRequest Level 2', () => {
       expect(window.XMLHttpRequest && ('upload' in new XMLHttpRequest()))
           .withContext(
@@ -119,12 +126,14 @@ describe('Functional Tests', () => {
   });
 
   describe('Fetch API', () => {
+    yts.test({id: '14.8.1.1'});
     it('Fetch API - fetch()', () => {
       expect(window.fetch)
           .withContext('window.fetch should be defined')
           .toBeDefined();
     });
 
+    yts.test({id: '14.8.2.1'});
     it('Fetch API - Headers', () => {
       const httpHeaders = {
         'Content-Type': 'image/jpeg',
@@ -136,6 +145,7 @@ describe('Functional Tests', () => {
           .toBe('image/jpeg');
     });
 
+    yts.test({id: '14.8.3.1'});
     it('Fetch API - Request', () => {
       const fetchRequest = new Request(
           'https://qual-e.appspot.com/test',
@@ -152,6 +162,7 @@ describe('Functional Tests', () => {
       expect(fetchRequest.credentials).not.toBe('include');
     });
 
+    yts.test({id: '14.8.4.1'});
     it('Fetch API - Response', () => {
       const init = {'status': 200, 'statusText': 'YouTube'};
       const myResponse = new Response('test_body', init);
@@ -170,6 +181,7 @@ describe('Functional Tests', () => {
           .toBeTrue();
     });
 
+    yts.test({id: '14.8.5.1'});
     it('Fetch API - stream', async () => {
       const FETCH_TIME_OUT = 3000;
       const timeoutPromise = new Promise(
@@ -217,10 +229,11 @@ describe('Functional Tests', () => {
       })();
 
       await Promise.race([fetchPromise, timeoutPromise]);
-    });
+    }, 60000);
   });
 
   describe('SSL', () => {
+    yts.test({id: '14.23.1.1'});
     it('Self-Signed', (done) => {
       const img = new Image();
       img.onload = () => {
@@ -234,6 +247,7 @@ describe('Functional Tests', () => {
       img.src = 'https://self-signed.badssl.com/test/dashboard/small-image.png';
     });
 
+    yts.test({id: '14.23.2.1'});
     it('expired', (done) => {
       const img = new Image();
       img.onload = () => {
@@ -247,6 +261,7 @@ describe('Functional Tests', () => {
       img.src = 'https://expired.badssl.com/test/dashboard/small-image.png';
     });
 
+    yts.test({id: '14.23.3.1'});
     it('sha256', (done) => {
       const img = new Image();
       img.onload = () => {
@@ -259,6 +274,7 @@ describe('Functional Tests', () => {
       img.src = 'https://sha256.badssl.com/test/dashboard/small-image.png';
     });
 
+    yts.test({id: '14.23.4.1'});
     it('TLS', (done) => {
       const img = new Image();
       img.onload = () => {
@@ -272,6 +288,7 @@ describe('Functional Tests', () => {
           'https://tls-v1-2.badssl.com:1012/test/dashboard/small-image.png';
     });
 
+    yts.test({id: '14.23.5.1'});
     it('GlobalSign RootCA R2', (done) => {
       const xhr = new XMLHttpRequest();
       xhr.open('GET', 'https://cert-test.sandbox.google.com/', true);
@@ -291,6 +308,7 @@ describe('Functional Tests', () => {
       xhr.send();
     });
 
+    yts.test({id: '14.23.6.1'});
     it('GlobalSign RootCA R3', (done) => {
       const url =
           'https://www.globalsign.com/application/files/5815/8462/7621/iot-banner.jpg';
@@ -308,6 +326,7 @@ describe('Functional Tests', () => {
   });
 
   describe('IPv6', () => {
+    yts.test({id: '104AF2BC-0370-4828-B238-1F135005F4D5'});
     it('IPv6 Support', (done) => {
       const img = document.createElement('img');
       img.onload = () => {
@@ -325,6 +344,7 @@ describe('Functional Tests', () => {
   });
 
   describe('Assorted', () => {
+    yts.test({id: '14.9.1.1'});
     it('Streams API - ReadableByteStream', () => {
       const init = {'status': 200, 'statusText': 'YouTube'};
       const myResponse = new Response('test_body', init);
@@ -334,6 +354,7 @@ describe('Functional Tests', () => {
           .toBeTrue();
     });
 
+    yts.test({id: '14.20.1.1'});
     it('Same-origin Policy', () => {
       const value = window.localStorage.getItem('yt.leanback::schema-version');
       expect(value)

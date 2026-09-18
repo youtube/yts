@@ -58,7 +58,8 @@ describe('MSE Codec Tests', () => {
   // --- Test Templates (Factory Functions) ---
 
   function createAppendTest(
-      stream: StreamDef, unused_stream: StreamDef, mandatory = true) {
+      id: string, stream: StreamDef, unused_stream: StreamDef,
+      mandatory = true) {
     it(`Append${stream.codec}${
            legacyYtsUtils.makeCapitalName(stream.mediatype)}`,
         (done) => {
@@ -118,7 +119,8 @@ describe('MSE Codec Tests', () => {
   }
 
   function createAbortTest(
-      stream: StreamDef, unused_stream: StreamDef, mandatory = true) {
+      id: string, stream: StreamDef, unused_stream: StreamDef,
+      mandatory = true) {
     it(`Abort${stream.codec}${
            legacyYtsUtils.makeCapitalName(stream.mediatype)}`,
         (done) => {
@@ -168,7 +170,8 @@ describe('MSE Codec Tests', () => {
   }
 
   function createTimestampOffsetTest(
-      stream: StreamDef, unused_stream: StreamDef, mandatory = true) {
+      id: string, stream: StreamDef, unused_stream: StreamDef,
+      mandatory = true) {
     it(`TimestampOffset${stream.codec}${
            legacyYtsUtils.makeCapitalName(stream.mediatype)}`,
         (done) => {
@@ -212,7 +215,8 @@ describe('MSE Codec Tests', () => {
    * @param mandatory Whether the test is mandatory.
    */
   function createDurationAfterAppendTest(
-      stream: StreamDef, unused_stream: StreamDef, mandatory = true) {
+      id: string, stream: StreamDef, unused_stream: StreamDef,
+      mandatory = true) {
     it(`DurationAfterAppend${stream.codec}${
            legacyYtsUtils.makeCapitalName(stream.mediatype)}`,
         (done) => {
@@ -294,7 +298,7 @@ describe('MSE Codec Tests', () => {
         DEFAULT_TIMEOUT_MS);
   }
 
-  function createPausedTest(stream: StreamDef, mandatory = true) {
+  function createPausedTest(id: string, stream: StreamDef, mandatory = true) {
     it(`PausedStateWith${stream.codec}${
            legacyYtsUtils.makeCapitalName(stream.mediatype)}`,
         (done) => {
@@ -333,7 +337,7 @@ describe('MSE Codec Tests', () => {
         DEFAULT_TIMEOUT_MS);
   }
 
-  function createIncrementalAudioTest(stream: StreamDef) {
+  function createIncrementalAudioTest(id: string, stream: StreamDef) {
     it(`Incremental${stream.codec}Audio`, (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -365,7 +369,7 @@ describe('MSE Codec Tests', () => {
     }, DEFAULT_TIMEOUT_MS);
   }
 
-  function createLimitedAudioTest(stream: StreamDef) {
+  function createLimitedAudioTest(id: string, stream: StreamDef) {
     it(`Limited${stream.codec}Audio`, (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -411,7 +415,7 @@ describe('MSE Codec Tests', () => {
   }
 
   function createIncrementalLimitedAudioTest(
-      stream: StreamDef, highBitRate = false) {
+      id: string, stream: StreamDef, highBitRate = false) {
     let testName = `IncrementalLimited${stream.codec}Audio`;
     if (highBitRate) {
       testName = `HighBitRateIncrementalLimited${stream.codec}Audio`;
@@ -494,7 +498,8 @@ describe('MSE Codec Tests', () => {
     }, DEFAULT_TIMEOUT_MS);
   }
 
-  function createAppendAudioOffsetTest(stream1: StreamDef, stream2: StreamDef) {
+  function createAppendAudioOffsetTest(
+      id: string, stream1: StreamDef, stream2: StreamDef) {
     it(`Append${stream1.codec}AudioOffset`, (done) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
@@ -537,8 +542,8 @@ describe('MSE Codec Tests', () => {
   }
 
   function createAppendVideoOffsetTest(
-      stream1: StreamDef, stream2: StreamDef, audioStream: StreamDef,
-      mandatory = true) {
+      id: string, stream1: StreamDef, stream2: StreamDef,
+      audioStream: StreamDef, mandatory = true) {
     it(`Append${stream1.codec}VideoOffset`, (done) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
@@ -611,7 +616,8 @@ describe('MSE Codec Tests', () => {
   }
 
   function createAppendMultipleInitTest(
-      stream: StreamDef, unused_stream: StreamDef, mandatory = true) {
+      id: string, stream: StreamDef, unused_stream: StreamDef,
+      mandatory = true) {
     it(`AppendMultipleInit${stream.codec}${
            legacyYtsUtils.makeCapitalName(stream.mediatype)}`,
         (done) => {
@@ -674,7 +680,8 @@ describe('MSE Codec Tests', () => {
   }
 
   function createAppendOutOfOrderTest(
-      stream: StreamDef, unused_stream: StreamDef, mandatory = true) {
+      id: string, stream: StreamDef, unused_stream: StreamDef,
+      mandatory = true) {
     it(`Append${stream.codec}${
            legacyYtsUtils.makeCapitalName(stream.mediatype)}OutOfOrder`,
         (done) => {
@@ -740,7 +747,8 @@ describe('MSE Codec Tests', () => {
   }
 
   function createBufferedRangeTest(
-      stream: StreamDef, unused_stream: StreamDef, mandatory = true) {
+      id: string, stream: StreamDef, unused_stream: StreamDef,
+      mandatory = true) {
     it(`BufferedRange${stream.codec}${
            legacyYtsUtils.makeCapitalName(stream.mediatype)}`,
         (done) => {
@@ -783,7 +791,8 @@ describe('MSE Codec Tests', () => {
   }
 
   function createOverlapTest(
-      stream: StreamDef, unused_stream: StreamDef, mandatory = true) {
+      id: string, stream: StreamDef, unused_stream: StreamDef,
+      mandatory = true) {
     it(`${stream.codec}${
            legacyYtsUtils.makeCapitalName(stream.mediatype)}WithOverlap`,
         (done) => {
@@ -843,7 +852,8 @@ describe('MSE Codec Tests', () => {
   }
 
   function createSmallGapTest(
-      stream: StreamDef, unused_stream: StreamDef, mandatory = true) {
+      id: string, stream: StreamDef, unused_stream: StreamDef,
+      mandatory = true) {
     it(`${stream.codec}${
            legacyYtsUtils.makeCapitalName(stream.mediatype)}WithSmallGap`,
         (done) => {
@@ -903,7 +913,8 @@ describe('MSE Codec Tests', () => {
   }
 
   function createLargeGapTest(
-      stream: StreamDef, unused_stream: StreamDef, mandatory = true) {
+      id: string, stream: StreamDef, unused_stream: StreamDef,
+      mandatory = true) {
     it(`${stream.codec}${
            legacyYtsUtils.makeCapitalName(stream.mediatype)}WithLargeGap`,
         (done) => {
@@ -966,7 +977,7 @@ describe('MSE Codec Tests', () => {
    * @param mandatory Whether the test is mandatory.
    */
   function createDelayedTest(
-      delayed: StreamDef, nonDelayed: StreamDef, mandatory = true) {
+      id: string, delayed: StreamDef, nonDelayed: StreamDef, mandatory = true) {
     it(`Delayed${delayed.codec}${
            legacyYtsUtils.makeCapitalName(delayed.mediatype)}`,
         (done) => {
@@ -1040,7 +1051,7 @@ describe('MSE Codec Tests', () => {
   }
 
   function createSingleSourceBufferPlaybackTest(
-      stream: StreamDef, mandatory = true) {
+      id: string, stream: StreamDef, mandatory = true) {
     it(`PlaybackOnly${stream.codec}${
            legacyYtsUtils.makeCapitalName(stream.mediatype)}`,
         (done) => {
@@ -1071,7 +1082,8 @@ describe('MSE Codec Tests', () => {
   }
 
   function createDASHLatencyTest(
-      videoStream: StreamDef, audioStream: StreamDef, mandatory = true) {
+      id: string, videoStream: StreamDef, audioStream: StreamDef,
+      mandatory = true) {
     it(`DASHLatency${videoStream.codec}`, (done) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
@@ -1144,7 +1156,8 @@ describe('MSE Codec Tests', () => {
   }
 
   function createVideoDimensionTest(
-      videoStream: StreamDef, audioStream: StreamDef, mandatory = true) {
+      id: string, videoStream: StreamDef, audioStream: StreamDef,
+      mandatory = true) {
     it(`VideoDimension${videoStream.codec}`, (done) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
@@ -1191,7 +1204,8 @@ describe('MSE Codec Tests', () => {
    * @param stream The stream to test.
    * @param mandatory Whether the test is mandatory.
    */
-  function createPlaybackStateTest(stream: StreamDef, mandatory = true) {
+  function createPlaybackStateTest(
+      id: string, stream: StreamDef, mandatory = true) {
     it(`PlaybackState${stream.codec}`, (done) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
@@ -1274,7 +1288,8 @@ describe('MSE Codec Tests', () => {
     }, DEFAULT_TIMEOUT_MS);
   }
 
-  function createPlayPartialSegmentTest(stream: StreamDef, mandatory = true) {
+  function createPlayPartialSegmentTest(
+      id: string, stream: StreamDef, mandatory = true) {
     it(`PlayPartial${stream.codec}Segment`, (done) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
@@ -1315,7 +1330,8 @@ describe('MSE Codec Tests', () => {
    * @param mandatory Whether the test is mandatory.
    */
   function createMediaSourceDurationTest(
-      videoStream: StreamDef, audioStream: StreamDef, mandatory = true) {
+      id: string, videoStream: StreamDef, audioStream: StreamDef,
+      mandatory = true) {
     it(`MediaSourceDuration${videoStream.codec}`, (done) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
@@ -1432,7 +1448,8 @@ describe('MSE Codec Tests', () => {
    * @param videoStream The video stream definition.
    * @param mandatory Whether the test is mandatory.
    */
-  function createSeekTest(videoStream: StreamDef, mandatory = true) {
+  function createSeekTest(
+      id: string, videoStream: StreamDef, mandatory = true) {
     it(`Seek${videoStream.codec}`, (done) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
@@ -1442,7 +1459,8 @@ describe('MSE Codec Tests', () => {
         ms.removeEventListener('sourceopen', onSourceOpen);
         const xhrManager = new XhrManager();
         const audioStream = AAC['AudioNormal'];
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            playbackUtil.getMimeTypeWithTunnelMode(videoStream.mimetype));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
         const videoChain = new ResetInit(
             new FileSource(videoStream.src, xhrManager, timeoutManager));
@@ -1514,7 +1532,8 @@ describe('MSE Codec Tests', () => {
    * @param videoStream The video stream definition.
    * @param mandatory Whether the test is mandatory.
    */
-  function createLoopTest(videoStream: StreamDef, mandatory = true) {
+  function createLoopTest(
+      id: string, videoStream: StreamDef, mandatory = true) {
     it(`Loop${videoStream.codec}`, (done) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
@@ -1584,7 +1603,7 @@ describe('MSE Codec Tests', () => {
    * @param seekBack Whether to seek back to 0.
    */
   function createLoopAfterEnded(
-      videoStream: StreamDef, mandatory = true, seekBack = true) {
+      id: string, videoStream: StreamDef, mandatory = true, seekBack = true) {
     const testName =
         `LoopAfterEnded${seekBack ? '' : 'NoSeek'}${videoStream.codec}`;
     it(testName, (done) => {
@@ -1596,7 +1615,8 @@ describe('MSE Codec Tests', () => {
         ms.removeEventListener('sourceopen', onSourceOpen);
         const xhrManager = new XhrManager();
         const audioStream = AAC['AudioShorts'];
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            playbackUtil.getMimeTypeWithTunnelMode(videoStream.mimetype));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
 
         const onVideoUpdate = () => {
@@ -1659,7 +1679,8 @@ describe('MSE Codec Tests', () => {
    * @param videoStream The video stream definition.
    * @param mandatory Whether the test is mandatory.
    */
-  function createBufUnbufSeekTest(videoStream: StreamDef, mandatory = true) {
+  function createBufUnbufSeekTest(
+      id: string, videoStream: StreamDef, mandatory = true) {
     it(`BufUnbufSeek${videoStream.codec}`, (done) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
@@ -1669,7 +1690,8 @@ describe('MSE Codec Tests', () => {
         ms.removeEventListener('sourceopen', onSourceOpen);
         const xhrManager = new XhrManager();
         const audioStream = AAC['AudioNormal'];
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            playbackUtil.getMimeTypeWithTunnelMode(videoStream.mimetype));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
 
         const duration = 100000000;
@@ -1733,7 +1755,8 @@ describe('MSE Codec Tests', () => {
     }, DEFAULT_TIMEOUT_MS);
   }
 
-  function createIAMFPlaybackTest(stream: StreamDef, mandatory = true) {
+  function createIAMFPlaybackTest(
+      id: string, stream: StreamDef, mandatory = true) {
     it(stream.customMap?.['testDisplayName'] as string ||
            `IAMFPlayback${stream.codec}`,
        (done) => {
@@ -1763,7 +1786,8 @@ describe('MSE Codec Tests', () => {
        DEFAULT_TIMEOUT_MS);
   }
 
-  function createAAC256kPlaybackTest(stream: StreamDef, mandatory = true) {
+  function createAAC256kPlaybackTest(
+      id: string, stream: StreamDef, mandatory = true) {
     it('AAC256kbpsPlayback', (done) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
@@ -1798,149 +1822,177 @@ describe('MSE Codec Tests', () => {
 
 
   describe('MSE (Opus)', () => {
-    createAppendTest(Opus['SantaHigh'], H264['Video1MB']);
-    createAbortTest(Opus['SantaHigh'], H264['Video1MB']);
-    createTimestampOffsetTest(Opus['CarLow'], H264['Video1MB']);
-    createDurationAfterAppendTest(Opus['CarLow'], H264['Video1MB']);
-    createPausedTest(Opus['CarLow']);
-    createIncrementalAudioTest(Opus['CarMed']);
-    createLimitedAudioTest(Opus['CarMed']);
-    createIncrementalLimitedAudioTest(Opus['CarMed']);
-    createIncrementalLimitedAudioTest(Opus['CarMed'], true);
-    createAppendAudioOffsetTest(Opus['CarMed'], Opus['CarHigh']);
-    createAppendMultipleInitTest(Opus['CarLow'], H264['Video1MB']);
-    createAppendOutOfOrderTest(Opus['CarMed'], H264['Video1MB']);
-    createBufferedRangeTest(Opus['CarMed'], H264['Video1MB']);
-    createOverlapTest(Opus['CarMed'], H264['Video1MB']);
-    createSmallGapTest(Opus['CarMed'], H264['Video1MB']);
-    createLargeGapTest(Opus['CarMed'], H264['Video1MB']);
-    createDelayedTest(Opus['CarMed'], H264['VideoNormal']);
-    createSingleSourceBufferPlaybackTest(Opus['SantaHigh']);
+    createAppendTest('2.1.1.1', Opus['SantaHigh'], H264['Video1MB']);
+    createAbortTest('2.1.2.1', Opus['SantaHigh'], H264['Video1MB']);
+    createTimestampOffsetTest('2.1.3.1', Opus['CarLow'], H264['Video1MB']);
+    createDurationAfterAppendTest('2.1.4.1', Opus['CarLow'], H264['Video1MB']);
+    createPausedTest('2.1.5.1', Opus['CarLow']);
+    createIncrementalAudioTest('2.1.6.1', Opus['CarMed']);
+    createLimitedAudioTest('2.1.6.2', Opus['CarMed']);
+    createIncrementalLimitedAudioTest('2.1.6.3', Opus['CarMed']);
+    createIncrementalLimitedAudioTest('2.1.6.4', Opus['CarMed'], true);
+    createAppendAudioOffsetTest('2.1.7.1', Opus['CarMed'], Opus['CarHigh']);
+    createAppendMultipleInitTest('2.1.8.1', Opus['CarLow'], H264['Video1MB']);
+    createAppendOutOfOrderTest('2.1.9.1', Opus['CarMed'], H264['Video1MB']);
+    createBufferedRangeTest('2.1.10.1', Opus['CarMed'], H264['Video1MB']);
+    createOverlapTest('2.1.11.1', Opus['CarMed'], H264['Video1MB']);
+    createSmallGapTest('2.1.12.1', Opus['CarMed'], H264['Video1MB']);
+    createLargeGapTest('2.1.13.1', Opus['CarMed'], H264['Video1MB']);
+    createDelayedTest('2.1.14.1', Opus['CarMed'], H264['VideoNormal']);
+    createSingleSourceBufferPlaybackTest('2.1.15.1', Opus['SantaHigh']);
   });
 
   describe('MSE (AC3)', () => {
-    createSingleSourceBufferPlaybackTest(AC3['Audio51'], false);
+    createSingleSourceBufferPlaybackTest(
+        'AF203C31-6C96-45E5-8B48-5DDF15A8B7A2', AC3['Audio51'], false);
   });
 
   describe('MSE (EAC3)', () => {
-    createSingleSourceBufferPlaybackTest(EAC3['Audio51'], false);
+    createSingleSourceBufferPlaybackTest(
+        'C4A59B61-E4B6-42BB-9445-BA1F9EADD166', EAC3['Audio51'], false);
   });
 
   describe('MSE (Iamf)', () => {
-    createIAMFPlaybackTest(Iamf['IamfAnimationIamfOpus3oa48khz'], false);
     createIAMFPlaybackTest(
+        '4FF527E0-842B-4DC8-8EB4-74B63F8D2636',
+        Iamf['IamfAnimationIamfOpus3oa48khz'], false);
+    createIAMFPlaybackTest(
+        '184686E3-45DC-443F-8BF1-56802F8776EA',
         Iamf['IamfAnimationIamfOpus3oaAndStereo48khz2mixpresentations'], false);
     createIAMFPlaybackTest(
+        '43397D7A-D0F1-454F-A696-66FA447416F8',
         Iamf['IamfAnimationIamfOpus3oaAndStereo48khz'], false);
-    createIAMFPlaybackTest(Iamf['IamfAnimationIamfOpus5148khz'], false);
-    createIAMFPlaybackTest(Iamf['IamfAnimationIamfOpusFoa48khz'], false);
     createIAMFPlaybackTest(
+        '25977A3B-99C7-4293-A846-949205CA497B',
+        Iamf['IamfAnimationIamfOpus5148khz'], false);
+    createIAMFPlaybackTest(
+        '8E4E8E34-3665-4F1C-BDBD-B424EB55848E',
+        Iamf['IamfAnimationIamfOpusFoa48khz'], false);
+    createIAMFPlaybackTest(
+        '669D654D-C580-4699-BC6B-E638DBB4E931',
         Iamf['IamfAnimationIamfOpusFoaAndStereo48khz'], false);
-    createIAMFPlaybackTest(Iamf['IamfSpeechIamfOpus71448khz'], false);
-    createIAMFPlaybackTest(Iamf['IamfSpeechIamfOpusStereo48khz'], false);
-    createIAMFPlaybackTest(Iamf['IamfChannelTest71448khzOpusF'], false);
+    createIAMFPlaybackTest(
+        'E94B4753-04DB-4CCE-9990-25A81E640E3D',
+        Iamf['IamfSpeechIamfOpus71448khz'], false);
+    createIAMFPlaybackTest(
+        '45C2C9EE-C291-4575-B2A4-5906551DA8C2',
+        Iamf['IamfSpeechIamfOpusStereo48khz'], false);
+    createIAMFPlaybackTest(
+        'F42AB0DB-116C-42BC-8CEC-36FD7DCB5649',
+        Iamf['IamfChannelTest71448khzOpusF'], false);
   });
 
   describe('MSE (AAC)', () => {
-    createAppendTest(AAC['Audio1MB'], H264['Video1MB']);
-    createAbortTest(AAC['Audio1MB'], H264['Video1MB']);
-    createTimestampOffsetTest(AAC['Audio1MB'], H264['Video1MB']);
-    createDurationAfterAppendTest(AAC['Audio1MB'], H264['Video1MB']);
-    createPausedTest(AAC['Audio1MB']);
-    createIncrementalAudioTest(AAC['AudioNormal']);
-    createLimitedAudioTest(AAC['AudioNormal']);
-    createIncrementalLimitedAudioTest(AAC['AudioNormal']);
-    createIncrementalLimitedAudioTest(AAC['AudioNormal'], true);
-    createAppendAudioOffsetTest(AAC['AudioNormal'], AAC['AudioHuge']);
-    createAppendMultipleInitTest(AAC['Audio1MB'], H264['Video1MB']);
-    createAppendOutOfOrderTest(AAC['AudioNormal'], H264['Video1MB']);
-    createBufferedRangeTest(AAC['AudioNormal'], H264['Video1MB']);
-    createOverlapTest(AAC['AudioNormal'], H264['Video1MB']);
-    createSmallGapTest(AAC['AudioNormal'], H264['Video1MB']);
-    createLargeGapTest(AAC['AudioNormal'], H264['Video1MB']);
-    createDelayedTest(AAC['AudioNormal'], VP9['VideoNormal']);
-    createSingleSourceBufferPlaybackTest(AAC['Audio1MB']);
-    createAAC256kPlaybackTest(AAC['Audio256k'], false);
+    createAppendTest('2.2.1.1', AAC['Audio1MB'], H264['Video1MB']);
+    createAbortTest('2.2.2.1', AAC['Audio1MB'], H264['Video1MB']);
+    createTimestampOffsetTest('2.2.3.1', AAC['Audio1MB'], H264['Video1MB']);
+    createDurationAfterAppendTest('2.2.4.1', AAC['Audio1MB'], H264['Video1MB']);
+    createPausedTest('2.2.5.1', AAC['Audio1MB']);
+    createIncrementalAudioTest('2.2.6.1', AAC['AudioNormal']);
+    createLimitedAudioTest('2.2.6.2', AAC['AudioNormal']);
+    createIncrementalLimitedAudioTest('2.2.6.3', AAC['AudioNormal']);
+    createIncrementalLimitedAudioTest('2.2.6.4', AAC['AudioNormal'], true);
+    createAppendAudioOffsetTest(
+        '2.2.7.1', AAC['AudioNormal'], AAC['AudioHuge']);
+    createAppendMultipleInitTest('2.2.8.1', AAC['Audio1MB'], H264['Video1MB']);
+    createAppendOutOfOrderTest('2.2.9.1', AAC['AudioNormal'], H264['Video1MB']);
+    createBufferedRangeTest('2.2.10.1', AAC['AudioNormal'], H264['Video1MB']);
+    createOverlapTest('2.2.11.1', AAC['AudioNormal'], H264['Video1MB']);
+    createSmallGapTest('2.2.12.1', AAC['AudioNormal'], H264['Video1MB']);
+    createLargeGapTest('2.2.13.1', AAC['AudioNormal'], H264['Video1MB']);
+    createDelayedTest('2.2.14.1', AAC['AudioNormal'], VP9['VideoNormal']);
+    createSingleSourceBufferPlaybackTest('2.2.15.1', AAC['Audio1MB']);
+    createAAC256kPlaybackTest(
+        '4E4B2EBB-97B7-447C-A17E-6E6C977AD3C5', AAC['Audio256k'], false);
   });
 
   describe('MSE (VP9)', () => {
-    createAppendTest(VP9['Video1MB'], AAC['Audio1MB']);
-    createAbortTest(VP9['Video1MB'], AAC['Audio1MB']);
-    createTimestampOffsetTest(VP9['Video1MB'], AAC['Audio1MB']);
-    createDASHLatencyTest(VP9['VideoTiny'], AAC['Audio1MB']);
-    createDurationAfterAppendTest(VP9['Video1MB'], AAC['Audio1MB']);
-    createPausedTest(VP9['Video1MB']);
-    createVideoDimensionTest(VP9['VideoNormal'], AAC['AudioNormal']);
-    createPlaybackStateTest(VP9['VideoNormal']);
-    createPlayPartialSegmentTest(VP9['VideoTiny']);
+    createAppendTest('2.3.1.1', VP9['Video1MB'], AAC['Audio1MB']);
+    createAbortTest('2.3.2.1', VP9['Video1MB'], AAC['Audio1MB']);
+    createTimestampOffsetTest('2.3.3.1', VP9['Video1MB'], AAC['Audio1MB']);
+    createDASHLatencyTest('2.3.4.1', VP9['VideoTiny'], AAC['Audio1MB']);
+    createDurationAfterAppendTest('2.3.5.1', VP9['Video1MB'], AAC['Audio1MB']);
+    createPausedTest('2.3.6.1', VP9['Video1MB']);
+    createVideoDimensionTest('2.3.7.1', VP9['VideoNormal'], AAC['AudioNormal']);
+    createPlaybackStateTest('2.3.8.1', VP9['VideoNormal']);
+    createPlayPartialSegmentTest('2.3.9.1', VP9['VideoTiny']);
     createAppendVideoOffsetTest(
-        VP9['VideoNormal'], VP9['VideoTiny'], AAC['AudioNormal']);
-    createAppendMultipleInitTest(VP9['Video1MB'], AAC['Audio1MB']);
-    createAppendOutOfOrderTest(VP9['VideoNormal'], AAC['AudioNormal']);
-    createBufferedRangeTest(VP9['VideoNormal'], AAC['AudioNormal']);
-    createMediaSourceDurationTest(VP9['VideoNormal'], AAC['AudioNormal']);
-    createOverlapTest(VP9['VideoNormal'], AAC['AudioNormal']);
-    createSmallGapTest(VP9['VideoNormal'], AAC['AudioNormal']);
-    createLargeGapTest(VP9['VideoNormal'], AAC['AudioNormal']);
-    createSeekTest(VP9['VideoNormal']);
-    createLoopTest(VP9['VideoShorts']);
-    createLoopAfterEnded(VP9['VideoShorts']);
-    createLoopAfterEnded(VP9['VideoShorts'], true, false);
-    createBufUnbufSeekTest(VP9['VideoNormal']);
-    createDelayedTest(VP9['VideoNormal'], AAC['AudioNormal']);
-    createSingleSourceBufferPlaybackTest(VP9['VideoTiny']);
+        '2.3.10.1', VP9['VideoNormal'], VP9['VideoTiny'], AAC['AudioNormal']);
+    createAppendMultipleInitTest('2.3.11.1', VP9['Video1MB'], AAC['Audio1MB']);
+    createAppendOutOfOrderTest(
+        '2.3.12.1', VP9['VideoNormal'], AAC['AudioNormal']);
+    createBufferedRangeTest('2.3.13.1', VP9['VideoNormal'], AAC['AudioNormal']);
+    createMediaSourceDurationTest(
+        '2.3.14.1', VP9['VideoNormal'], AAC['AudioNormal']);
+    createOverlapTest('2.3.15.1', VP9['VideoNormal'], AAC['AudioNormal']);
+    createSmallGapTest('2.3.16.1', VP9['VideoNormal'], AAC['AudioNormal']);
+    createLargeGapTest('2.3.17.1', VP9['VideoNormal'], AAC['AudioNormal']);
+    createSeekTest('2.3.18.1', VP9['VideoNormal']);
+    createLoopTest('2.3.22.1', VP9['VideoShorts']);
+    createLoopAfterEnded('2.3.23.1', VP9['VideoShorts']);
+    createLoopAfterEnded('2.3.24.1', VP9['VideoShorts'], true, false);
+    createBufUnbufSeekTest('2.3.19.1', VP9['VideoNormal']);
+    createDelayedTest('2.3.20.1', VP9['VideoNormal'], AAC['AudioNormal']);
+    createSingleSourceBufferPlaybackTest('2.3.21.1', VP9['VideoTiny']);
   });
 
   describe('MSE (H264)', () => {
-    createAppendTest(H264['Video1MB'], AAC['Audio1MB']);
-    createAbortTest(H264['Video1MB'], AAC['Audio1MB']);
-    createTimestampOffsetTest(H264['Video1MB'], AAC['Audio1MB']);
-    createDASHLatencyTest(H264['VideoTiny'], AAC['Audio1MB']);
-    createDurationAfterAppendTest(H264['Video1MB'], AAC['Audio1MB']);
-    createPausedTest(H264['Video1MB']);
-    createVideoDimensionTest(H264['VideoNormal'], AAC['Audio1MB']);
-    createPlaybackStateTest(H264['VideoNormal']);
-    createPlayPartialSegmentTest(H264['VideoTiny']);
+    createAppendTest('2.4.1.1', H264['Video1MB'], AAC['Audio1MB']);
+    createAbortTest('2.4.2.1', H264['Video1MB'], AAC['Audio1MB']);
+    createTimestampOffsetTest('2.4.3.1', H264['Video1MB'], AAC['Audio1MB']);
+    createDASHLatencyTest('2.4.4.1', H264['VideoTiny'], AAC['Audio1MB']);
+    createDurationAfterAppendTest('2.4.5.1', H264['Video1MB'], AAC['Audio1MB']);
+    createPausedTest('2.4.6.1', H264['Video1MB']);
+    createVideoDimensionTest('2.4.7.1', H264['VideoNormal'], AAC['Audio1MB']);
+    createPlaybackStateTest('2.4.8.1', H264['VideoNormal']);
+    createPlayPartialSegmentTest('2.4.9.1', H264['VideoTiny']);
     createAppendVideoOffsetTest(
-        H264['VideoNormal'], H264['VideoTiny'], AAC['Audio1MB']);
-    createAppendMultipleInitTest(H264['Video1MB'], AAC['Audio1MB']);
-    createAppendOutOfOrderTest(H264['CarMedium'], AAC['Audio1MB']);
-    createBufferedRangeTest(H264['VideoNormal'], AAC['Audio1MB']);
-    createMediaSourceDurationTest(H264['VideoNormal'], AAC['Audio1MB']);
-    createOverlapTest(H264['VideoNormal'], AAC['Audio1MB']);
-    createSmallGapTest(H264['VideoNormal'], AAC['Audio1MB']);
-    createLargeGapTest(H264['VideoNormal'], AAC['Audio1MB']);
-    createSeekTest(H264['VideoNormal']);
-    createLoopTest(H264['VideoShorts']);
-    createLoopAfterEnded(H264['VideoShorts']);
-    createLoopAfterEnded(H264['VideoShorts'], true, false);
-    createBufUnbufSeekTest(H264['VideoNormal']);
-    createDelayedTest(H264['VideoNormal'], AAC['AudioNormal']);
-    createSingleSourceBufferPlaybackTest(H264['VideoTiny']);
+        '2.4.10.1', H264['VideoNormal'], H264['VideoTiny'], AAC['Audio1MB']);
+    createAppendMultipleInitTest('2.4.11.1', H264['Video1MB'], AAC['Audio1MB']);
+    createAppendOutOfOrderTest('2.4.12.1', H264['CarMedium'], AAC['Audio1MB']);
+    createBufferedRangeTest('2.4.13.1', H264['VideoNormal'], AAC['Audio1MB']);
+    createMediaSourceDurationTest(
+        '2.4.14.1', H264['VideoNormal'], AAC['Audio1MB']);
+    createOverlapTest('2.4.15.1', H264['VideoNormal'], AAC['Audio1MB']);
+    createSmallGapTest('2.4.16.1', H264['VideoNormal'], AAC['Audio1MB']);
+    createLargeGapTest('2.4.17.1', H264['VideoNormal'], AAC['Audio1MB']);
+    createSeekTest('2.4.18.1', H264['VideoNormal']);
+    createLoopTest('2.4.22.1', H264['VideoShorts']);
+    createLoopAfterEnded('2.4.23.1', H264['VideoShorts']);
+    createLoopAfterEnded('2.4.24.1', H264['VideoShorts'], true, false);
+    createBufUnbufSeekTest('2.4.19.1', H264['VideoNormal']);
+    createDelayedTest('2.4.20.1', H264['VideoNormal'], AAC['AudioNormal']);
+    createSingleSourceBufferPlaybackTest('2.4.21.1', H264['VideoTiny']);
   });
 
   describe('MSE (AV1)', () => {
-    createAppendTest(AV1['Video1MB'], AAC['Audio1MB']);
-    createAbortTest(AV1['Video1MB'], AAC['Audio1MB']);
-    createTimestampOffsetTest(AV1['Bunny144p30fps'], AAC['Audio1MB']);
-    createDASHLatencyTest(AV1['Bunny240p30fps'], AAC['Audio1MB']);
-    createDurationAfterAppendTest(AV1['VideoSmall'], AAC['Audio1MB']);
-    createPausedTest(AV1['Bunny144p30fps']);
-    createVideoDimensionTest(AV1['Bunny360p30fps'], AAC['Audio1MB']);
-    createPlaybackStateTest(AV1['Bunny360p30fps']);
-    createPlayPartialSegmentTest(AV1['Bunny240p30fps']);
+    createAppendTest('2.5.1.1', AV1['Video1MB'], AAC['Audio1MB']);
+    createAbortTest('2.5.2.1', AV1['Video1MB'], AAC['Audio1MB']);
+    createTimestampOffsetTest(
+        '2.5.3.1', AV1['Bunny144p30fps'], AAC['Audio1MB']);
+    createDASHLatencyTest('2.5.4.1', AV1['Bunny240p30fps'], AAC['Audio1MB']);
+    createDurationAfterAppendTest(
+        '2.5.5.1', AV1['VideoSmall'], AAC['Audio1MB']);
+    createPausedTest('2.5.6.1', AV1['Bunny144p30fps']);
+    createVideoDimensionTest('2.5.7.1', AV1['Bunny360p30fps'], AAC['Audio1MB']);
+    createPlaybackStateTest('2.5.8.1', AV1['Bunny360p30fps']);
+    createPlayPartialSegmentTest('2.5.9.1', AV1['Bunny240p30fps']);
     createAppendVideoOffsetTest(
-        AV1['Bunny360p30fps'], AV1['Bunny240p30fps'], AAC['Audio1MB']);
-    createAppendMultipleInitTest(AV1['Bunny144p30fps'], AAC['Audio1MB']);
-    createAppendOutOfOrderTest(AV1['Bunny360p30fps'], AAC['Audio1MB']);
-    createBufferedRangeTest(AV1['Bunny360p30fps'], AAC['Audio1MB']);
-    createMediaSourceDurationTest(AV1['Bunny360p30fps'], AAC['Audio1MB']);
-    createOverlapTest(AV1['Bunny360p30fps'], AAC['Audio1MB']);
-    createSmallGapTest(AV1['Bunny360p30fps'], AAC['Audio1MB']);
-    createLargeGapTest(AV1['Bunny360p30fps'], AAC['Audio1MB']);
-    createSeekTest(AV1['Bunny360p30fps']);
-    createBufUnbufSeekTest(AV1['Bunny360p30fps']);
-    createDelayedTest(AV1['Bunny360p30fps'], AAC['AudioNormal']);
-    createSingleSourceBufferPlaybackTest(AV1['Bunny240p30fps']);
+        '2.5.10.1', AV1['Bunny360p30fps'], AV1['Bunny240p30fps'],
+        AAC['Audio1MB']);
+    createAppendMultipleInitTest(
+        '2.5.11.1', AV1['Bunny144p30fps'], AAC['Audio1MB']);
+    createAppendOutOfOrderTest(
+        '2.5.12.1', AV1['Bunny360p30fps'], AAC['Audio1MB']);
+    createBufferedRangeTest('2.5.13.1', AV1['Bunny360p30fps'], AAC['Audio1MB']);
+    createMediaSourceDurationTest(
+        '2.5.14.1', AV1['Bunny360p30fps'], AAC['Audio1MB']);
+    createOverlapTest('2.5.15.1', AV1['Bunny360p30fps'], AAC['Audio1MB']);
+    createSmallGapTest('2.5.16.1', AV1['Bunny360p30fps'], AAC['Audio1MB']);
+    createLargeGapTest('2.5.17.1', AV1['Bunny360p30fps'], AAC['Audio1MB']);
+    createSeekTest('2.5.18.1', AV1['Bunny360p30fps']);
+    createBufUnbufSeekTest('2.5.19.1', AV1['Bunny360p30fps']);
+    createDelayedTest('2.5.20.1', AV1['Bunny360p30fps'], AAC['AudioNormal']);
+    createSingleSourceBufferPlaybackTest('2.5.21.1', AV1['Bunny240p30fps']);
   });
 });
