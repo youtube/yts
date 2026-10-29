@@ -18,6 +18,14 @@
 import * as dgram from 'dgram';
 
 /**
+ * Difference between Unix epoch (1970-01-01) and NTP epoch (1900-01-01) in seconds and milliseconds.
+ * RFC 5905 section 6.
+ */
+const NTP_DELTA_SECONDS = 2208988800n;
+const NTP_DELTA_MS = 2208988800000n;
+const FRAC_DIVISOR = 0x100000000n;
+
+/**
  * Obtains current time from public NTP server at time.google.com.
  * Spec: https://www.rfc-editor.org/rfc/rfc5905.html
  */
@@ -28,9 +36,7 @@ export async function getCurrentTime(): Promise<Date> {
     );
   }
   const offset = await getNtpOffset();
-  const date = new Date();
-  date.setUTCMilliseconds(date.getUTCMilliseconds() + offset);
-  return date;
+  return new Date(Date.now() + Math.round(offset));
 }
 
 /**
@@ -98,10 +104,18 @@ function queryNtpServer(server: string): Promise<NtpPacket> {
 
   return new Promise((resolve, reject) => {
     const socket = dgram.createSocket('udp4');
+    let isSettled = false;
 
     function clear() {
       clearTimeout(timeoutHandle);
-      socket.close();
+      if (!isSettled) {
+        isSettled = true;
+      }
+      try {
+        socket.close();
+      } catch {
+        // Socket may already be closed or closing.
+      }
     }
 
     function rejectImpl(e: unknown) {
@@ -123,16 +137,37 @@ function queryNtpServer(server: string): Promise<NtpPacket> {
       console.debug(
         `Received NTP response from ${server}: 0x${msg.toString('hex')}.`,
       );
-      const data = new DataView(msg.buffer, msg.byteOffset, msg.length);
+      if (msg.length < 48) {
+        rejectImpl(
+          new Error(
+            `Invalid NTP response length (${msg.length} bytes, expected >= 48) from ${server}.`,
+          ),
+        );
+        return;
+      }
       clear();
-      resolve(parseNtpResponse(data));
+      try {
+        const data = new DataView(msg.buffer, msg.byteOffset, msg.length);
+        resolve(parseNtpResponse(data));
+      } catch (e) {
+        reject(e);
+      }
     });
 
-    socket.send(new Uint8Array(createNtpRequest()), port, server);
+    try {
+      const request = new Uint8Array(createNtpRequest());
+      socket.send(request, port, server, (err) => {
+        if (err) {
+          rejectImpl(err);
+        }
+      });
+    } catch (err) {
+      rejectImpl(err);
+    }
   });
 }
 
-function createNtpRequest(): ArrayBuffer {
+export function createNtpRequest(): ArrayBuffer {
   const data = new ArrayBuffer(48);
   const view = new DataView(data);
 
@@ -141,26 +176,29 @@ function createNtpRequest(): ArrayBuffer {
   const mode = 3; // client
   view.setUint8(0, (leap << 6) | (version << 3) | mode);
 
-  const zero = new Date('Jan 01 1900 GMT');
-  const now = new Date();
-  const seconds = (now.getTime() - zero.getTime()) / 1000;
-  const fraction = Math.floor((seconds % 1) * 0x100000000); // magic
+  const nowMs = BigInt(Date.now());
+  const ntpMs = nowMs + NTP_DELTA_MS;
+  const seconds = ntpMs / 1000n;
+  const fraction = ((ntpMs % 1000n) * FRAC_DIVISOR) / 1000n;
 
-  view.setUint32(40, Math.floor(seconds), false); // xmt seconds
-  view.setUint32(44, fraction, false); // xmt fraction
+  view.setUint32(40, Number(seconds), false); // xmt seconds
+  view.setUint32(44, Number(fraction), false); // xmt fraction
 
-  console.debug(`Constructed NTP request at ${now}.`);
+  console.debug(`Constructed NTP request at ${new Date(Number(nowMs))}.`);
   return data;
 }
 
-function parseNtpResponse(data: DataView): NtpPacket {
-  function readTimestamp(byteOffset: number) {
-    const seconds = data.getUint32(byteOffset, false);
-    const fraction = data.getUint32(byteOffset + 4, false);
-    const time = seconds + fraction / 0x100000000;
-    const date = new Date('Jan 01 1900 GMT');
-    date.setUTCMilliseconds(date.getUTCMilliseconds() + time * 1000);
-    return date;
+export function parseNtpResponse(data: DataView): NtpPacket {
+  function readTimestamp(byteOffset: number): Date {
+    const seconds = BigInt(data.getUint32(byteOffset, false));
+    const fraction = BigInt(data.getUint32(byteOffset + 4, false));
+    if (seconds === 0n && fraction === 0n) {
+      return new Date(0);
+    }
+    const unixSeconds = seconds - NTP_DELTA_SECONDS;
+    const fractionMs = (fraction * 1000n + (FRAC_DIVISOR / 2n)) / FRAC_DIVISOR;
+    const totalMs = Number(unixSeconds * 1000n + fractionMs);
+    return new Date(totalMs);
   }
 
   const p: NtpPacket = {
@@ -179,7 +217,7 @@ function parseNtpResponse(data: DataView): NtpPacket {
  * 7.3.  Packet Header Variables
  * (only the fields that we need)
  */
-interface NtpPacket {
+export interface NtpPacket {
   org: Date; // T1
   rec: Date; // T2
   xmt: Date; // T3
