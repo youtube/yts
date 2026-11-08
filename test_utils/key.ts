@@ -28,7 +28,7 @@ export function keysMatch(
     console.debug('Keys match on keyCode property');
     return true;
   }
-  if (receivedKey.key === expectedKey.key && isChrobalt) {
+  if (isChrobalt && chrobaltKeysMatch(expectedKey.key, receivedKey.key)) {
     console.log('Keys match on key property');
     return true;
   }
@@ -234,6 +234,19 @@ export const micKey: ExpectedKey = {
 };
 
 /**
+ * The YouTube remote button key
+ */
+export const ytButtonKey: ExpectedKey = {
+  name: 'YouTube button',
+  // Currently, ATV doesn't encode a key value for the YouTube button, but
+  // ATV is working to resolve this.
+  key: 'LaunchThisApplication',
+  keyCode: 0x3000,
+  note:
+      'Applies only to remotes that implement dedicated hardware buttons for YouTube applications',
+};
+
+/**
  * The keys that are required if present
  */
 export const reqIfPresentKeys: ExpectedKey[] = [
@@ -325,15 +338,7 @@ export const reqIfPresentKeys: ExpectedKey[] = [
     key: 'ColorF3Blue',
     keyCode: 0x196,
   },
-  {
-    name: 'YouTube button',
-    // Currently, ATV doesn't encode a key value for the YouTube button, but
-    // ATV is working to resolve this.
-    key: 'LaunchThisApplication',
-    keyCode: 0x3000,
-    note:
-        'Applies only to remotes that implement dedicated hardware buttons for YouTube applications',
-  },
+  ytButtonKey,
 ];
 
 /**
@@ -441,3 +446,25 @@ export const reqIfNotReservedKeys2026Plus: ExpectedKey[] = [
     keyCode: 0x12,
   },
 ];
+
+/**
+ * Alternate standard W3C/Chromium `KeyboardEvent.key` names emitted on
+ * Cobalt 26+ when a platform does not preserve legacy Starboard keyCodes.
+ */
+const CHROBALT_KEY_ALIASES = new Map<w3cKeyName, readonly string[]>([
+  ['Escape', ['GoBack', 'BrowserBack']],
+  ['Pause', ['MediaPause']],
+  ['Play', ['MediaPlay']],
+  ['Subtitle', ['ClosedCaptionToggle']],
+]);
+
+/**
+ * Returns whether a received `KeyboardEvent.key` matches the expected key or
+ * a known Cobalt 26+ W3C alias.
+ */
+function chrobaltKeysMatch(expected: w3cKeyName, received: string): boolean {
+  return (
+    received === expected ||
+    (CHROBALT_KEY_ALIASES.get(expected)?.includes(received) ?? false)
+  );
+}

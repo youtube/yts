@@ -17,7 +17,6 @@
 
 import 'jasmine';
 
-import {resetCliContext, setCliContext} from './cli_context';
 import {TEST_ONLY} from './storage';
 
 describe('Storage', () => {
@@ -50,26 +49,15 @@ describe('Storage', () => {
   });
 
   describe('storage dir resolution', () => {
-    afterEach(() => {
-      resetCliContext();
-    });
-
-    it('uses storageDir from active cliContext', () => {
-      setCliContext({
-        cliName: 'tvh',
-        cliVersion: '1.0.0',
-        storageDir: 'custom_storage_dir',
-        moduleDownloadUrl: 'test_bucket_url',
-        getLatestVersion: async () => '1.0.0',
-      });
+    it('uses configured storageDir', () => {
       const storage = new TEST_ONLY.Storage();
+      storage.storageDir = 'custom_storage_dir';
       expect(storage.getFullDataDirPath('test.txt')).toContain(
         'custom_storage_dir',
       );
     });
 
-    it('defaults storage dir to yts_server when cliContext is default', () => {
-      resetCliContext();
+    it('defaults storage dir to yts_server', () => {
       const storage = new TEST_ONLY.Storage();
       expect(storage.getFullDataDirPath('test.txt')).toContain(
         'yts_server',

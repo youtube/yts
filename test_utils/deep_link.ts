@@ -15,49 +15,98 @@
  * limitations under the License.
  */
 
-import {isChrobalt} from 'google3/third_party/javascript/yts/test_utils/cobalt';
-import {getGlobal} from 'google3/third_party/javascript/yts/yts_common/global';
-import {h5vcc} from 'google3/third_party/javascript/yts/yts_common/h5vcc';
+/** @fileoverview Deep link listener and inspection utilities for YTS tests. */
+
+import {
+  h5vcc,
+  H5vccDeepLinkEvent,
+} from 'google3/third_party/javascript/yts/yts_common/h5vcc';
 import {firstValueFrom, Subject} from 'rxjs';
 
-///////////////// Deep link tools////////////////
+/** Local storage key written by tv_harness for the last received deep link. */
+const LAST_DEEP_LINK_STORAGE_KEY = 'yts.last_deep_link';
+
 if (!h5vcc?.runtime) {
-  console.error(`window.h5vcc.runtime was undefined`);
+  console.error('window.h5vcc.runtime was undefined');
 }
 
-// Subject that listens for deeplinks to avoid multiple listeners
-let deepLinkSubjectInst: Subject<string>|undefined;
+// Subject that listens for deep links to avoid multiple listeners.
+let deepLinkSubjectInst: Subject<string> | undefined;
 
-// Store the first location href
+// Store received deep links in arrival order.
 const deepLinks: string[] = [];
-if (getGlobal().window) {
-  deepLinks.push(window.location.href);
-}
 
-/**
- * Applies listener on deeplinks
- */
+/** Applies listener on deep links. */
 export function listenDeepLink() {
-  // Calling this function adds the deep link listener if it's not already
-  // present.
   deepLinkSubject();
 }
 
-/** Reads deep links from array */
-export function getDeepLinks() {
-  return deepLinks;
+/** Reads deep links from array, pulling any reload fallback from storage. */
+export function getDeepLinks(): string[] {
+  const stored = consumeStoredDeepLink();
+  if (stored && !deepLinks.length) {
+    deepLinks.push(stored);
+  }
+  const result = [...deepLinks];
+  deepLinks.length = 0;
+  return result;
 }
 
-/**
- * Waits until a deeplink is received, then resolves
- */
+/** Waits until a deep link is received, then resolves. */
 export function awaitDeepLink(): Promise<string> {
   return firstValueFrom(deepLinkSubject());
 }
 
-/**
- * Returns a subject that listens for deeplinks
- */
+/** Clears recorded deep links and storage. */
+export function clearDeepLinks() {
+  deepLinks.length = 0;
+  consumeStoredDeepLink();
+}
+
+/** Registers a callback for incoming H5VCC deep link events. */
+export function addDeepLinkListener(listener: (link: string) => void) {
+  const runtime = globalThis.window?.h5vcc?.runtime;
+  if (runtime?.ondeeplink !== undefined) {
+    runtime.addEventListener('deeplink', (e: H5vccDeepLinkEvent) => {
+      if (typeof e?.url === 'string') {
+        console.log(`Chrobalt deep link received: ${e.url}`);
+        listener(e.url);
+      }
+    });
+  } else {
+    runtime?.onDeepLink?.addListener((link: string) => {
+      console.log(`Cobalt deep link received: ${link}`);
+      listener(link);
+    });
+  }
+}
+
+/** Stores last deep link received. Warning: value can be altered by tests. */
+export function writeLastDeepLinkToLocalStorage(link: string) {
+  try {
+    window.localStorage.setItem(LAST_DEEP_LINK_STORAGE_KEY, link);
+  } catch (e: unknown) {
+    console.log('Error recording deep link to local storage');
+    console.error(e);
+  }
+}
+
+function handleDeepLink(url: string) {
+  deepLinks.push(url);
+  deepLinkSubjectInst?.next(url);
+}
+
+function consumeStoredDeepLink(): string | null {
+  try {
+    const link = window.localStorage?.getItem(LAST_DEEP_LINK_STORAGE_KEY);
+    window.localStorage?.removeItem(LAST_DEEP_LINK_STORAGE_KEY);
+    return link ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Returns a subject that listens for deep links. */
 export function deepLinkSubject(): Subject<string> {
   console.log('Listening deep links');
   if (deepLinkSubjectInst) {
@@ -65,24 +114,16 @@ export function deepLinkSubject(): Subject<string> {
   }
 
   deepLinkSubjectInst = new Subject<string>();
-  const handleDeepLink = (url: string) => {
-    if (url.includes('yts.devicecertification.youtube')) {
-      console.log(`No deeplink received`);
-    } else {
-      deepLinks.push(url);
-    }
-    deepLinkSubjectInst?.next(url);
-  };
-  if (isChrobalt()) {
-    h5vcc?.runtime?.addEventListener('deeplink', (e) => {
-      console.log(`Chrobalt deeplink received: ${e.url}`);
-      handleDeepLink(e.url);
-    });
-  } else {
-    h5vcc?.runtime?.onDeepLink?.addListener((link: string) => {
-      console.log(`Cobalt deeplink received: ${link}`);
-      handleDeepLink(link);
-    });
-  }
+  addDeepLinkListener(handleDeepLink);
   return deepLinkSubjectInst;
 }
+
+export const TEST_ONLY = {
+  resetForTesting: () => {
+    deepLinkSubjectInst = undefined;
+    clearDeepLinks();
+  },
+  handleDeepLinkForTesting: (url: string) => {
+    handleDeepLink(url);
+  },
+};

@@ -296,21 +296,26 @@ describe('Functional Tests', () => {
       const hdrVideo = document.createElement('video');
       util.listenForErrors(hdrVideo, 'hdrVideo');
 
-      hdrVideo.addEventListener('timeupdate', (e) => {
+      const onHdrTimeUpdate = () => {
         if (hdrVideo.currentTime > HDR_WARMUP_THRESHOLD) {
+          hdrVideo.removeEventListener('timeupdate', onHdrTimeUpdate);
           resolve();
         }
-      });
+      };
+      hdrVideo.addEventListener('timeupdate', onHdrTimeUpdate);
 
       hdrVideo.id = 'hdr-video';
       hdrVideoContainer.appendChild(hdrVideo);
       hdrVideo.autoplay = true;
-      hdrVideo.src = createMediaSourceUrl([
-        {
-          mimetype: 'video/webm; codecs="vp9"',
-          src: 'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/meridian_vp9_hdr_low_progressive.webm',
-        },
-      ]);
+      hdrVideo.src = createMediaSourceUrl(
+        [
+          {
+            mimetype: 'video/webm; codecs="vp9"',
+            src: 'https://storage.googleapis.com/ytlr-cert.appspot.com/test-materials/media/meridian_vp9_hdr_low_progressive.webm',
+          },
+        ],
+        {disableTunnel: true},
+      );
       await hdrVideo.play();
     }
 

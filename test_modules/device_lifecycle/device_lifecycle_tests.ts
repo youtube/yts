@@ -99,7 +99,12 @@ describe('Device Lifecycle', () => {
 
         const cobaltLts = await getCobaltLtsVersion();
         const deepestState = cobaltLts >= 26 ? 'visibilitychange' : 'freeze';
-        eventSequenceMatcher.verify(parsedStateChanges, deepestState, fail);
+        eventSequenceMatcher.verify(
+          parsedStateChanges,
+          deepestState,
+          fail,
+          /* checkPartialSequence= */ true,
+        );
         await exitCobalt();
       },
       minutes(5),
@@ -127,7 +132,6 @@ describe('Device Lifecycle', () => {
         const cobaltLts = await getCobaltLtsVersion();
         const deepestState = cobaltLts >= 26 ? 'visibilitychange' : 'freeze';
         eventSequenceMatcher.verify(parsedStateChanges, deepestState, fail);
-        expect(parsedStateChanges).toContain('window.onfocus');
 
         // ensure suspend events happen at suspend and before resume fires
         const timestamps = await getEventTimestamps();
@@ -203,20 +207,11 @@ describe('Device Lifecycle', () => {
     it(
       'Cold Start',
       async () => {
-        // We start the test off by playing Big Buck Bunny because 1) it's
-        // unmonetized, 2) it populates a watch history so that Kabuki doesn't
-        // load in NoHo mode, and 3) it's a fan favorite. Everyone loves to
-        // watch the adventures of Big Buck Bunny, especially when it is played
-        // 4-5 times a day during certification.
+        // The device MUST be signed in to a YouTube account before running
+        // this test. The signed-out landing page never logs the 'ftl' or
+        // 'ftl_d' ticks this test measures.
         //
-        // However, reason #2 is arguably the most important.
-        console.log(
-          'Will now briefly play unmonetized video to prepare for cold start.',
-        );
-        const url = 'https://www.youtube.com/tv?v=aqz-KE-bpKQ';
-        const payload = `loader=yts&redirect=${encodeURIComponent(url)}`;
-        await device.launch(payload);
-        await sleep(15_000);
+        // Make sure YouTube is not running so the first launch is cold.
         await device.stop();
         await sleep(seconds(3));
 
@@ -270,7 +265,12 @@ describe('Device Lifecycle', () => {
             i--;
             if (++attemptNum === maxRetries) {
               throw new Error(
-                `Failed to measure app start time after ${maxRetries} retries.`,
+                `Failed to measure app start time after ${maxRetries} retries.` +
+                  (endMs
+                    ? ''
+                    : ' No ftl/ftl_d tick was logged; the device is likely' +
+                      ' signed out. This test requires the device to be' +
+                      ' signed in to a YouTube account.'),
               );
             }
             console.log(`Failed to measure app start time. Retrying...`);

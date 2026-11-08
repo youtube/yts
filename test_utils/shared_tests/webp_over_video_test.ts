@@ -20,6 +20,7 @@ import {h5vcc} from 'google3/third_party/javascript/yts/yts_common/h5vcc';
 
 import * as playbackUtil from '../playback_util';
 import {StreamHandlerType, streamVideoByChunksV2} from '../streaming/playback_mp4_stream';
+import type {PlaybackOptions} from '../streams/interfaces';
 
 let errors: string[] = [];
 
@@ -103,8 +104,14 @@ const DEFAULT_WEBP_STATS: WebpStats = {
   wallTime: 0,
 };
 
+const WEBP_OVER_VIDEO_STYLE_ID = 'webp-over-video-style';
+
 function initializeStyle() {
+  if (document.getElementById(WEBP_OVER_VIDEO_STYLE_ID)) {
+    return;
+  }
   const style = document.createElement('style');
+  style.id = WEBP_OVER_VIDEO_STYLE_ID;
   style.textContent = `
   .fixed-position {
     position: absolute;
@@ -262,6 +269,7 @@ function createWebPAnimation(
 /** Runs the WebP over video test */
 export async function webpOverVideoTest(
   numAnimations: number,
+  options?: PlaybackOptions,
 ): Promise<string[]> {
   let fpsCounter: FpsCounter | undefined;
   let stopFpsCounter: (() => void) | undefined;
@@ -311,7 +319,8 @@ export async function webpOverVideoTest(
   let lastCallWebpStats: WebpStats = Object.assign({}, DEFAULT_WEBP_STATS);
   await new Promise<void>(async (resolve) => {
     let lastMeasureTime = 0;
-    video.addEventListener('timeupdate', (e) => {
+    let streamPromise: {stop: () => void} | undefined;
+    const onTimeUpdate = () => {
       const loggableTime = video.currentTime.toFixed(2);
 
       if (video.currentTime < lastMeasureTime + MEASUREMENT_THRESHOLD) {
@@ -350,6 +359,8 @@ export async function webpOverVideoTest(
       lastMeasureTime = video.currentTime;
 
       if (video.currentTime > TEST_DONE_THRESHOLD) {
+        video.removeEventListener('timeupdate', onTimeUpdate);
+        streamPromise?.stop();
         if (fpsCounter && stopFpsCounter) {
           const fpsStats = fpsCounter.getFpsStats();
           console.log(`Average FPS: ${fpsStats?.avgFps.toFixed(2)}`);
@@ -366,17 +377,31 @@ export async function webpOverVideoTest(
         }
         resolve();
       }
-    });
+    };
+    video.addEventListener('timeupdate', onTimeUpdate);
     video.muted = true;
-    void streamVideoByChunksV2(video, StreamHandlerType.BASE, stream);
+    streamPromise = streamVideoByChunksV2(
+      video,
+      StreamHandlerType.BASE,
+      stream,
+      undefined,
+      undefined,
+      undefined,
+      options,
+    );
     await video.play();
   });
 
   for (const webp of webpAnimations) {
     webp.style.backgroundImage = '';
-    container.removeChild(webp);
+    if (webp.parentNode === container) {
+      container.removeChild(webp);
+    }
   }
   playbackUtil.removeCobaltVideo(video);
+  if (container.parentNode) {
+    container.parentNode.removeChild(container);
+  }
 
   return errors;
 }

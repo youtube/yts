@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-import {getMimeTypeWithTunnelMode} from 'google3/third_party/javascript/yts/test_utils/playback_util';
 import type {PlaybackOptions, StreamInfo} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
+import {getMimeTypeWithTunnelMode} from 'google3/third_party/javascript/yts/test_utils/tunnel_mode';
 import {objectUrlFromSafeSource, unwrapUrl} from 'safevalues';
 
 import {BaseStreamHandler} from './base_stream_handler';
@@ -106,6 +106,7 @@ export function streamVideoByChunksV2(
                   videoSb,
                   mediaSource,
                   stopTime,
+                  options?.targetBufferDepth,
               );
               activeHandlers.push(videoHandler);
               videoPromises.push(videoHandler.handleStreaming());

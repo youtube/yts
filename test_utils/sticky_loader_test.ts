@@ -15,9 +15,13 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview Unit tests for sticky_loader.
+ */
+
 import * as globalUtils from 'google3/third_party/javascript/yts/yts_common/global';
 
-import {applyStickyLoader, removeStickyLoader, TEST_ONLY} from './sticky_loader';
+import {applyStickyLoader, removeStickyLoader} from './sticky_loader';
 import * as urlUtils from './url_utils';
 
 const PROD_LOADER = 'yts';
@@ -66,10 +70,6 @@ describe('sticky_loader', () => {
     urlUtils.TEST_ONLY.inTestEnvironment = false;
   });
 
-  beforeEach(() => {
-    TEST_ONLY.setStickyLoaderApplied(false);
-  });
-
   describe('sticky loader (yts)', () => {
     it('Applies sticky loader', async () => {
       updateFakeWindow(`https://${PROD_HOSTNAME}/agent/agent.html`);
@@ -90,9 +90,7 @@ describe('sticky_loader', () => {
           );
     });
 
-    it('Removes sticky loader', async () => {
-      TEST_ONLY.setStickyLoaderApplied(true);
-
+    it('Removes sticky loader without prior in-memory apply', async () => {
       updateFakeWindow(`https://${PROD_HOSTNAME}/agent/agent.html`);
       await removeStickyLoader();
       expect(fakeWindow.location.href)
@@ -102,8 +100,6 @@ describe('sticky_loader', () => {
     });
 
     it('Removes sticky loader from a sub-version', async () => {
-      TEST_ONLY.setStickyLoaderApplied(true);
-
       updateFakeWindow(`https://${SUBVERSION_HOSTNAME}/agent/agent.html`);
       await removeStickyLoader();
       expect(fakeWindow.location.href)
@@ -112,12 +108,21 @@ describe('sticky_loader', () => {
                   SUBVERSION_HOSTNAME}/agent/agent.html#?loader=${PROD_LOADER}`,
           );
     });
+
+    it('Does not redirect on localhost', async () => {
+      const localhostUrl = 'http://localhost:8080/agent/agent.html';
+      updateFakeWindow(localhostUrl);
+      await applyStickyLoader();
+      expect(fakeWindow.location.href).toBe(localhostUrl);
+      await removeStickyLoader();
+      expect(fakeWindow.location.href).toBe(localhostUrl);
+    });
   });
 
   describe('sticky loader (ytstest)', () => {
     it('Applies sticky loader', async () => {
       updateFakeWindow(`https://${TEST_HOSTNAME}/agent/agent.html`);
-      await applyStickyLoader(/* testProd = */ true);
+      await applyStickyLoader(/* testProd= */ true);
       expect(fakeWindow.location.href)
           .toBe(
               `https://www.youtube.com/tv?stick=1#?loader=${TEST_LOADER}`,
@@ -126,7 +131,7 @@ describe('sticky_loader', () => {
 
     it('Applies sticky loader to a sub-version', async () => {
       updateFakeWindow(`https://${SUBVERSION_HOSTNAME}/agent/agent.html`);
-      await applyStickyLoader(/* testProd = */ true);
+      await applyStickyLoader(/* testProd= */ true);
       expect(fakeWindow.location.href)
           .toBe(
               `https://www.youtube.com/tv?stick=1&redirect=https://${
@@ -134,11 +139,9 @@ describe('sticky_loader', () => {
           );
     });
 
-    it('Removes sticky loader', async () => {
-      TEST_ONLY.setStickyLoaderApplied(true);
-
+    it('Removes sticky loader without prior in-memory apply', async () => {
       updateFakeWindow(`https://${TEST_HOSTNAME}/agent/agent.html`);
-      await removeStickyLoader(/* testProd = */ true);
+      await removeStickyLoader(/* testProd= */ true);
       expect(fakeWindow.location.href)
           .toBe(
               `https://www.youtube.com/tv?stick=0#?loader=${TEST_LOADER}`,
@@ -146,10 +149,8 @@ describe('sticky_loader', () => {
     });
 
     it('Removes sticky loader from a sub-version', async () => {
-      TEST_ONLY.setStickyLoaderApplied(true);
-
       updateFakeWindow(`https://${SUBVERSION_HOSTNAME}/agent/agent.html`);
-      await removeStickyLoader(/* testProd = */ true);
+      await removeStickyLoader(/* testProd= */ true);
       expect(fakeWindow.location.href)
           .toBe(
               `https://www.youtube.com/tv?stick=0&redirect=https://${

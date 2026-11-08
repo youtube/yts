@@ -71,6 +71,21 @@ describe('Shell', () => {
     });
   });
 
+  it('suppresses stderr and console.error when silent is true', () => {
+    const consoleErrorSpy = spyOn(console, 'error');
+    execSyncSpy.and.throwError(new Error('xcrun failed'));
+
+    expect(() =>
+      shell.execSync('xcrun --find devicectl', {timeout: 5000, silent: true}),
+    ).toThrowError('xcrun failed');
+    expect(execSyncSpy).toHaveBeenCalledWith('xcrun --find devicectl', {
+      maxBuffer: 200 * 1024 * 1024,
+      timeout: 5000,
+      stdio: ['pipe', 'pipe', 'ignore'],
+    });
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+  });
+
   it('reports adbExists false when execFileSync throws', () => {
     execFileSyncSpy.and.throwError(new Error('adb not found'));
     expect(shell.adbExists()).toBeFalse();

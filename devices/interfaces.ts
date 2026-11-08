@@ -29,7 +29,7 @@ import {VideoInputSource, VoiceSystem} from 'google3/third_party/javascript/yts/
 export interface DeviceProperties {
   /** The specific protocol or type identifier of the device. */
   deviceType:|'adb'|'dab'|'dial'|'webdriver'|'cobalt'|'chrome'|'in-memory'|
-      'ssh'|'tvos';
+      'ssh'|'tvos'|'rdk'|'remote';
   /** Unique short identifier assigned during device discovery. */
   shortId: string;
   /** Human-readable friendly name of the device. */
@@ -59,6 +59,10 @@ export interface LaunchOptions {
   allowDirectNav?: boolean;
   /** Additional command-line arguments to pass to the Cobalt process. */
   cobaltArgs?: string;
+  /** Optional development workspace path for loading uploaded scripts. */
+  devWorkspace?: string;
+  /** Optional callback invoked when the on-device agent emits a log message. */
+  onLog?: (text: string) => void;
 }
 
 /** Defines configuration parameters for taking a screenshot. */
@@ -157,7 +161,7 @@ export interface AgentLaunchTarget {
 export interface Device extends AgentLaunchTarget, DeviceProperties {
   /** The specific protocol or type identifier of the device. */
   deviceType:|'adb'|'dab'|'dial'|'webdriver'|'cobalt'|'chrome'|'in-memory'|
-      'ssh'|'tvos';
+      'ssh'|'tvos'|'rdk'|'remote';
   /** Takes a screenshot of the target device screen. */
   screenshot(options?: ScreenshotOptions): Promise<ImageData>;
 
@@ -262,6 +266,9 @@ export interface Device extends AgentLaunchTarget, DeviceProperties {
 
   /** Deeplinks to the specified URL or path on the device. */
   deeplink(deeplink: string, app?: string): Promise<void>;
+
+  /** Streams raw runtime logs from the device line-by-line. */
+  streamLog(onLine: (line: string) => void): () => void;
 
   /** Destroys the device connection. */
   destroy(): Promise<void>;
@@ -379,7 +386,14 @@ export interface AgentLauncher<TFromServer = unknown, TFromAgent = unknown> {
       ignoreDisconnects?: boolean,
       ): Promise<void>;
 
-  /** Sends a raw protobuf server message payload across the active socket. */
+  /**
+   * Sends a raw protobuf server message payload across the active socket.
+   *
+   * @deprecated Avoid one-shot fire-and-forget messages; use `runTask` instead.
+   *     `RemoteClient` cannot provide message-level delivery guarantees and
+   *     instead provides app-level delivery guarantees (both sides hold
+   *     messages in memory until acknowledged).
+   */
   send(message: TFromServer): void;
 
   /** Resolves when the active WebSocket session disconnects or times out. */

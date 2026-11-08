@@ -26,12 +26,14 @@ import * as playbackUtil from 'google3/third_party/javascript/yts/test_utils/pla
 import {AAC_STREAMS} from 'google3/third_party/javascript/yts/test_utils/streams/aac';
 import {AV1_STREAMS} from 'google3/third_party/javascript/yts/test_utils/streams/av1';
 import {H264_STREAMS} from 'google3/third_party/javascript/yts/test_utils/streams/h264';
-import {StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
+import {type PlaybackOptions, StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
 import {AAC, AV1, H264, Opus, VP9} from 'google3/third_party/javascript/yts/test_utils/streams/media_streams';
 import {OPUS_STREAMS} from 'google3/third_party/javascript/yts/test_utils/streams/opus';
 import {VP9_STREAMS} from 'google3/third_party/javascript/yts/test_utils/streams/vp9';
 import {TimeoutManager} from 'google3/third_party/javascript/yts/test_utils/timeout_manager';
+import {getMimeTypeWithTunnelMode, runWithTunnelModeDualPass} from 'google3/third_party/javascript/yts/test_utils/tunnel_mode';
 import {XhrManager} from 'google3/third_party/javascript/yts/test_utils/xhr_manager';
+import {h5vcc} from 'google3/third_party/javascript/yts/yts_common/h5vcc';
 
 const DEFAULT_TIMEOUT_MS = 60_000;
 const EXTENDED_TIMEOUT_MS = 200_000;
@@ -58,6 +60,51 @@ describe('MSE Conformance Tests', () => {
     if (!mandatory) {
       yts.markOptional();
     }
+  }
+
+  /**
+   * Executes an MSE video playback test across Pass 1 (Tunnel Mode ON) and
+   * Pass 2 (Tunnel Mode OFF) with XHR and timeout cleanup between passes.
+   *
+   * Parameterized test factories that register both video and audio-only test
+   * cases (such as `createChangeTypeTest`) can pass `enableDualPass = false`
+   * so audio-only specs (which are unaffected by video tunnel mode) run only
+   * once instead of repeating an identical pass.
+   *
+   * @param runPass Callback executing a single pass of the test.
+   * @param enableDualPass Whether to run both tunnel and non-tunnel passes on
+   *     tunnel-capable devices. When false, runs `runPass` once with default
+   *     options.
+   */
+  function runDualMsePlaybackTest(
+      runPass: (done: DoneFn, options: PlaybackOptions) => void,
+      enableDualPass = true,
+  ): (done: DoneFn) => void {
+    if (!enableDualPass) {
+      return (done: DoneFn) => {
+        runPass(done, {});
+      };
+    }
+    return (done: DoneFn) => {
+      runWithTunnelModeDualPass(
+          done,
+          (passDone, options) => {
+            video = playbackUtil.getVideoElement()!;
+            runPass(passDone, options);
+          },
+          {
+            onBeforePass2: () => {
+              video.pause();
+              xhrManager.abortAll();
+              timeoutManager.clearAll();
+              xhrManager = new XhrManager();
+              timeoutManager = new TimeoutManager();
+              playbackUtil.cleanupVideoElement();
+              playbackUtil.initializeVideoElement();
+            },
+          },
+      );
+    };
   }
 
   function getNestedAttr(obj: unknown, path: string): unknown {
@@ -323,7 +370,7 @@ describe('MSE Conformance Tests', () => {
     }, DEFAULT_TIMEOUT_MS);
 
     yts.test({id: '1.3.9.1'});
-    it('MediaElementEvents', (done) => {
+    it('MediaElementEvents', runDualMsePlaybackTest((done, options) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
       ms.addEventListener('sourceopen', () => {
@@ -331,19 +378,19 @@ describe('MSE Conformance Tests', () => {
         const videoStream = VP9['Video1MB'];
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
         const videoSb = ms.addSourceBuffer(
-            playbackUtil.getMimeTypeWithTunnelMode(videoStream.mimetype));
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const videoXhr = xhrManager.createRequest(videoStream.src, () => {
           const onUpdate = () => {
             videoSb.removeEventListener('update', onUpdate);
             setDuration(1.0, ms, [videoSb, audioSb], () => {
               if (audioSb.updating || videoSb.updating) {
-                fail('Source buffers are updating on duration change.');
-                done();
+                done.fail('Source buffers are updating on duration change.');
                 return;
               }
               ms.endOfStream();
               playbackUtil.playAndHandleErrors(video, (err) => {
-                fail(err);
+                done.fail(err);
               });
             });
           };
@@ -364,7 +411,7 @@ describe('MSE Conformance Tests', () => {
         }, {once: true});
         audioXhr.send();
       }, {once: true});
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
 
     yts.test({id: '1.3.10.1'});
     it('MediaSourceEvents', (done) => {
@@ -376,7 +423,7 @@ describe('MSE Conformance Tests', () => {
         const videoStream = VP9['Video1MB'];
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
         const videoSb = ms.addSourceBuffer(
-            playbackUtil.getMimeTypeWithTunnelMode(videoStream.mimetype));
+            getMimeTypeWithTunnelMode(videoStream.mimetype));
         const videoXhr = xhrManager.createRequest(videoStream.src, () => {
           videoSb.appendBuffer(videoXhr.getResponseData());
           videoSb.abort();
@@ -490,7 +537,7 @@ describe('MSE Conformance Tests', () => {
     }, DEFAULT_TIMEOUT_MS);
 
     yts.test({id: '1.3.12.1'});
-    it('StartPlayWithoutData', (done) => {
+    it('StartPlayWithoutData', runDualMsePlaybackTest((done, options) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
       ms.addEventListener('sourceopen', () => {
@@ -498,12 +545,14 @@ describe('MSE Conformance Tests', () => {
         const videoStream = VP9['VideoHuge'];
         const videoChain = new ResetInit(
             new FileSource(videoStream.src, xhrManager, timeoutManager));
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const audioChain = new ResetInit(
             new FileSource(audioStream.src, xhrManager, timeoutManager));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
         playbackUtil.playAndHandleErrors(video, (err) => {
-          fail(err);
+          done.fail(err);
         });
         appendUntil(timeoutManager, video, videoSb, videoChain, 1, () => {
           appendUntil(timeoutManager, video, audioSb, audioChain, 1, () => {
@@ -518,17 +567,19 @@ describe('MSE Conformance Tests', () => {
           });
         });
       }, {once: true});
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
 
     function createStartPlayAtNonZeroPositionTest(
         id: string, testTitle: string, audioStream: StreamDef, audioSegments: number[],
         videoStream: StreamDef, videoSegments: number[], startAtSec: number) {
       yts.test({id});
-      it(testTitle, (done) => {
+      it(testTitle, runDualMsePlaybackTest((done, options) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
         ms.addEventListener('sourceopen', () => {
-          const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+          const videoSb = ms.addSourceBuffer(
+              getMimeTypeWithTunnelMode(
+                  videoStream.mimetype, options));
           const audioSb = ms.addSourceBuffer(audioStream.mimetype);
 
           const fetchStream =
@@ -556,7 +607,8 @@ describe('MSE Conformance Tests', () => {
                     const onUpdateEnd = () => {
                       if (seekTime && segmentIdx === 0) {
                         playbackUtil.playAndHandleErrors(video, (err) => {
-                          fail(err);
+                          video.removeEventListener('timeupdate', onTimeUpdate);
+                          done.fail(err);
                         });
                       }
                       if (segmentIdx >= maxSegments) {
@@ -578,19 +630,21 @@ describe('MSE Conformance Tests', () => {
                 }, 0, 32 * 1024);
               };
 
-          video.addEventListener('timeupdate', () => {
+          const onTimeUpdate = () => {
             if (!video.paused && video.currentTime > startAtSec + 5) {
+              video.removeEventListener('timeupdate', onTimeUpdate);
               expect(video.currentTime)
                   .withContext('video.currentTime')
                   .toBeGreaterThan(startAtSec + 5);
               done();
             }
-          });
+          };
+          video.addEventListener('timeupdate', onTimeUpdate);
 
           appendLoop(audioStream, audioSb, audioSegments);
           appendLoop(videoStream, videoSb, videoSegments, startAtSec);
         }, {once: true});
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
 
     createStartPlayAtNonZeroPositionTest('1.3.13.1', 
@@ -601,13 +655,15 @@ describe('MSE Conformance Tests', () => {
         VP9['VideoNormal'], [2, 3, 4], 12);
 
     yts.test({id: '1.3.15.1'});
-    it('EventTimestamp', (done) => {
+    it('EventTimestamp', runDualMsePlaybackTest((done, options) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
       ms.addEventListener('sourceopen', () => {
         const videoStream = VP9['VideoTiny'];
         const audioStream = AAC['AudioTiny'];
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
         expect(Date.now())
             .withContext('Date.now()')
@@ -616,19 +672,22 @@ describe('MSE Conformance Tests', () => {
         let requestCounter = 0;
         const audioXhr = xhrManager.createRequest(audioStream.src, () => {
           audioSb.appendBuffer(audioXhr.getResponseData());
-          video.addEventListener('timeupdate', (e) => {
+          const onTimeUpdate = (e: Event) => {
             expect(e.timeStamp)
                 .withContext('event.timeStamp')
                 .toBeGreaterThanOrEqual(lastTime);
             lastTime = e.timeStamp;
             if (!video.paused && video.currentTime >= 2 &&
                 requestCounter >= 3) {
+              video.removeEventListener('timeupdate', onTimeUpdate);
               done();
             }
             requestCounter++;
-          });
+          };
+          video.addEventListener('timeupdate', onTimeUpdate);
           playbackUtil.playAndHandleErrors(video, (err) => {
-            fail(err);
+            video.removeEventListener('timeupdate', onTimeUpdate);
+            done.fail(err);
           });
         }, 0, 500000);
         const videoXhr = xhrManager.createRequest(videoStream.src, () => {
@@ -637,16 +696,18 @@ describe('MSE Conformance Tests', () => {
         }, 0, 1500000);
         videoXhr.send();
       }, {once: true});
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
 
     yts.test({id: '1.3.16.1'});
-    it('SeekTimeUpdate', (done) => {
+    it('SeekTimeUpdate', runDualMsePlaybackTest((done, options) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
       ms.addEventListener('sourceopen', () => {
         const videoStream = VP9['VideoNormal'];
         const audioStream = AAC['AudioNormal'];
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
         let lastTime = 0;
         let updateCount = 0;
@@ -655,7 +716,7 @@ describe('MSE Conformance Tests', () => {
           const xhr2 = xhrManager.createRequest(audioStream.src, () => {
             audioSb.appendBuffer(xhr2.getResponseData());
             const onLoadedMetadata = () => {
-              video.addEventListener('timeupdate', () => {
+              const onTimeUpdate = () => {
                 if (!video.paused) {
                   updateCount++;
                   expect(video.currentTime)
@@ -665,15 +726,18 @@ describe('MSE Conformance Tests', () => {
                     updateCount = 0;
                     lastTime += 10;
                     if (lastTime >= 35) {
+                      video.removeEventListener('timeupdate', onTimeUpdate);
                       done();
                     } else {
                       video.currentTime = lastTime + 6;
                     }
                   }
                 }
-              });
+              };
+              video.addEventListener('timeupdate', onTimeUpdate);
               playbackUtil.playAndHandleErrors(video, (err) => {
-                fail(err);
+                video.removeEventListener('timeupdate', onTimeUpdate);
+                done.fail(err);
               });
             };
             if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
@@ -688,7 +752,7 @@ describe('MSE Conformance Tests', () => {
         ms.duration = 100000000;
         xhr.send();
       }, {once: true});
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
 
     yts.test({id: '1.3.17.1'});
     it('AppendWindowStart', (done) => {
@@ -756,13 +820,15 @@ describe('MSE Conformance Tests', () => {
     }, DEFAULT_TIMEOUT_MS);
 
     yts.test({id: '1.3.25.1'});
-    it('PlaybackRateChange', (done) => {
+    it('PlaybackRateChange', runDualMsePlaybackTest((done, options) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
       ms.addEventListener('sourceopen', () => {
         const videoStream = VP9['VideoNormal'];
         const audioStream = AAC['AudioNormal'];
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
         let baseMediaTime = 0.0;
         let baseRealTime = 0.0;
@@ -775,7 +841,7 @@ describe('MSE Conformance Tests', () => {
           const xhr2 = xhrManager.createRequest(audioStream.src, () => {
             audioSb.appendBuffer(xhr2.getResponseData());
             const onLoadedMetadata = () => {
-              video.addEventListener('timeupdate', () => {
+              const onTimeUpdate = () => {
                 updateCount++;
                 if (updateCount % 2 === 0) return;
                 const time = video.currentTime;
@@ -809,6 +875,7 @@ describe('MSE Conformance Tests', () => {
                       .withContext('Playback rate 2x')
                       .toBeGreaterThanOrEqual(1.95);
                 } else {
+                  video.removeEventListener('timeupdate', onTimeUpdate);
                   const droppedFrames =
                       video.getVideoPlaybackQuality().droppedVideoFrames;
                   expect(droppedFrames)
@@ -816,9 +883,11 @@ describe('MSE Conformance Tests', () => {
                       .toBeLessThanOrEqual(1);
                   done();
                 }
-              });
+              };
+              video.addEventListener('timeupdate', onTimeUpdate);
               playbackUtil.playAndHandleErrors(video, (err) => {
-                fail(err);
+                video.removeEventListener('timeupdate', onTimeUpdate);
+                done.fail(err);
               });
             };
             if (video.readyState >= HTMLMediaElement.HAVE_METADATA) {
@@ -832,7 +901,7 @@ describe('MSE Conformance Tests', () => {
         }, 0, 5000000);
         xhr.send();
       }, {once: true});
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
 
     function getActualPlaybackRate(
         currMedia: number, currReal: number, baseMedia: number,
@@ -845,13 +914,15 @@ describe('MSE Conformance Tests', () => {
     function createAvSyncAfterSwitch(
         id: string, testTitle: string, audioStream: StreamDef) {
       yts.test({id});
-      it(testTitle, (done) => {
+      it(testTitle, runDualMsePlaybackTest((done, options) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
         ms.addEventListener('sourceopen', () => {
           const videoStream = H264['VideoTiny'];
           const audioSb = ms.addSourceBuffer(audioStream.mimetype);
-          const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+          const videoSb = ms.addSourceBuffer(
+              getMimeTypeWithTunnelMode(
+                  videoStream.mimetype, options));
           const QUARTERED_AU_DURATION_IN_SECONDS = 1024.0 / 44100 / 4;
           const MAX_DURATION_IN_SECONDS = 5;
           const COUNTER_PROGRESSION = QUARTERED_AU_DURATION_IN_SECONDS / 3;
@@ -881,6 +952,7 @@ describe('MSE Conformance Tests', () => {
                 };
                 video.addEventListener('timeupdate', startListener);
                 video.addEventListener('ended', () => {
+                  video.removeEventListener('timeupdate', startListener);
                   const durationSec = (performance.now() - startTime) / 1000;
                   expect(durationSec)
                       .withContext('Video duration max')
@@ -892,7 +964,8 @@ describe('MSE Conformance Tests', () => {
                 }, {once: true});
                 video.currentTime = QUARTERED_AU_DURATION_IN_SECONDS / 2;
                 playbackUtil.playAndHandleErrors(video, (err) => {
-                  fail(err);
+                  video.removeEventListener('timeupdate', startListener);
+                  done.fail(err);
                 });
               }
             };
@@ -918,7 +991,7 @@ describe('MSE Conformance Tests', () => {
           }, 0, 165757);
           videoXhr.send();
         }, {once: true});
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
 
     createAvSyncAfterSwitch('1.3.26.1', 'AVSync.AAC', AAC['Audio44100']);
@@ -927,7 +1000,7 @@ describe('MSE Conformance Tests', () => {
     function createInBufferSeekTest(
         id: string, testTitle: string, audioStream: StreamDef) {
       yts.test({id});
-      it(testTitle, (done) => {
+      it(testTitle, runDualMsePlaybackTest((done, options) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
         ms.addEventListener('sourceopen', () => {
@@ -936,7 +1009,8 @@ describe('MSE Conformance Tests', () => {
           const maxAllowedSeekMs = 300;
           const videoStream = VP9['VideoNormal'];
           const videoSb = ms.addSourceBuffer(
-              playbackUtil.getMimeTypeWithTunnelMode(videoStream.mimetype));
+              getMimeTypeWithTunnelMode(
+                  videoStream.mimetype, options));
           const audioSb = ms.addSourceBuffer(audioStream.mimetype);
           let startTime = performance.now();
           const audioXhr = xhrManager.createRequest(audioStream.src, () => {
@@ -960,7 +1034,8 @@ describe('MSE Conformance Tests', () => {
               };
               video.addEventListener('timeupdate', onTimeUpdate);
               playbackUtil.playAndHandleErrors(video, (err) => {
-                fail(err);
+                video.removeEventListener('timeupdate', onTimeUpdate);
+                done.fail(err);
               });
             };
             video.addEventListener(
@@ -972,89 +1047,115 @@ describe('MSE Conformance Tests', () => {
           }, 0, 1500000);
           videoXhr.send();
         }, {once: true});
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
 
     createInBufferSeekTest('35B259EC-E1AA-40A6-AE93-8AD8D79128C0', 'InBufferSeek', Opus['CarMed']);
     createInBufferSeekTest('7F7C5D8B-6DDB-467F-B62E-4B79DB5C5DF1', 'InBufferSeek (AAC)', AAC['AudioNormal']);
 
+    /**
+     * Simulates a Shorts transition: the next stream is appended to the same
+     * SourceBuffer after changeType(), at a later time slot, and is reached by
+     * seeking to it.
+     */
     function createChangeTypeTest(
         id: string, fromStream: StreamDef, toStream: StreamDef, suffix = '',
         fromSeconds = 2, toSeconds = 3) {
+      const slotSecs = 100;
+      const isVideoChangeType =
+          fromStream.mediatype === 'video' || toStream.mediatype === 'video';
       yts.test({id});
-      it(`ChangeType.${fromStream.codec}.${toStream.codec}${suffix}`, (done) => {
-        const ms = new MediaSource();
-        video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
+      it(`ChangeType.${fromStream.codec}.${toStream.codec}${suffix}`,
+          runDualMsePlaybackTest((done, options) => {
+            h5vcc?.settings?.set?.('Media.EnableChangeType', 1);
 
-        const onSourceOpen = () => {
-          ms.removeEventListener('sourceopen', onSourceOpen);
-          const xhrManager = new XhrManager();
-          let sourceBuffer: SourceBuffer;
+            const ms = new MediaSource();
+            video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
 
-          try {
-            sourceBuffer = ms.addSourceBuffer(fromStream.mimetype);
-            sourceBuffer.mode = 'sequence';
+            ms.addEventListener('sourceopen', () => {
+              try {
+                const sourceBuffer = ms.addSourceBuffer(
+                    getMimeTypeWithTunnelMode(fromStream.mimetype, options));
 
-            const transitionTime = fromSeconds === -1 ? fromStream.duration : fromSeconds;
-            const windowEndTime = transitionTime + (toSeconds === -1 ? toStream.duration : toSeconds);
-            const targetTime = transitionTime + 2;
+                const fromDuration =
+                    fromSeconds === -1 ? fromStream.duration : fromSeconds;
+                const toDuration =
+                    toSeconds === -1 ? toStream.duration : toSeconds;
+                const fromLength = fromSeconds === -1 ?
+                    fromStream.fileSize :
+                    fromStream.bps * fromSeconds;
+                const toLength = toSeconds === -1 ? toStream.fileSize :
+                                                    toStream.bps * toSeconds;
 
-            const fromLength = fromSeconds === -1 ? fromStream.fileSize : fromStream.bps * fromSeconds;
-            const toLength = toSeconds === -1 ? toStream.fileSize : toStream.bps * toSeconds;
+                sourceBuffer.appendWindowEnd = fromDuration;
 
-            if (fromSeconds !== -1) {
-              sourceBuffer.appendWindowEnd = transitionTime;
-            }
+                const firstXhr =
+                    xhrManager.createRequest(fromStream.src, () => {
+                      sourceBuffer.addEventListener('updateend', () => {
+                        try {
+                          sourceBuffer.changeType(
+                              getMimeTypeWithTunnelMode(
+                                  toStream.mimetype, options));
+                          sourceBuffer.appendWindowEnd = slotSecs + toDuration;
+                          sourceBuffer.appendWindowStart = slotSecs;
+                          sourceBuffer.timestampOffset = slotSecs;
+                        } catch (e) {
+                          done.fail('Failed to changeType: ' + e);
+                          return;
+                        }
 
-            const firstXhr = xhrManager.createRequest(fromStream.src, () => {
-              const onFirstUpdateEnd = () => {
-                sourceBuffer.removeEventListener('updateend', onFirstUpdateEnd);
+                        const secondXhr =
+                            xhrManager.createRequest(toStream.src, () => {
+                              sourceBuffer.addEventListener('updateend', () => {
+                                ms.endOfStream();
 
-                try {
-                  if (toSeconds !== -1) {
-                    sourceBuffer.appendWindowEnd = windowEndTime;
-                  } else {
-                    sourceBuffer.appendWindowEnd = Infinity;
-                  }
-
-                  sourceBuffer.changeType(toStream.mimetype);
-
-                  const secondXhr = xhrManager.createRequest(toStream.src, () => {
-                    const onSecondUpdateEnd = () => {
-                      sourceBuffer.removeEventListener(
-                          'updateend', onSecondUpdateEnd);
-                      ms.endOfStream();
-
-                      video.addEventListener(
-                          'timeupdate', function onTimeUpdate() {
-                            if (video.currentTime >= targetTime) {
-                              video.removeEventListener(
-                                  'timeupdate', onTimeUpdate);
-                              done();
-                            }
-                          });
-                      video.play();
-                    };
-                    sourceBuffer.addEventListener('updateend', onSecondUpdateEnd);
-                    sourceBuffer.appendBuffer(secondXhr.getResponseData());
-                  }, 0, toLength);
-                  secondXhr.send();
-                } catch (e) {
-                  fail('Failed to changeType or append second stream: ' + e);
-                  done();
-                }
-              };
-              sourceBuffer.addEventListener('updateend', onFirstUpdateEnd);
-              sourceBuffer.appendBuffer(firstXhr.getResponseData());
-            }, 0, fromLength);
-            firstXhr.send();
-          } catch (e) {
-            fail('Failed to add source buffer: ' + e);
-            done();
-          }
-        };
-        ms.addEventListener('sourceopen', onSourceOpen);
-      }, DEFAULT_TIMEOUT_MS);
+                                const onTimeUpdate = () => {
+                                  if (video.currentTime < 1) return;
+                                  video.removeEventListener(
+                                      'timeupdate', onTimeUpdate);
+                                  const onTimeUpdateAfterSeek = () => {
+                                    if (video.currentTime >= slotSecs + 2) {
+                                      video.removeEventListener(
+                                          'timeupdate', onTimeUpdateAfterSeek);
+                                      done();
+                                    }
+                                  };
+                                  video.addEventListener(
+                                      'timeupdate', onTimeUpdateAfterSeek);
+                                  video.currentTime = slotSecs;
+                                };
+                                video.addEventListener(
+                                    'timeupdate', onTimeUpdate);
+                                playbackUtil.playAndHandleErrors(
+                                    video, (err) => {
+                                      video.removeEventListener(
+                                          'timeupdate', onTimeUpdate);
+                                      done.fail(err);
+                                    });
+                              }, {once: true});
+                              try {
+                                sourceBuffer.appendBuffer(
+                                    secondXhr.getResponseData());
+                              } catch (e) {
+                                done.fail(
+                                    'Failed to append second stream: ' + e);
+                              }
+                            }, 0, toLength);
+                        secondXhr.send();
+                      }, {once: true});
+                      try {
+                        sourceBuffer.appendBuffer(firstXhr.getResponseData());
+                      } catch (e) {
+                        done.fail('Failed to append first stream: ' + e);
+                      }
+                    }, 0, fromLength);
+                firstXhr.send();
+              } catch (e) {
+                done.fail('Failed to add source buffer: ' + e);
+              }
+            }, {once: true});
+          }, /* enableDualPass= */ isVideoChangeType),
+          DEFAULT_TIMEOUT_MS * 2);
     }
 
     // Different Family Transitions (Optional - SHOULD)
@@ -1090,7 +1191,7 @@ describe('MSE Conformance Tests', () => {
         id: string, testTitle: string, videoStream: StreamDef, audioStream: StreamDef,
         isSpec: boolean) {
       yts.test({id});
-      it(testTitle, (done) => {
+      it(testTitle, runDualMsePlaybackTest((done, options) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
         ms.addEventListener('sourceopen', () => {
@@ -1100,16 +1201,19 @@ describe('MSE Conformance Tests', () => {
           const testStartTime = performance.now();
           const getElapsedS = () =>
               (performance.now() - testStartTime) / 1000.0;
-          const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+          const videoSb = ms.addSourceBuffer(
+              getMimeTypeWithTunnelMode(
+                  videoStream.mimetype, options));
           const audioSb = ms.addSourceBuffer(audioStream.mimetype);
           const videoXhr = xhrManager.createRequest(videoStream.src, () => {
             videoSb.appendBuffer(videoXhr.getResponseData());
-            video.addEventListener('timeupdate', () => {
+            const onTimeUpdate = () => {
               const elapsedInS = getElapsedS();
               if (isSpec) {
                 if (times === 0) {
                   baseTimeDiff = elapsedInS - video.currentTime;
                 } else {
+                  video.removeEventListener('timeupdate', onTimeUpdate);
                   const timeDiff = elapsedInS - video.currentTime;
                   maxTimeDiff =
                       Math.max(Math.abs(timeDiff - baseTimeDiff), maxTimeDiff);
@@ -1130,16 +1234,19 @@ describe('MSE Conformance Tests', () => {
                       Math.max(Math.abs(timeDiff - baseTimeDiff), maxTimeDiff);
                 }
                 if (video.currentTime > 10) {
+                  video.removeEventListener('timeupdate', onTimeUpdate);
                   expect(maxTimeDiff)
                       .withContext('media.currentTime diff during playback')
                       .toBeLessThanOrEqual(0.25);
                   done();
                 }
               }
-            });
+            };
+            video.addEventListener('timeupdate', onTimeUpdate);
             video.addEventListener('canplaythrough', () => {
               playbackUtil.playAndHandleErrors(video, (err) => {
-                fail(err);
+                video.removeEventListener('timeupdate', onTimeUpdate);
+                done.fail(err);
               });
             }, {once: true});
           }, 0, 2500000);
@@ -1149,7 +1256,7 @@ describe('MSE Conformance Tests', () => {
           }, 0, 2500000);
           audioXhr.send();
         }, {once: true});
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
 
     createCurrentTimeAccuracyTest('1.4.1.1', 
@@ -1165,7 +1272,7 @@ describe('MSE Conformance Tests', () => {
         id: string, testTitle: string, videoStream: StreamDef, audioStream: StreamDef,
         maxDiffInS: number) {
       yts.test({id});
-      it(testTitle, (done) => {
+      it(testTitle, runDualMsePlaybackTest((done, options) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
         ms.addEventListener('sourceopen', () => {
@@ -1176,7 +1283,9 @@ describe('MSE Conformance Tests', () => {
           const testStartTime = performance.now();
           const getElapsedS = () =>
               (performance.now() - testStartTime) / 1000.0;
-          const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+          const videoSb = ms.addSourceBuffer(
+              getMimeTypeWithTunnelMode(
+                  videoStream.mimetype, options));
           const audioSb = ms.addSourceBuffer(audioStream.mimetype);
 
           const videoXhr = xhrManager.createRequest(videoStream.src, () => {
@@ -1191,8 +1300,9 @@ describe('MSE Conformance Tests', () => {
               }
               times++;
             };
-            video.addEventListener('play', () => {
+            const onPlay = () => {
               if (assertTimeAtPlay) {
+                video.removeEventListener('play', onPlay);
                 const timeDiff = getElapsedS() - video.currentTime;
                 const currentTimeDiff = Math.abs(baseTimeDiff - timeDiff);
                 currentTimeIsAccurate =
@@ -1204,7 +1314,8 @@ describe('MSE Conformance Tests', () => {
                 assertTimeAtPlay = false;
                 done();
               }
-            });
+            };
+            video.addEventListener('play', onPlay);
             video.addEventListener('pause', () => {
               const timeDiff = getElapsedS() - video.currentTime;
               const currentTimeDiff = Math.abs(baseTimeDiff - timeDiff);
@@ -1212,13 +1323,17 @@ describe('MSE Conformance Tests', () => {
               currentTimeIsAccurate = currentTimeDiff <= maxDiffInS;
               assertTimeAtPlay = true;
               playbackUtil.playAndHandleErrors(video, (err) => {
-                fail(err);
+                video.removeEventListener('timeupdate', onTimeUpdate);
+                video.removeEventListener('play', onPlay);
+                done.fail(err);
               });
             }, {once: true});
             video.addEventListener('timeupdate', onTimeUpdate);
             video.addEventListener('canplaythrough', () => {
               playbackUtil.playAndHandleErrors(video, (err) => {
-                fail(err);
+                video.removeEventListener('timeupdate', onTimeUpdate);
+                video.removeEventListener('play', onPlay);
+                done.fail(err);
               });
             }, {once: true});
           }, 0, 2500000);
@@ -1228,7 +1343,7 @@ describe('MSE Conformance Tests', () => {
           }, 0, 2500000);
           audioXhr.send();
         }, {once: true});
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
 
     createCurrentTimePausedAccuracyTest('1.4.3.1', 
@@ -1275,19 +1390,21 @@ describe('MSE Conformance Tests', () => {
     function createFrameTest(
         id: string, testTitle: string, videoStream: StreamDef) {
       yts.test({id});
-      it(testTitle, (done) => {
+      it(testTitle, runDualMsePlaybackTest((done, options) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
         ms.addEventListener('sourceopen', () => {
           const audioStream = AAC['AudioNormal'];
           const videoChain = new FixedAppendSize(new ResetInit(
               new FileSource(videoStream.src, xhrManager, timeoutManager)));
-          const videoSb = ms.addSourceBuffer(H264_STREAMS.mimetype);
+          const videoSb = ms.addSourceBuffer(
+              getMimeTypeWithTunnelMode(
+                  H264_STREAMS.mimetype, options));
           const audioChain = new FixedAppendSize(new ResetInit(
               new FileSource(audioStream.src, xhrManager, timeoutManager)));
           const audioSb = ms.addSourceBuffer(AAC_STREAMS.mimetype);
           playbackUtil.playAndHandleErrors(video, (err) => {
-            fail(err);
+            done.fail(err);
           });
           playThrough(
               timeoutManager, video, 5, 18, videoSb, videoChain, audioSb,
@@ -1298,7 +1415,7 @@ describe('MSE Conformance Tests', () => {
                 done();
               });
         }, {once: true});
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
 
     createFrameTest('1.8.1.1', 'H264FrameGaps', H264['FrameGap']);
@@ -1307,13 +1424,15 @@ describe('MSE Conformance Tests', () => {
     function createHeAacTest(
         id: string, testTitle: string, audioStream: StreamDef) {
       yts.test({id});
-      it(testTitle, (done) => {
+      it(testTitle, runDualMsePlaybackTest((done, options) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
         ms.addEventListener('sourceopen', () => {
           const videoStream = H264['VideoHeAac'];
           const audioSb = ms.addSourceBuffer(audioStream.mimetype);
-          const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+          const videoSb = ms.addSourceBuffer(
+              getMimeTypeWithTunnelMode(
+                  videoStream.mimetype, options));
           const xhr = xhrManager.createRequest(audioStream.src, () => {
             audioSb.addEventListener('update', () => {
               const xhr2 = xhrManager.createRequest(videoStream.src, () => {
@@ -1327,9 +1446,9 @@ describe('MSE Conformance Tests', () => {
                         .withContext('media.currentTime lower bound')
                         .toBeGreaterThanOrEqual(audioStream.duration - 0.5);
                     done();
-                  });
+                  }, {once: true});
                   playbackUtil.playAndHandleErrors(video, (err) => {
-                    fail(err);
+                    done.fail(err);
                   });
                 }, {once: true});
                 videoSb.appendBuffer(xhr2.getResponseData());
@@ -1340,7 +1459,7 @@ describe('MSE Conformance Tests', () => {
           }, 0, audioStream.fileSize);
           xhr.send();
         }, {once: true});
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
 
     createHeAacTest('1.8.3.1', 'HE-AAC/ExplicitSBR', AAC['AudioLowExplicitHE']);
@@ -1376,12 +1495,14 @@ describe('MSE Conformance Tests', () => {
     function createEventFiredTest(
         id: string, testTitle: string, eventName: string, shouldPlay = false) {
       yts.test({id});
-      it(testTitle, (done) => {
+      it(testTitle, runDualMsePlaybackTest((done, options) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
         ms.addEventListener('sourceopen', () => {
           const videoStream = VP9['VideoNormal'];
-          const sb = ms.addSourceBuffer(videoStream.mimetype);
+          const sb = ms.addSourceBuffer(
+              getMimeTypeWithTunnelMode(
+                  videoStream.mimetype, options));
           const videoXhr = xhrManager.createRequest(videoStream.src, () => {
             video.addEventListener(eventName, () => {
               expect(true).withContext(`${eventName} event fired`).toBeTrue();
@@ -1390,13 +1511,13 @@ describe('MSE Conformance Tests', () => {
             sb.appendBuffer(videoXhr.getResponseData());
             if (shouldPlay) {
               playbackUtil.playAndHandleErrors(video, (err) => {
-                fail(err);
+                done.fail(err);
               });
             }
           }, 0, 3000000);
           videoXhr.send();
         }, {once: true});
-      }, DEFAULT_TIMEOUT_MS);
+      }, shouldPlay), DEFAULT_TIMEOUT_MS * 2);
     }
 
     createEventFiredTest('1.9.18.1', 'canplay', 'canplay');
@@ -1404,12 +1525,14 @@ describe('MSE Conformance Tests', () => {
     createEventFiredTest('1.9.21.1', 'timeupdate', 'timeupdate', true);
 
     yts.test({id: '1.9.20.1'});
-    it('autoplay', (done) => {
+    it('autoplay', runDualMsePlaybackTest((done, options) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
       ms.addEventListener('sourceopen', () => {
         const videoStream = VP9['VideoNormal'];
-        const sb = ms.addSourceBuffer(videoStream.mimetype);
+        const sb = ms.addSourceBuffer(
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const videoXhr = xhrManager.createRequest(videoStream.src, () => {
           video.addEventListener('timeupdate', () => {
             expect(true)
@@ -1422,7 +1545,7 @@ describe('MSE Conformance Tests', () => {
         video.autoplay = true;
         videoXhr.send();
       }, {once: true});
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
 
     yts.test({id: '1.9.22.1'});
     it('networkState', (done) => {
@@ -1457,13 +1580,15 @@ describe('MSE Conformance Tests', () => {
         id: string, testTitle: string, playbackRate: number, isMax: boolean,
         threshold: number) {
       yts.test({id});
-      it(testTitle, (done) => {
+      it(testTitle, runDualMsePlaybackTest((done, options) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
         ms.addEventListener('sourceopen', () => {
           const videoStream = VP9['VideoNormal'];
           const audioStream = AAC['AudioNormal'];
-          const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+          const videoSb = ms.addSourceBuffer(
+              getMimeTypeWithTunnelMode(
+                  videoStream.mimetype, options));
           const audioSb = ms.addSourceBuffer(audioStream.mimetype);
           const warmUpCount = 15;
           let extremeGranularity = isMax ? 0 : Infinity;
@@ -1472,7 +1597,7 @@ describe('MSE Conformance Tests', () => {
           const videoXhr = xhrManager.createRequest(videoStream.src, () => {
             videoSb.appendBuffer(videoXhr.getResponseData());
             video.playbackRate = playbackRate;
-            video.addEventListener('timeupdate', () => {
+            const onTimeUpdate = () => {
               if (times >= warmUpCount) {
                 const interval = Date.now() - last;
                 console.log(`timeupdate interval: ${interval}ms`);
@@ -1487,6 +1612,7 @@ describe('MSE Conformance Tests', () => {
                 }
               }
               if (times === 50 + warmUpCount) {
+                video.removeEventListener('timeupdate', onTimeUpdate);
                 extremeGranularity = extremeGranularity / 1000.0;
                 console.log(
                     `most extreme interval: ${extremeGranularity.toFixed(3)}s`);
@@ -1503,9 +1629,11 @@ describe('MSE Conformance Tests', () => {
               }
               last = Date.now();
               times++;
-            });
+            };
+            video.addEventListener('timeupdate', onTimeUpdate);
             playbackUtil.playAndHandleErrors(video, (err) => {
-              fail(err);
+              video.removeEventListener('timeupdate', onTimeUpdate);
+              done.fail(err);
             });
           }, 0, 3000000);
           const audioXhr = xhrManager.createRequest(audioStream.src, () => {
@@ -1514,7 +1642,7 @@ describe('MSE Conformance Tests', () => {
           });
           audioXhr.send();
         }, {once: true});
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
 
     createGranularityTest('1.9.23.1', 'maxGranularityPlaybackRate0.25', 0.25, true, 0.28);
@@ -1552,19 +1680,21 @@ describe('MSE Conformance Tests', () => {
     createGranularityTest('1.9.65.1', 'minGranularityPlaybackRate4.00', 4.00, false, 0.015);
 
     yts.test({id: '1.9.35.1'});
-    it('progressing', (done) => {
+    it('progressing', runDualMsePlaybackTest((done, options) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
       ms.addEventListener('sourceopen', () => {
         const videoStream = VP9['VideoNormal'];
         const audioStream = AAC['AudioNormal'];
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
         let last = 0;
         let times = 0;
         const videoXhr = xhrManager.createRequest(videoStream.src, () => {
           videoSb.appendBuffer(videoXhr.getResponseData());
-          video.addEventListener('timeupdate', () => {
+          const onTimeUpdate = () => {
             if (times === 0) {
               last = video.currentTime;
             } else {
@@ -1574,12 +1704,15 @@ describe('MSE Conformance Tests', () => {
               last = video.currentTime;
             }
             if (video.currentTime > 10) {
+              video.removeEventListener('timeupdate', onTimeUpdate);
               done();
             }
             times++;
-          });
+          };
+          video.addEventListener('timeupdate', onTimeUpdate);
           playbackUtil.playAndHandleErrors(video, (err) => {
-            fail(err);
+            video.removeEventListener('timeupdate', onTimeUpdate);
+            done.fail(err);
           });
         }, 0, 3000000);
         const audioXhr = xhrManager.createRequest(audioStream.src, () => {
@@ -1588,29 +1721,34 @@ describe('MSE Conformance Tests', () => {
         });
         audioXhr.send();
       }, {once: true});
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
 
     yts.test({id: '1.9.37.1'});
-    it('duration on timeupdate', (done) => {
+    it('duration on timeupdate', runDualMsePlaybackTest((done, options) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
       ms.addEventListener('sourceopen', () => {
         const videoStream = VP9['VideoNormal'];
         const audioStream = AAC['AudioNormal'];
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
         const videoXhr = xhrManager.createRequest(videoStream.src, () => {
           videoSb.appendBuffer(videoXhr.getResponseData());
-          video.addEventListener('timeupdate', () => {
+          const onTimeUpdate = () => {
             expect(video.duration)
                 .withContext('video.duration')
                 .toBeGreaterThanOrEqual(0);
             if (video.currentTime > 1) {
+              video.removeEventListener('timeupdate', onTimeUpdate);
               done();
             }
-          });
+          };
+          video.addEventListener('timeupdate', onTimeUpdate);
           playbackUtil.playAndHandleErrors(video, (err) => {
-            fail(err);
+            video.removeEventListener('timeupdate', onTimeUpdate);
+            done.fail(err);
           });
         }, 0, 3000000);
         const audioXhr = xhrManager.createRequest(audioStream.src, () => {
@@ -1619,18 +1757,20 @@ describe('MSE Conformance Tests', () => {
         });
         audioXhr.send();
       }, {once: true});
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
 
     function createPlaybackRateTest(
         id: string, testTitle: string, playbackRate: number) {
       yts.test({id});
-      it(testTitle, (done) => {
+      it(testTitle, runDualMsePlaybackTest((done, options) => {
         const ms = new MediaSource();
         video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
         ms.addEventListener('sourceopen', () => {
           const videoStream = VP9['VideoNormal'];
           const audioStream = AAC['AudioNormal'];
-          const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+          const videoSb = ms.addSourceBuffer(
+              getMimeTypeWithTunnelMode(
+                  videoStream.mimetype, options));
           const audioSb = ms.addSourceBuffer(audioStream.mimetype);
           const videoXhr = xhrManager.createRequest(videoStream.src, () => {
             videoSb.appendBuffer(videoXhr.getResponseData());
@@ -1639,7 +1779,7 @@ describe('MSE Conformance Tests', () => {
             let times = 0;
             let realTimeLast = 0;
             let playTimeLast = 0;
-            video.addEventListener('timeupdate', () => {
+            const onTimeUpdate = () => {
               if (times <= warmUpCount) {
                 realTimeLast = Date.now();
                 playTimeLast = video.currentTime;
@@ -1663,12 +1803,15 @@ describe('MSE Conformance Tests', () => {
                 playTimeLast = playTimeNext;
               }
               if (times === 50 + warmUpCount) {
+                video.removeEventListener('timeupdate', onTimeUpdate);
                 done();
               }
               times++;
-            });
+            };
+            video.addEventListener('timeupdate', onTimeUpdate);
             playbackUtil.playAndHandleErrors(video, (err) => {
-              fail(err);
+              video.removeEventListener('timeupdate', onTimeUpdate);
+              done.fail(err);
             });
           });
           const audioXhr = xhrManager.createRequest(audioStream.src, () => {
@@ -1677,7 +1820,7 @@ describe('MSE Conformance Tests', () => {
           });
           audioXhr.send();
         }, {once: true});
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
 
     createPlaybackRateTest('1.9.23.1', 'PlaybackRate0.25', 0.25);

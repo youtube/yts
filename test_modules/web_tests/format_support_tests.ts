@@ -29,10 +29,11 @@ import {AC3_STREAMS} from 'google3/third_party/javascript/yts/test_utils/streams
 import {AV1_STREAMS} from 'google3/third_party/javascript/yts/test_utils/streams/av1';
 import {EAC3_STREAMS} from 'google3/third_party/javascript/yts/test_utils/streams/eac3';
 import {H264_STREAMS} from 'google3/third_party/javascript/yts/test_utils/streams/h264';
-import type {StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
+import type {PlaybackOptions, StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
 import {AAC, AC3, AV1, EAC3, Opus, VP9} from 'google3/third_party/javascript/yts/test_utils/streams/media_streams';
 import {OPUS_STREAMS} from 'google3/third_party/javascript/yts/test_utils/streams/opus';
 import {VP9_STREAMS} from 'google3/third_party/javascript/yts/test_utils/streams/vp9';
+import {runWithTunnelModeDualPass} from 'google3/third_party/javascript/yts/test_utils/tunnel_mode';
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_DURATION = 5;
@@ -63,6 +64,33 @@ describe('Format Support Tests', () => {
   }
 
   /**
+   * Executes a video playback test across Pass 1 (Tunnel Mode ON) and Pass 2
+   * (Tunnel Mode OFF) when tunnel mode is active.
+   */
+  function runDualPlaybackTest(
+      runPass: (done: DoneFn, options: PlaybackOptions) => void,
+  ): (done: DoneFn) => void {
+    return (done: DoneFn) => {
+      runWithTunnelModeDualPass(
+          done,
+          (passDone, options) => {
+            video = playbackUtil.getVideoElement()!;
+            runPass(passDone, options);
+          },
+          {
+            onBeforePass2: () => {
+              video.pause();
+              activeStream?.stop();
+              activeStream = undefined;
+              playbackUtil.cleanupVideoElement();
+              playbackUtil.initializeVideoElement();
+            },
+          },
+      );
+    };
+  }
+
+  /**
    * Monitors video playback progress and asserts that playback reaches the
    * expected duration.
    * @param done Jasmine done callback function.
@@ -84,8 +112,8 @@ describe('Format Support Tests', () => {
     video.addEventListener('timeupdate', onTimeUpdate);
 
     playbackUtil.playAndHandleErrors(video, (msg) => {
-      fail(msg);
-      done();
+      video.removeEventListener('timeupdate', onTimeUpdate);
+      done.fail(msg);
     });
   }
 
@@ -415,11 +443,12 @@ describe('Format Support Tests', () => {
         stopTime: number,
     ) {
       yts.test({id});
-      it(name, (done) => {
+      it(name, runDualPlaybackTest((done, options) => {
         activeStream = setupMse(
-            video, videoStream, AAC['AudioForVP9Live'] as StreamDef, stopTime);
+            video, videoStream, AAC['AudioForVP9Live'] as StreamDef, stopTime,
+            undefined, undefined, options);
         monitorPlayback(done, stopTime);
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
     createLiveTest('20.3.1.1', 'Playback', VP9['VideoLive'] as StreamDef, 14);
     createLiveTest('20.3.2.1', 'PartialSegmentPlayback', VP9['VideoLive'] as StreamDef, 3);
@@ -443,12 +472,13 @@ describe('Format Support Tests', () => {
       }
 
       yts.test({id});
-      it(name, (done) => {
+      it(name, runDualPlaybackTest((done, options) => {
         checkMandatory(mandatory);
-        activeStream =
-            setupMse(video, videoStream, audioStream, DEFAULT_DURATION);
+        activeStream = setupMse(
+            video, videoStream, audioStream, DEFAULT_DURATION, undefined,
+            undefined, options);
         monitorPlayback(done, DEFAULT_DURATION);
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
 
     const vp9HdrStreams: Array<{id: string; stream: StreamDef}> = [
@@ -576,13 +606,13 @@ describe('Format Support Tests', () => {
       const mandatory = av1Level < 5.0 || util.isAv1Gt4K();
 
       yts.test({id});
-      it(name, (done) => {
+      it(name, runDualPlaybackTest((done, options) => {
         checkMandatory(mandatory);
         activeStream = setupMse(
             video, videoStream, AAC['AudioNormal'] as StreamDef,
-            DEFAULT_DURATION);
+            DEFAULT_DURATION, undefined, undefined, options);
         monitorPlayback(done, DEFAULT_DURATION);
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
 
     /**
@@ -611,13 +641,13 @@ describe('Format Support Tests', () => {
       }
 
       yts.test({id});
-      it(name, (done) => {
+      it(name, runDualPlaybackTest((done, options) => {
         checkMandatory(mandatory);
         activeStream = setupMse(
             video, videoStream, AAC['AudioNormal'] as StreamDef,
-            DEFAULT_DURATION);
+            DEFAULT_DURATION, undefined, undefined, options);
         monitorPlayback(done, DEFAULT_DURATION);
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
 
     const av1SdrStreams: Array<{id: string; stream: StreamDef}> = [

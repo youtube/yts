@@ -279,7 +279,11 @@ export const DAB_REQUEST_PARAMS = new Map<DabTopics, ParameterDefinition[]>([
   ],
   [
     DabTopics.SET_POWER_MODE,
-    [{name: 'powerMode', type: 'string', required: true}],
+    // Accept both 'powerMode' (DAB spec) and 'mode' (functional suite).
+    [
+      {name: 'powerMode', type: 'string'},
+      {name: 'mode', type: 'string'},
+    ],
   ],
 ]);
 

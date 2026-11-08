@@ -16,8 +16,9 @@
  */
 
 import {asUnsafeAny, extendedPerformance, is4k, is8k, isGt4K, isGtFHD} from 'google3/third_party/javascript/yts/test_utils/legacy_yts_utils';
-import {createMediaSourceUrlFromSource, getMimeTypeWithTunnelMode, isHdrSupported} from 'google3/third_party/javascript/yts/test_utils/playback_util';
+import {createMediaSourceUrlFromSource, isHdrSupported} from 'google3/third_party/javascript/yts/test_utils/playback_util';
 import {AAC, AV1, H264, VP9} from 'google3/third_party/javascript/yts/test_utils/streams/media_streams';
+import {getMimeTypeWithTunnelMode} from 'google3/third_party/javascript/yts/test_utils/tunnel_mode';
 import {h5vcc} from 'google3/third_party/javascript/yts/yts_common/h5vcc';
 
 

@@ -50,6 +50,7 @@ import {
   AV1,
   H264,
 } from 'google3/third_party/javascript/yts/test_utils/streams/media_streams';
+import {getMimeTypeWithTunnelMode} from 'google3/third_party/javascript/yts/test_utils/tunnel_mode';
 
 /** Declarative specification for a 2027 Concurrent Playback test case. */
 interface DualVideoTestCase2027 {
@@ -561,7 +562,7 @@ describe('Functional Tests', () => {
           const mediaSource = new MediaSource();
           mediaSource.addEventListener('sourceopen', () => {
             const videoSourceBuffer = mediaSource.addSourceBuffer(
-              util.getMimeTypeWithTunnelMode(secondaryStream.mimetype, {
+              getMimeTypeWithTunnelMode(secondaryStream.mimetype, {
                 disableTunnel: true,
               }),
             );

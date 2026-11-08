@@ -15,34 +15,45 @@
  * limitations under the License.
  */
 
+import 'jasmine';
+
 import {webpOverVideoTest} from 'google3/third_party/javascript/yts/test_utils/shared_tests/webp_over_video_test';
+import {runWithTunnelModeDualPass} from 'google3/third_party/javascript/yts/test_utils/tunnel_mode';
 
 const TEST_TIMEOUT = 50 * 1000; // 50 sec
+
+function runDualWebpOverVideoTest(numAnimations: number): (done: DoneFn) => void {
+  return (done: DoneFn) => {
+    runWithTunnelModeDualPass(done, (passDone, options) => {
+      webpOverVideoTest(numAnimations, options)
+        .then((errors) => {
+          if (errors.length > 0) {
+            passDone.fail(errors.join('; '));
+            return;
+          }
+          passDone();
+        })
+        .catch((e) => {
+          passDone.fail(e instanceof Error ? e : new Error(String(e)));
+        });
+    });
+  };
+}
 
 describe('Functional Tests', () => {
   describe('WebP', () => {
     yts.test({id: 'B56048AC-C383-4A61-A037-F9600BD152D3'});
     it(
       'WebP Over Video Test',
-      async () => {
-        const errors = await webpOverVideoTest(1);
-        for (const error of errors) {
-          fail(error);
-        }
-      },
-      TEST_TIMEOUT,
+      runDualWebpOverVideoTest(1),
+      TEST_TIMEOUT * 2,
     );
 
     yts.test({id: 'CD603552-1CA5-4445-8561-D1B3D21CC67F'});
     it(
       '10x WebP Over Video Test',
-      async () => {
-        const errors = await webpOverVideoTest(10);
-        for (const error of errors) {
-          fail(error);
-        }
-      },
-      TEST_TIMEOUT,
+      runDualWebpOverVideoTest(10),
+      TEST_TIMEOUT * 2,
     );
   });
 });

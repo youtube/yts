@@ -27,8 +27,9 @@ import * as util from 'google3/third_party/javascript/yts/test_utils/legacy_yts_
 import {setupMse} from 'google3/third_party/javascript/yts/test_utils/mse/setup_mse';
 import * as playbackUtil from 'google3/third_party/javascript/yts/test_utils/playback_util';
 import {StreamPromise} from 'google3/third_party/javascript/yts/test_utils/streaming/stream_promise';
-import type {StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
+import type {PlaybackOptions, StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
 import {AAC, AC3, AV1, EAC3, H264, Iamf, Opus, VP9} from 'google3/third_party/javascript/yts/test_utils/streams/media_streams';
+import {runWithTunnelModeDualPass} from 'google3/third_party/javascript/yts/test_utils/tunnel_mode';
 
 const DEFAULT_TIMEOUT_MS = 60_000;
 
@@ -55,6 +56,53 @@ describe('EME Conformance Tests', () => {
     if (!mandatory) {
       yts.markOptional();
     }
+  }
+
+  /**
+   * Executes a DRM video playback test across Pass 1 (Tunnel Mode ON) and
+   * Pass 2 (Tunnel Mode OFF) with EME session teardown/re-initialization
+   * between passes.
+   *
+   * Parameterized test factories that register both video playback cases and
+   * audio-only or negative key-system rejection cases (such as
+   * `createEncryptionSchemeTest`) can pass `enableDualPass = false` so specs
+   * that never create a video SourceBuffer run only once instead of repeating
+   * an identical pass.
+   *
+   * @param runPass Callback executing a single pass of the test.
+   * @param enableDualPass Whether to run both tunnel and non-tunnel passes on
+   *     tunnel-capable devices. When false, runs `runPass` once with default
+   *     options.
+   */
+  function runDualEmePlaybackTest(
+      runPass: (done: DoneFn, options: PlaybackOptions) => void,
+      enableDualPass = true,
+  ): (done: DoneFn) => void {
+    if (!enableDualPass) {
+      return (done: DoneFn) => {
+        runPass(done, {});
+      };
+    }
+    return (done: DoneFn) => {
+      runWithTunnelModeDualPass(
+          done,
+          (passDone, options) => {
+            video = playbackUtil.getVideoElement()!;
+            runPass(passDone, options);
+          },
+          {
+            onBeforePass2: async () => {
+              video.pause();
+              activeStream?.stop();
+              activeStream = undefined;
+              await emeHandler.dispose();
+              emeHandler = new EMEHandler();
+              playbackUtil.cleanupVideoElement();
+              playbackUtil.initializeVideoElement();
+            },
+          },
+      );
+    };
   }
 
   function isStreamTypeSupported(stream: StreamDef|null): boolean {
@@ -88,13 +136,15 @@ describe('EME Conformance Tests', () => {
           util.makeCapitalName(encStream.mediatype)}`;
 
       yts.test({id});
-      it(testName, (done) => {
+      it(testName, runDualEmePlaybackTest((done, options) => {
         checkMandatory(mandatory);
-        activeStream = setupMse(video, videoStream, audioStream);
+        activeStream = setupMse(
+            video, videoStream, audioStream, undefined, undefined, undefined,
+            options);
         setupEme(emeHandler, video, [encStream], LicenseManager.WIDEVINE);
 
         let timeUpdateCount = 0;
-        video.addEventListener('timeupdate', function onTimeUpdate() {
+        const onTimeUpdate = () => {
           playbackUtil.logPlaybackProgress(video, timeUpdateCount++);
           if (!video.paused && video.currentTime >= duration &&
               !emeHandler.keyUnusable) {
@@ -102,12 +152,13 @@ describe('EME Conformance Tests', () => {
             expect(video.currentTime).toBeGreaterThanOrEqual(duration);
             done();
           }
-        });
+        };
+        video.addEventListener('timeupdate', onTimeUpdate);
         playbackUtil.playAndHandleErrors(video, (msg) => {
-          fail(msg);
-          done();
+          video.removeEventListener('timeupdate', onTimeUpdate);
+          done.fail(msg);
         });
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
 
     createEncryptedCodecTest(
@@ -138,17 +189,18 @@ describe('EME Conformance Tests', () => {
     );
 
     yts.test({id: '3.1.6.1'});
-    it('WidevineH264MultiMediaKeySessions', (done) => {
+    it('WidevineH264MultiMediaKeySessions', runDualEmePlaybackTest((done, options) => {
       const videoStream = H264['VideoMultiKeyCenc'];
       const audioStream = AAC['AudioNormal'];
       const MediaKeySessionCount = 8;
 
-      activeStream =
-          setupMse(video, videoStream, audioStream, 15, MediaKeySessionCount);
+      activeStream = setupMse(
+          video, videoStream, audioStream, 15, MediaKeySessionCount, undefined,
+          options);
       setupEme(emeHandler, video, [videoStream], LicenseManager.WIDEVINE);
 
       let timeUpdateCount = 0;
-      video.addEventListener('timeupdate', function onTimeUpdate() {
+      const onTimeUpdate = () => {
         playbackUtil.logPlaybackProgress(video, timeUpdateCount++);
         if (!video.paused && video.currentTime >= 15 &&
             !emeHandler.keyUnusable) {
@@ -158,12 +210,13 @@ describe('EME Conformance Tests', () => {
           expect(emeHandler.keyCount).toBe(128);
           done();
         }
-      });
+      };
+      video.addEventListener('timeupdate', onTimeUpdate);
       playbackUtil.playAndHandleErrors(video, (msg) => {
-        fail(msg);
-        done();
+        video.removeEventListener('timeupdate', onTimeUpdate);
+        done.fail(msg);
       });
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
 
     function createWidevineLicenseDelayTest(
         id: string,
@@ -171,11 +224,13 @@ describe('EME Conformance Tests', () => {
     ) {
       const audioStream = AAC['AudioNormal'];
       yts.test({id});
-      it(`WidevineLicenseDelay${videoStream.codec}Video`, (done) => {
-        activeStream = setupMse(video, videoStream, audioStream);
+      it(`WidevineLicenseDelay${videoStream.codec}Video`, runDualEmePlaybackTest((done, options) => {
+        activeStream = setupMse(
+            video, videoStream, audioStream, undefined, undefined, undefined,
+            options);
         setupEme(emeHandler, video, [videoStream], LicenseManager.WIDEVINE);
         let timeUpdateCountDelay = 0;
-        video.addEventListener('timeupdate', function onTimeUpdate() {
+        const onTimeUpdate = () => {
           playbackUtil.logPlaybackProgress(video, timeUpdateCountDelay++);
           if (!video.paused && video.currentTime >= 15 &&
               !emeHandler.keyUnusable) {
@@ -183,12 +238,13 @@ describe('EME Conformance Tests', () => {
             expect(video.currentTime).toBeGreaterThanOrEqual(15);
             done();
           }
-        });
+        };
+        video.addEventListener('timeupdate', onTimeUpdate);
         playbackUtil.playAndHandleErrors(video, (msg) => {
-          fail(msg);
-          done();
+          video.removeEventListener('timeupdate', onTimeUpdate);
+          done.fail(msg);
         });
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
 
     createWidevineLicenseDelayTest('3.1.7.1', H264['VideoStreamYTCenc']);
@@ -208,15 +264,16 @@ describe('EME Conformance Tests', () => {
     });
 
     yts.test({id: 'D88CE76F-8804-41B9-9AD1-E4490AEA5D1D'});
-    it('WidevineH264ClearMiddleVideo', (done) => {
+    it('WidevineH264ClearMiddleVideo', runDualEmePlaybackTest((done, options) => {
       const videoStream = H264['VideoClearMiddleCenc'];
       const audioStream = AAC['AudioClearMiddleCenc'];
 
-      activeStream = setupMse(video, videoStream, audioStream, 26);
+      activeStream = setupMse(
+          video, videoStream, audioStream, 26, undefined, undefined, options);
       setupEme(emeHandler, video, [videoStream], LicenseManager.WIDEVINE);
 
       let timeUpdateCountClear = 0;
-      video.addEventListener('timeupdate', function onTimeUpdate() {
+      const onTimeUpdate = () => {
         playbackUtil.logPlaybackProgress(video, timeUpdateCountClear++);
         if (!video.paused && video.currentTime >= 26 &&
             !emeHandler.keyUnusable) {
@@ -224,12 +281,13 @@ describe('EME Conformance Tests', () => {
           expect(video.currentTime).toBeGreaterThanOrEqual(26);
           done();
         }
-      });
+      };
+      video.addEventListener('timeupdate', onTimeUpdate);
       playbackUtil.playAndHandleErrors(video, (msg) => {
-        fail(msg);
-        done();
+        video.removeEventListener('timeupdate', onTimeUpdate);
+        done.fail(msg);
       });
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
   });
 
   describe('EME Basic', () => {
@@ -379,10 +437,11 @@ describe('EME Conformance Tests', () => {
 
   describe('General', () => {
     yts.test({id: '3.3.1.1'});
-    it('EncryptedEventData', (done) => {
+    it('EncryptedEventData', runDualEmePlaybackTest((done, options) => {
       const videoStream = H264['VideoSmallCenc'];
 
-      activeStream = setupMse(video, videoStream, null);
+      activeStream = setupMse(
+          video, videoStream, null, undefined, undefined, undefined, options);
       emeHandler.addEventSpies({
         onEncrypted: (e: MediaEncryptedEvent) => {
           const initData = new Uint8Array(e.initData as ArrayBuffer);
@@ -393,7 +452,7 @@ describe('EME Conformance Tests', () => {
       });
       setupEme(emeHandler, video, [videoStream], LicenseManager.WIDEVINE);
       video.play();
-    });
+    }), DEFAULT_TIMEOUT_MS * 2);
   });
 
 
@@ -429,6 +488,12 @@ describe('EME Conformance Tests', () => {
         audioEncryptionScheme: string|null,
         mandatory = true,
     ) {
+      if (videoStream) {
+        mandatory = mandatory && isStreamTypeSupported(videoStream);
+      }
+      if (audioStream) {
+        mandatory = mandatory && isStreamTypeSupported(audioStream);
+      }
       const validEncryptionScheme = ['cenc', 'cbcs', null];
       function appendToTestName(encryptionScheme: string|null) {
         if (validEncryptionScheme.includes(encryptionScheme)) {
@@ -451,8 +516,12 @@ describe('EME Conformance Tests', () => {
             appendToTestName(audioEncryptionScheme)}`;
       }
 
+      const isVideoPlaybackTest =
+          Boolean(videoStream) &&
+          validEncryptionScheme.includes(videoEncryptionScheme);
+
       yts.test({id});
-      it(testName, (done) => {
+      it(testName, runDualEmePlaybackTest((done, options) => {
         checkMandatory(mandatory);
 
         const initDataTypes = ['cenc'];
@@ -494,13 +563,15 @@ describe('EME Conformance Tests', () => {
         emeHandler.checkKeySystem([config] as MediaKeySystemConfiguration[])
             .then(() => {
               if (!hasValidScheme) {
-                fail('checkKeySystem succeeded with invalid EncryptionScheme.');
-                done();
+                done.fail(
+                    'checkKeySystem succeeded with invalid EncryptionScheme.');
                 return;
               }
-              activeStream = setupMse(video, videoStream, audioStream);
+              activeStream = setupMse(
+                  video, videoStream, audioStream, undefined, undefined,
+                  undefined, options);
               let timeUpdateCount = 0;
-              video.addEventListener('timeupdate', function onTimeUpdate() {
+              const onTimeUpdate = () => {
                 playbackUtil.logPlaybackProgress(video, timeUpdateCount++);
                 if (!video.paused && video.currentTime >= 12 &&
                     !emeHandler.keyUnusable) {
@@ -508,10 +579,11 @@ describe('EME Conformance Tests', () => {
                   expect(video.currentTime).toBeGreaterThanOrEqual(12);
                   done();
                 }
-              });
+              };
+              video.addEventListener('timeupdate', onTimeUpdate);
               playbackUtil.playAndHandleErrors(video, (msg) => {
-                fail(msg);
-                done();
+                video.removeEventListener('timeupdate', onTimeUpdate);
+                done.fail(msg);
               });
             })
             .catch((rejected) => {
@@ -519,13 +591,13 @@ describe('EME Conformance Tests', () => {
                   `rejected KeySystem for ${videoEncryptionScheme} and ${
                       audioEncryptionScheme} EncryptionScheme.`);
               if (hasValidScheme) {
-                fail(rejected);
+                done.fail(rejected);
               } else {
                 expect(true).toBe(true);
+                done();
               }
-              done();
             });
-      }, DEFAULT_TIMEOUT_MS);
+      }, /* enableDualPass= */ isVideoPlaybackTest), DEFAULT_TIMEOUT_MS * 2);
     }
 
     createEncryptionSchemeTest(
@@ -662,12 +734,14 @@ describe('EME Conformance Tests', () => {
           Math.round(videoStream.get('fps') as number)}fps${additionalName}`;
 
       yts.test({id});
-      it(testName, (done) => {
+      it(testName, runDualEmePlaybackTest((done, options) => {
         checkMandatory(mandatory);
-        activeStream = setupMse(video, videoStream, audioStream);
+        activeStream = setupMse(
+            video, videoStream, audioStream, undefined, undefined, undefined,
+            options);
         setupEme(emeHandler, video, [videoStream], LicenseManager.WIDEVINE);
         let timeUpdateCountAV1 = 0;
-        video.addEventListener('timeupdate', function onTimeUpdate() {
+        const onTimeUpdate = () => {
           playbackUtil.logPlaybackProgress(video, timeUpdateCountAV1++);
           if (!video.paused && video.currentTime >= 15 &&
               !emeHandler.keyUnusable) {
@@ -675,12 +749,13 @@ describe('EME Conformance Tests', () => {
             expect(video.currentTime).toBeGreaterThanOrEqual(15);
             done();
           }
-        });
+        };
+        video.addEventListener('timeupdate', onTimeUpdate);
         playbackUtil.playAndHandleErrors(video, (msg) => {
-          fail(msg);
-          done();
+          video.removeEventListener('timeupdate', onTimeUpdate);
+          done.fail(msg);
         });
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
 
     createWidevineAV1Test('3.6.1.1', AV1['SencSdr144p30'], true);
@@ -807,15 +882,17 @@ describe('EME Conformance Tests', () => {
       const testName = `WidevineIamf${additionalName}`;
 
       yts.test({id});
-      it(testName, (done) => {
+      it(testName, runDualEmePlaybackTest((done, options) => {
         const videoStream = H264['VideoNormal'];
         mandatory = mandatory && isStreamTypeSupported(audioStream);
         checkMandatory(mandatory);
-        activeStream = setupMse(video, videoStream, audioStream);
+        activeStream = setupMse(
+            video, videoStream, audioStream, undefined, undefined, undefined,
+            options);
         setupEme(emeHandler, video, [audioStream], LicenseManager.WIDEVINE);
 
         let timeUpdateCountIamf = 0;
-        video.addEventListener('timeupdate', function onTimeUpdate() {
+        const onTimeUpdate = () => {
           playbackUtil.logPlaybackProgress(video, timeUpdateCountIamf++);
           if (!video.paused && video.currentTime >= 15 &&
               !emeHandler.keyUnusable) {
@@ -823,12 +900,13 @@ describe('EME Conformance Tests', () => {
             expect(video.currentTime).toBeGreaterThanOrEqual(15);
             done();
           }
-        });
+        };
+        video.addEventListener('timeupdate', onTimeUpdate);
         playbackUtil.playAndHandleErrors(video, (msg) => {
-          fail(msg);
-          done();
+          video.removeEventListener('timeupdate', onTimeUpdate);
+          done.fail(msg);
         });
-      }, DEFAULT_TIMEOUT_MS);
+      }), DEFAULT_TIMEOUT_MS * 2);
     }
 
     createWidevineIamfTest(

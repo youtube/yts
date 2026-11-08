@@ -21,6 +21,7 @@
 
 import 'jasmine';
 
+import * as asyncMqtt from 'async-mqtt'; // from //third_party/javascript/node_modules/async_mqtt:typings
 import {AsyncMqttClient, Packet} from 'async-mqtt'; // from //third_party/javascript/node_modules/async_mqtt:typings
 import {ListenerFn} from 'eventemitter2'; // from //third_party/javascript/node_modules/eventemitter2:typings
 import {Subscriber} from '../lib/interfaces';
@@ -549,6 +550,32 @@ describe('MqttClient', () => {
       'http://www.google.com',
     );
     expect(resolvedIpFromAddress).toEqual('mqtt://127.0.0.1');
+  });
+
+  it('passes parsed URL options object to connect in init', async () => {
+    spyOn(dns, 'resolve').and.resolveTo('mqtt://127.0.0.1:1883');
+    asyncMqttClient.on.and.callFake(
+      ((event: string, listener: () => void) => {
+        if (event === 'connect') {
+          listener();
+        }
+        return asyncMqttClient;
+      }) as unknown as typeof asyncMqttClient.on,
+    );
+    const connectSpy = spyOn(asyncMqtt, 'connect').and.returnValue(
+      asyncMqttClient,
+    );
+
+    const initializedClient = await MqttClient.init('127.0.0.1:1883');
+
+    expect(initializedClient).toBeInstanceOf(MqttClient);
+    expect(connectSpy).toHaveBeenCalledOnceWith(
+      jasmine.objectContaining({
+        protocol: 'mqtt',
+        hostname: '127.0.0.1',
+        port: 1883,
+      }),
+    );
   });
 
   it('should publish multiple messages if the callback returns an array', async () => {

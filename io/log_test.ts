@@ -69,12 +69,22 @@ describe('log', () => {
     messages = [];
     log.colors = false;
     log.time = false;
-    log.verbose = false;
+    log.verboseStdout = false;
+    log.verboseOutputFile = undefined;
+  });
+
+  it('verbose getter', () => {
+    expect(log.verbose).toBeFalse();
+    log.verboseStdout = true;
+    expect(log.verbose).toBeTrue();
+    log.verboseStdout = false;
+    log.verboseOutputFile = '/tmp/yts.log';
+    expect(log.verbose).toBeTrue();
   });
 
   it('colors', () => {
     log.colors = true;
-    log.verbose = true;
+    log.verboseStdout = true;
     console.log('log1');
     console.error('error1');
     console.debug('debug1');
@@ -107,15 +117,35 @@ describe('log', () => {
     expect(messages[1].data[1]).toEqual('error1');
   });
 
-  it('verbose', () => {
+  it('verboseStdout', () => {
     console.debug('debug1');
-    log.verbose = true;
+    log.verboseStdout = true;
     console.debug('debug2');
-    log.verbose = false;
+    log.verboseStdout = false;
     console.debug('debug3');
     expect(messages.length).toBe(1);
     expect(messages[0].method).toBe('debug');
     expect(messages[0].data).toEqual(['debug2']);
+  });
+
+  it('proto message formatting', () => {
+    log.verboseStdout = true;
+    const fakeProto = {
+      toJsonValue: () => [
+        null,
+        null,
+        null,
+        [null, 'incrementCounter', null, 95],
+      ],
+    };
+    expect(log.proto(fakeProto)).toBe('[,,,[,"incrementCounter",,95]]');
+    console.debug('WEBSOCKET.SEND', fakeProto);
+    expect(messages.length).toBe(1);
+    expect(messages[0].method).toBe('debug');
+    expect(messages[0].data).toEqual([
+      'WEBSOCKET.SEND',
+      '[,,,[,"incrementCounter",,95]]',
+    ]);
   });
 
   it('error without colors', () => {
@@ -128,7 +158,7 @@ describe('log', () => {
 
   it('error with colors and stack', () => {
     log.colors = true;
-    log.verbose = true;
+    log.verboseStdout = true;
     const e = new Error('my error');
     console.error(e);
     expect(messages.length).toBe(1);

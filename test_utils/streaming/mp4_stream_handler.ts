@@ -43,8 +43,9 @@ export class Mp4StreamHandler extends BaseStreamHandler {
       sb: SourceBuffer,
       ms: MediaSource,
       stopTime?: number,
+      targetBufferDepth?: number,
   ) {
-    super(videoElement, videoInfo, sb, ms, stopTime);
+    super(videoElement, videoInfo, sb, ms, stopTime, targetBufferDepth);
   }
 
   /** Hook executed for incoming chunk events. */

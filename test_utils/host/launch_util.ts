@@ -23,6 +23,18 @@ import {Device, Script} from 'google3/third_party/javascript/yts/devices/interfa
 import {deviceUnderTest} from 'google3/third_party/javascript/yts/test_context';
 import {sleep} from 'google3/third_party/javascript/yts/yts_common';
 
+/**
+ * Delay before stopping Chrobalt so its 1s DomStorage commit timer can flush
+ * localStorage changes to disk before SIGKILL.
+ */
+const CHROBALT_DOM_STORAGE_FLUSH_DELAY_MS = 1500;
+
+/**
+ * Maximum time to wait for the on-device `exitCobalt` script before treating
+ * the runtime as suspended/unresponsive and stopping the process from the host.
+ */
+const EXIT_COBALT_SCRIPT_TIMEOUT_MS = 5000;
+
 /** Arguments for launchCobalt */
 export declare interface LaunchCobaltArgs {
   device?: Device;
@@ -114,11 +126,8 @@ export async function exitCobalt(device?: Device): Promise<void> {
     if (!script?.isConnected()) {
       return;
     }
-    const isChrobalt = (await script.invoke(
-                           'exitCobalt',
-                           /* migratedToDeviceStop = */ true,
-                           )) as boolean;
-    if (isChrobalt) {
+    const invokeResult = await invokeExitCobaltWithTimeout(script);
+    if (invokeResult.timedOut || invokeResult.isChrobalt) {
       const stopDevice =
           targetDevice.deviceType === 'dial' ? dut : targetDevice;
       if (stopDevice.deviceType === 'dial') {
@@ -128,7 +137,13 @@ export async function exitCobalt(device?: Device): Promise<void> {
             'Cannot exit C26+ via the DIAL interface. Use DAB or ADB instead.',
         );
       }
+      if (!invokeResult.timedOut) {
+        await sleep(CHROBALT_DOM_STORAGE_FLUSH_DELAY_MS);
+      }
       await stopDevice.stop();
+      if (invokeResult.timedOut) {
+        script.disconnect();
+      }
     }
   } catch (e: unknown) {
     console.log('Ignoring error that happened while trying to exit Cobalt:');
@@ -170,4 +185,41 @@ export async function suspendCobalt(device?: Device): Promise<void> {
     console.log(e);
   }
   await sleep(3000);
+}
+
+interface ExitCobaltInvokeResult {
+  isChrobalt: boolean;
+  timedOut: boolean;
+}
+
+/**
+ * Invokes `exitCobalt` on the device script with a bounded timeout so a
+ * backgrounded or frozen Cobalt runtime cannot stall teardown for a full
+ * heartbeat interval.
+ */
+async function invokeExitCobaltWithTimeout(
+    script: Script,
+): Promise<ExitCobaltInvokeResult> {
+  let timer: ReturnType<typeof setTimeout>|undefined;
+  const invokePromise = script
+      .invokeIgnoringDisconnect(
+          'exitCobalt',
+          /* migratedToDeviceStop = */ true,
+      )
+      .then(
+          (result): ExitCobaltInvokeResult => ({
+            isChrobalt: Boolean(result),
+            timedOut: false,
+          }),
+      );
+  const timeoutPromise = new Promise<ExitCobaltInvokeResult>((resolve) => {
+    timer = setTimeout(() => {
+      resolve({isChrobalt: false, timedOut: true});
+    }, EXIT_COBALT_SCRIPT_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([invokePromise, timeoutPromise]);
+  } finally {
+    clearTimeout(timer);
+  }
 }

@@ -15,13 +15,10 @@
  * limitations under the License.
  */
 
-import {isChrobalt} from 'google3/third_party/javascript/yts/test_utils/cobalt';
-import {
-  h5vcc,
-  VerifyTestResponse,
-  WriteTestResponse,
-} from 'google3/third_party/javascript/yts/yts_common/h5vcc';
 import 'yts';
+
+import {isAndroidTv, isChrobalt} from 'google3/third_party/javascript/yts/test_utils/cobalt';
+import {h5vcc, VerifyTestResponse, WriteTestResponse} from 'google3/third_party/javascript/yts/yts_common/h5vcc';
 
 /** Name of the test cache to use for persistence tests. */
 const TEST_CACHE_NAME = 'yts-persistence-test-cache';
@@ -34,12 +31,18 @@ const TEST_STRING = 'x';
 /** Contents of the test file to repeatedly write to the cache. */
 const TEST_DATA = TEST_STRING.repeat(TEST_DATA_SIZE);
 
+/** Whether to use the Cache API or h5vcc for cache operations. */
+const hasH5vccStorageApi = !!h5vcc?.storage &&
+    typeof h5vcc.storage.writeTest === 'function' &&
+    typeof h5vcc.storage.verifyTest === 'function';
+const useCacheApi = isAndroidTv() || (isChrobalt() && !hasH5vccStorageApi);
+
 /**
  * Writes 24MB of test data to the cache under a test cache key.
  */
 async function writeCache(): Promise<WriteTestResponse | undefined> {
   console.log('writeCache');
-  return isChrobalt() ? writeCacheWithCacheApi() : writeCacheWithH5vcc();
+  return useCacheApi ? writeCacheWithCacheApi() : writeCacheWithH5vcc();
 }
 yts.script('writeCache', writeCache);
 
@@ -49,7 +52,7 @@ yts.script('writeCache', writeCache);
  */
 async function verifyCache(): Promise<VerifyTestResponse | undefined> {
   console.log('verifyCache');
-  return isChrobalt() ? verifyCacheWithCacheApi() : verifyCacheWithH5vcc();
+  return useCacheApi ? verifyCacheWithCacheApi() : verifyCacheWithH5vcc();
 }
 yts.script('verifyCache', verifyCache);
 

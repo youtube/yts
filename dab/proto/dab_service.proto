@@ -603,7 +603,7 @@ message SystemLogsResponse {
 enum PowerMode {
   Active = 0;
   Standby = 1;
-  reserved 2;
+  DeepSleep = 2;
 }
 
 message GetPowerModeResponse {

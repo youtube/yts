@@ -28,17 +28,14 @@ class WsServer {
    * @param deviceIp The IP address of the device, used for network interface
    *     selection.
    * @param ports Optional ports to use for the HTTP server.
-   * @param formatter An optional function to format incoming Uint8Array
-   *     messages into a human-readable string for verbose debugging output.
    */
   async getServer(
       deviceIp: string|undefined,
       ports?: Ports,
-      formatter?: (message: Uint8Array) => string | undefined,
   ) {
     const httpServer = await createHttpServer(ports);
     const wss = new ws.Server({server: httpServer});
-    if (log.verbose || log.verboseOutputFile) {
+    if (log.verbose) {
       //
       // When '--verbose' flag is provided, we listen to all connections and
       // messages and print out detailed log. Useful for debugging.
@@ -49,10 +46,6 @@ class WsServer {
           `WEBSOCKET client connected from ${ip} to path ${request.url}.`,
         );
         this.printHeaders(request.headers);
-
-        ws.on('message', (message) => {
-          this.printDebug(message, formatter);
-        });
 
         ws.on('close', () => {
           console.debug('WEBSOCKET client disconnected.');
@@ -139,25 +132,6 @@ class WsServer {
   private printHeaders(headers: object | undefined) {
     if (headers) {
       console.debug(`Headers: ${JSON.stringify(headers)}`);
-    }
-  }
-
-  /**
-   * Prints a debug message to the console if a formatter is provided.
-   *
-   * @param message The message to print.
-   * @param formatter An optional function to format the message into a
-   *     human-readable string. If undefined, the message will not be printed.
-   */
-  private printDebug(
-      message: ws.Data,
-      formatter?: (message: Uint8Array) => string | undefined,
-  ) {
-    if (!formatter) return;
-    const data = new Uint8Array(message as Buffer);
-    const formatted = formatter(data);
-    if (formatted) {
-      console.debug(`WEBSOCKET received message: ${formatted}`);
     }
   }
 }

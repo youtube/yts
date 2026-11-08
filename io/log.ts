@@ -30,6 +30,13 @@ export interface ConsoleOverrides {
   debug?(text: string): void;
 }
 
+/**
+ * Minimal interface for JSPB protobuf messages with `toJsonValue()`.
+ */
+export interface ProtoMessage {
+  toJsonValue(): unknown;
+}
+
 class Log {
   /**
    * When true, console messages may have styling (red, bold, etc).
@@ -51,18 +58,26 @@ class Log {
   time = false;
 
   /**
-   * Set to true when --verbose CLI argument is passed. In this case components
-   * are expected to print extra debugging info using console.debug.
+   * Set to true when --verbose CLI argument is passed. In this case,
+   * console.debug messages are printed to stdout.
    *
-   * When false, console.debug calls are muted.
+   * When false, console.debug calls are muted on stdout.
    */
-  verbose = false;
+  verboseStdout = false;
 
   /**
    * When set, the logger will output all verbose messages to the given text
-   * file. This work even when verbose is false.
+   * file. This works even when verboseStdout is false.
    */
   verboseOutputFile?: string;
+
+  /**
+   * True when verbose logging is active (either via `--verbose` or
+   * `--verbose-output`).
+   */
+  get verbose(): boolean {
+    return Boolean(this.verboseStdout || this.verboseOutputFile);
+  }
 
   /**
    * Path to output directory for logs and screenshots.
@@ -116,6 +131,14 @@ class Log {
     return `${hh}:${mm}:${ss}.${ms}`;
   }
 
+  /**
+   * Formats a JSPB protobuf message as a compact JSON array string for logging,
+   * replacing `"null,"` array placeholders with `","`.
+   */
+  proto(p: ProtoMessage): string {
+    return JSON.stringify(p.toJsonValue()).replaceAll('null,', ',');
+  }
+
   enable(overrides?: ConsoleOverrides) {
     if (log.verboseOutputFile) {
       const dir = path.dirname(log.verboseOutputFile);
@@ -165,6 +188,14 @@ export type ConsoleMethod = 'log' | 'error' | 'warn' | 'debug';
 
 const originals: Partial<Console> = {};
 
+function isProtoMessage(arg: unknown): arg is ProtoMessage {
+  return (
+    typeof arg === 'object' &&
+    arg !== null &&
+    typeof (arg as ProtoMessage).toJsonValue === 'function'
+  );
+}
+
 function listenConsole(
   method: ConsoleMethod,
   style?: Style,
@@ -177,12 +208,15 @@ function listenConsole(
 
   // tslint:disable-next-line:no-dict-access-on-struct-type
   console[method] = function (...args: unknown[]) {
-    if (method === 'debug' && !log.verbose && !log.verboseOutputFile) {
+    if (method === 'debug' && !log.verbose) {
       return;
     }
     const parts = new Array<unknown>(args.length);
     for (let i = 0; i < args.length; i++) {
-      const arg = args[i];
+      let arg = args[i];
+      if (isProtoMessage(arg)) {
+        arg = log.proto(arg);
+      }
       if (typeof arg === 'string') {
         let s = applyRegex(arg as string);
         if (s === undefined) return;
@@ -212,7 +246,7 @@ function listenConsole(
       parts.unshift(time);
     }
 
-    if (method !== 'debug' || log.verbose) {
+    if (method !== 'debug' || log.verboseStdout) {
       // tslint:disable-next-line:no-dict-access-on-struct-type
       const func = overrides?.[method] ?? original;
       func.apply(this, parts);

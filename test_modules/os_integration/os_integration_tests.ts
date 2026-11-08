@@ -179,21 +179,18 @@ describe('OS Integration', () => {
         await launchCobalt(agentUrl);
         await sleep(seconds(5));
 
-        // 2. Retrieve deep links / location search from the listener
-        const deepLinks = (await script.invoke('getDeepLinks')) as string[];
+        // 2. Retrieve location search from the agent
+        const locationSearch = (await script.invoke(
+          'readProp',
+          'location.search',
+        )) as string | undefined;
 
-        if (!deepLinks.length) {
-          fail('No deep links were received by the listener.');
+        if (!locationSearch) {
+          fail('window.location.search was empty.');
         } else {
-          // Verify against the last received deep link
-          const lastDeepLink = deepLinks[deepLinks.length - 1];
-          console.log(`Last deep link: ${lastDeepLink}`);
+          console.log(`window.location.search: ${locationSearch}`);
 
-          const receivedParams = new URLSearchParams(
-            lastDeepLink.includes('?')
-              ? lastDeepLink.substring(lastDeepLink.indexOf('?'))
-              : '',
-          );
+          const receivedParams = new URLSearchParams(locationSearch);
           console.log('Received parameters:');
           for (const [key, value] of receivedParams.entries()) {
             console.log(`  ${key} = ${value}`);

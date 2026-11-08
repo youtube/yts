@@ -20,16 +20,6 @@
  * helper utilities used by device-side scripts and Node.js YTS test runners.
  */
 
-/** Converts seconds to milliseconds. */
-export function seconds(x: number): number {
-  return x * 1000;
-}
-
-/** Converts minutes to milliseconds. */
-export function minutes(x: number): number {
-  return seconds(x * 60);
-}
-
 /** Raw Cobalt 27+ SystemMemoryInfo fields returned by `window.performance.measureSystemMemoryInfo()`. */
 export interface SystemMemoryInfoData {
   usedRssMemory?: number;

@@ -27,6 +27,8 @@ export interface ShellOptions {
   maxBuffer?: number;
   /** Timeout in milliseconds before terminating the process. */
   timeout?: number;
+  /** Whether to suppress child process stderr output and error logging. */
+  silent?: boolean;
 }
 
 /** Type alias for either a numeric timeout in ms or full ShellOptions. */
@@ -83,15 +85,21 @@ class Shell {
     adbArgs: string[],
     options?: ShellOptionsOrTimeout,
   ): Buffer {
-    const {maxBuffer, timeout} = parseOptions(options);
+    const {maxBuffer, timeout, silent} = parseOptions(options);
     const adbPath = this.adbPath ?? 'adb';
     console.debug(`${adbPath} ${adbArgs.join(' ')}`);
     try {
-      const result = execFileSync(adbPath, adbArgs, {maxBuffer, timeout});
+      const result = execFileSync(adbPath, adbArgs, {
+        maxBuffer,
+        timeout,
+        ...(silent ? {stdio: ['pipe', 'pipe', 'ignore']} : {}),
+      });
       console.debug(`Result size: ${result.length}`);
       return result;
     } catch (e: unknown) {
-      console.error(e);
+      if (!silent) {
+        console.error(e);
+      }
       throw e;
     }
   }
@@ -116,14 +124,20 @@ class Shell {
     command: string,
     options?: ShellOptionsOrTimeout,
   ): Buffer {
-    const {maxBuffer, timeout} = parseOptions(options);
+    const {maxBuffer, timeout, silent} = parseOptions(options);
     console.debug(command);
     try {
-      const result = execSync(command, {maxBuffer, timeout});
+      const result = execSync(command, {
+        maxBuffer,
+        timeout,
+        ...(silent ? {stdio: ['pipe', 'pipe', 'ignore']} : {}),
+      });
       console.debug(`Result size: ${result.length}`);
       return result;
     } catch (e: unknown) {
-      console.error(e);
+      if (!silent) {
+        console.error(e);
+      }
       throw e;
     }
   }
@@ -138,20 +152,23 @@ export const TEST_ONLY = {Shell};
 export type {Shell};
 
 /**
- * Normalizes options or numeric timeout into maxBuffer and timeout.
+ * Normalizes options or numeric timeout into maxBuffer, timeout, and silent.
  */
 function parseOptions(options?: ShellOptionsOrTimeout): {
   maxBuffer: number;
   timeout: number;
+  silent: boolean;
 } {
   if (typeof options === 'number') {
     return {
       maxBuffer: DEFAULT_MAX_BUFFER_BYTES,
       timeout: options,
+      silent: false,
     };
   }
   return {
     maxBuffer: options?.maxBuffer ?? DEFAULT_MAX_BUFFER_BYTES,
     timeout: options?.timeout ?? DEFAULT_TIMEOUT_MS,
+    silent: options?.silent ?? false,
   };
 }

@@ -21,9 +21,10 @@ import 'yts';
 import * as legacyYtsUtils from 'google3/third_party/javascript/yts/test_utils/legacy_yts_utils';
 import {appendInit, appendUntil, FileSource, FixedAppendSize, playThrough, ResetInit, setDuration, waitUntil} from 'google3/third_party/javascript/yts/test_utils/mse/source_chain';
 import * as playbackUtil from 'google3/third_party/javascript/yts/test_utils/playback_util';
-import {StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
+import {type PlaybackOptions, StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
 import {AAC, AC3, AV1, EAC3, H264, Iamf, Opus, VP9} from 'google3/third_party/javascript/yts/test_utils/streams/media_streams';
 import {TimeoutManager} from 'google3/third_party/javascript/yts/test_utils/timeout_manager';
+import {getMimeTypeWithTunnelMode, runWithTunnelModeDualPass} from 'google3/third_party/javascript/yts/test_utils/tunnel_mode';
 import {XhrManager} from 'google3/third_party/javascript/yts/test_utils/xhr_manager';
 
 describe('MSE Codec Tests', () => {
@@ -32,14 +33,30 @@ describe('MSE Codec Tests', () => {
 
   let video: HTMLVideoElement;
   let timeoutManager: TimeoutManager;
+  let activeXhrManagers: XhrManager[] = [];
+
+  function createXhrManager(): XhrManager {
+    const manager = new XhrManager();
+    activeXhrManagers.push(manager);
+    return manager;
+  }
+
+  function abortActiveXhrManagers(): void {
+    for (const manager of activeXhrManagers) {
+      manager.abortAll();
+    }
+    activeXhrManagers = [];
+  }
 
   beforeEach(() => {
+    activeXhrManagers = [];
     playbackUtil.initializeVideoElement();
     video = playbackUtil.getVideoElement()!;
     timeoutManager = new TimeoutManager();
   });
 
   afterEach(() => {
+    abortActiveXhrManagers();
     playbackUtil.cleanupVideoElement();
     timeoutManager.clearAll();
   });
@@ -48,6 +65,40 @@ describe('MSE Codec Tests', () => {
     if (!mandatory) {
       yts.markOptional();
     }
+  }
+
+  /**
+   * Executes an MSE codec video playback test across Pass 1 (Tunnel Mode ON)
+   * and Pass 2 (Tunnel Mode OFF) with XHR and timeout cleanup between passes.
+   */
+  function runDualCodecPlaybackTest(
+      runPass: (done: DoneFn, options: PlaybackOptions) => void,
+      enabled = true,
+  ): (done: DoneFn) => void {
+    if (!enabled) {
+      return (done: DoneFn) => {
+        runPass(done, {});
+      };
+    }
+    return (done: DoneFn) => {
+      runWithTunnelModeDualPass(
+          done,
+          (passDone, options) => {
+            video = playbackUtil.getVideoElement()!;
+            runPass(passDone, options);
+          },
+          {
+            onBeforePass2: () => {
+              video.pause();
+              abortActiveXhrManagers();
+              timeoutManager.clearAll();
+              timeoutManager = new TimeoutManager();
+              playbackUtil.cleanupVideoElement();
+              playbackUtil.initializeVideoElement();
+            },
+          },
+      );
+    };
   }
 
   function checkApproxEq(actual: number, expected: number, eps: number) {
@@ -370,15 +421,17 @@ describe('MSE Codec Tests', () => {
   }
 
   function createLimitedAudioTest(id: string, stream: StreamDef) {
-    it(`Limited${stream.codec}Audio`, (done) => {
+    it(`Limited${stream.codec}Audio`, runDualCodecPlaybackTest((done, options) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
 
       const onSourceOpen = () => {
         ms.removeEventListener('sourceopen', onSourceOpen);
-        const xhrManager = new XhrManager();
+        const xhrManager = createXhrManager();
         const videoStream = H264['VideoNormal'];
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const audioSb = ms.addSourceBuffer(stream.mimetype);
 
         const videoXhr = xhrManager.createRequest(videoStream.src, () => {
@@ -411,7 +464,7 @@ describe('MSE Codec Tests', () => {
         audioXhr.send();
       };
       ms.addEventListener('sourceopen', onSourceOpen);
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
   }
 
   function createIncrementalLimitedAudioTest(
@@ -420,18 +473,20 @@ describe('MSE Codec Tests', () => {
     if (highBitRate) {
       testName = `HighBitRateIncrementalLimited${stream.codec}Audio`;
     }
-    it(testName, (done) => {
+    it(testName, runDualCodecPlaybackTest((done, options) => {
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
 
       const onSourceOpen = () => {
         ms.removeEventListener('sourceopen', onSourceOpen);
-        const xhrManager = new XhrManager();
+        const xhrManager = createXhrManager();
         let videoStream = H264['VideoNormal'];
         if (highBitRate) {
           videoStream = H264['Video1137H2641920x1080Fps30BitrateKbps20227k'];
         }
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const audioSb = ms.addSourceBuffer(stream.mimetype);
 
         const videoPromise = new Promise<void>((resolve) => {
@@ -485,7 +540,7 @@ describe('MSE Codec Tests', () => {
           const checkReady = () => {
             if ((videoSb.updating || audioSb.updating) && retryCount > 0) {
               retryCount--;
-              setTimeout(checkReady, 1000 * pollInterval);
+              timeoutManager.setTimeout(checkReady, 1000 * pollInterval);
             } else {
               ms.endOfStream();
               video.play();
@@ -495,7 +550,7 @@ describe('MSE Codec Tests', () => {
         });
       };
       ms.addEventListener('sourceopen', onSourceOpen);
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
   }
 
   function createAppendAudioOffsetTest(
@@ -544,15 +599,16 @@ describe('MSE Codec Tests', () => {
   function createAppendVideoOffsetTest(
       id: string, stream1: StreamDef, stream2: StreamDef,
       audioStream: StreamDef, mandatory = true) {
-    it(`Append${stream1.codec}VideoOffset`, (done) => {
+    it(`Append${stream1.codec}VideoOffset`, runDualCodecPlaybackTest((done, options) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
 
       const onSourceOpen = () => {
         ms.removeEventListener('sourceopen', onSourceOpen);
-        const xhrManager = new XhrManager();
-        const sb = ms.addSourceBuffer(stream1.mimetype);
+        const xhrManager = createXhrManager();
+        const sb = ms.addSourceBuffer(
+            getMimeTypeWithTunnelMode(stream1.mimetype, options));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
 
         const xhr = xhrManager.createRequest(stream1.src, () => {
@@ -612,7 +668,7 @@ describe('MSE Codec Tests', () => {
         audioXhr.send();
       };
       ms.addEventListener('sourceopen', onSourceOpen);
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
   }
 
   function createAppendMultipleInitTest(
@@ -980,14 +1036,14 @@ describe('MSE Codec Tests', () => {
       id: string, delayed: StreamDef, nonDelayed: StreamDef, mandatory = true) {
     it(`Delayed${delayed.codec}${
            legacyYtsUtils.makeCapitalName(delayed.mediatype)}`,
-        (done) => {
+        runDualCodecPlaybackTest((done, options) => {
           checkMandatory(mandatory);
           const ms = new MediaSource();
           video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
 
           const onSourceOpen = () => {
             ms.removeEventListener('sourceopen', onSourceOpen);
-            const xhrManager = new XhrManager();
+            const xhrManager = createXhrManager();
             let underflowTime = 0.0;
             if (delayed.mediatype === 'video') {
               underflowTime = 3.0;
@@ -997,12 +1053,16 @@ describe('MSE Codec Tests', () => {
                 new ResetInit(
                     new FileSource(nonDelayed.src, xhrManager, timeoutManager)),
                 16384);
-            const src = ms.addSourceBuffer(nonDelayed.mimetype);
+            const src = ms.addSourceBuffer(
+                getMimeTypeWithTunnelMode(
+                    nonDelayed.mimetype, options));
             const delayedChain = new FixedAppendSize(
                 new ResetInit(
                     new FileSource(delayed.src, xhrManager, timeoutManager)),
                 16384);
-            const delayedSrc = ms.addSourceBuffer(delayed.mimetype);
+            const delayedSrc = ms.addSourceBuffer(
+                getMimeTypeWithTunnelMode(
+                    delayed.mimetype, options));
 
             const ontimeupdate = () => {
               if (!video.paused) {
@@ -1046,23 +1106,25 @@ describe('MSE Codec Tests', () => {
             });
           };
           ms.addEventListener('sourceopen', onSourceOpen);
-        },
-        DEFAULT_TIMEOUT_MS);
+        }),
+        DEFAULT_TIMEOUT_MS * 2);
   }
 
   function createSingleSourceBufferPlaybackTest(
       id: string, stream: StreamDef, mandatory = true) {
     it(`PlaybackOnly${stream.codec}${
            legacyYtsUtils.makeCapitalName(stream.mediatype)}`,
-        (done) => {
+        runDualCodecPlaybackTest((done, options) => {
           checkMandatory(mandatory);
           const ms = new MediaSource();
           video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
 
           const onSourceOpen = () => {
             ms.removeEventListener('sourceopen', onSourceOpen);
-            const xhrManager = new XhrManager();
-            const sb = ms.addSourceBuffer(stream.mimetype);
+            const xhrManager = createXhrManager();
+            const sb = ms.addSourceBuffer(
+                getMimeTypeWithTunnelMode(
+                    stream.mimetype, options));
 
             const xhr = xhrManager.createRequest(stream.src, () => {
               sb.appendBuffer(xhr.getResponseData());
@@ -1077,22 +1139,24 @@ describe('MSE Codec Tests', () => {
             xhr.send();
           };
           ms.addEventListener('sourceopen', onSourceOpen);
-        },
-        DEFAULT_TIMEOUT_MS);
+        }, stream.mediatype === 'video'),
+        DEFAULT_TIMEOUT_MS * 2);
   }
 
   function createDASHLatencyTest(
       id: string, videoStream: StreamDef, audioStream: StreamDef,
       mandatory = true) {
-    it(`DASHLatency${videoStream.codec}`, (done) => {
+    it(`DASHLatency${videoStream.codec}`, runDualCodecPlaybackTest((done, options) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
 
       const onSourceOpen = () => {
         ms.removeEventListener('sourceopen', onSourceOpen);
-        const xhrManager = new XhrManager();
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const xhrManager = createXhrManager();
+        const videoSb = ms.addSourceBuffer(
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
 
         const videoXhr = xhrManager.createRequest(videoStream.src, () => {
@@ -1118,8 +1182,7 @@ describe('MSE Codec Tests', () => {
 
             if (loopCount > 300) {
               videoSb.removeEventListener('update', onUpdate);
-              fail('Failed to fill up source buffer');
-              done();
+              done.fail('Failed to fill up source buffer');
               return;
             }
 
@@ -1136,8 +1199,7 @@ describe('MSE Codec Tests', () => {
               if (e.code === 22 || e.name === 'QuotaExceededError') {
                 onBufferFull();
               } else {
-                fail(e);
-                done();
+                done.fail(e);
               }
             }
           };
@@ -1152,7 +1214,7 @@ describe('MSE Codec Tests', () => {
         audioXhr.send();
       };
       ms.addEventListener('sourceopen', onSourceOpen);
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
   }
 
   function createVideoDimensionTest(
@@ -1206,16 +1268,17 @@ describe('MSE Codec Tests', () => {
    */
   function createPlaybackStateTest(
       id: string, stream: StreamDef, mandatory = true) {
-    it(`PlaybackState${stream.codec}`, (done) => {
+    it(`PlaybackState${stream.codec}`, runDualCodecPlaybackTest((done, options) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
 
       const onSourceOpen = () => {
         ms.removeEventListener('sourceopen', onSourceOpen);
-        const xhrManager = new XhrManager();
+        const xhrManager = createXhrManager();
         const audioStream = AAC['AudioTiny'];
-        const videoSb = ms.addSourceBuffer(stream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            getMimeTypeWithTunnelMode(stream.mimetype, options));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
         const videoChain = new ResetInit(new FixedAppendSize(
             new FileSource(stream.src, xhrManager, timeoutManager), 65536));
@@ -1285,21 +1348,22 @@ describe('MSE Codec Tests', () => {
         });
       };
       ms.addEventListener('sourceopen', onSourceOpen);
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
   }
 
   function createPlayPartialSegmentTest(
       id: string, stream: StreamDef, mandatory = true) {
-    it(`PlayPartial${stream.codec}Segment`, (done) => {
+    it(`PlayPartial${stream.codec}Segment`, runDualCodecPlaybackTest((done, options) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
 
       const onSourceOpen = () => {
         ms.removeEventListener('sourceopen', onSourceOpen);
-        const xhrManager = new XhrManager();
+        const xhrManager = createXhrManager();
         const audioStream = AAC['AudioTiny'];
-        const videoSb = ms.addSourceBuffer(stream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            getMimeTypeWithTunnelMode(stream.mimetype, options));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
 
         const videoXhr = xhrManager.createRequest(stream.src, () => {
@@ -1320,7 +1384,7 @@ describe('MSE Codec Tests', () => {
         audioXhr.send();
       };
       ms.addEventListener('sourceopen', onSourceOpen);
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
   }
 
   /**
@@ -1332,18 +1396,20 @@ describe('MSE Codec Tests', () => {
   function createMediaSourceDurationTest(
       id: string, videoStream: StreamDef, audioStream: StreamDef,
       mandatory = true) {
-    it(`MediaSourceDuration${videoStream.codec}`, (done) => {
+    it(`MediaSourceDuration${videoStream.codec}`, runDualCodecPlaybackTest((done, options) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
 
       const onSourceOpen = () => {
         ms.removeEventListener('sourceopen', onSourceOpen);
-        const xhrManager = new XhrManager();
+        const xhrManager = createXhrManager();
         const videoFileSource =
             new FileSource(videoStream.src, xhrManager, timeoutManager);
         const videoChain = new ResetInit(videoFileSource);
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
 
         const onsourceclose = () => {
@@ -1395,9 +1461,8 @@ describe('MSE Codec Tests', () => {
                                 duration1}`);
                         setDuration(duration1, ms, [videoSb, audioSb], () => {
                           if (videoSb.updating) {
-                            fail(
+                            done.fail(
                                 'Source buffer is updating on duration change');
-                            done();
                             return;
                           }
                           const duration = videoSb.buffered.end(0);
@@ -1440,7 +1505,7 @@ describe('MSE Codec Tests', () => {
         audioXhr.send();
       };
       ms.addEventListener('sourceopen', onSourceOpen);
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
   }
 
   /**
@@ -1450,17 +1515,18 @@ describe('MSE Codec Tests', () => {
    */
   function createSeekTest(
       id: string, videoStream: StreamDef, mandatory = true) {
-    it(`Seek${videoStream.codec}`, (done) => {
+    it(`Seek${videoStream.codec}`, runDualCodecPlaybackTest((done, options) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
 
       const onSourceOpen = () => {
         ms.removeEventListener('sourceopen', onSourceOpen);
-        const xhrManager = new XhrManager();
+        const xhrManager = createXhrManager();
         const audioStream = AAC['AudioNormal'];
         const videoSb = ms.addSourceBuffer(
-            playbackUtil.getMimeTypeWithTunnelMode(videoStream.mimetype));
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
         const videoChain = new ResetInit(
             new FileSource(videoStream.src, xhrManager, timeoutManager));
@@ -1524,7 +1590,7 @@ describe('MSE Codec Tests', () => {
         });
       };
       ms.addEventListener('sourceopen', onSourceOpen);
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
   }
 
   /**
@@ -1534,16 +1600,18 @@ describe('MSE Codec Tests', () => {
    */
   function createLoopTest(
       id: string, videoStream: StreamDef, mandatory = true) {
-    it(`Loop${videoStream.codec}`, (done) => {
+    it(`Loop${videoStream.codec}`, runDualCodecPlaybackTest((done, options) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
 
       const onSourceOpen = () => {
         ms.removeEventListener('sourceopen', onSourceOpen);
-        const xhrManager = new XhrManager();
+        const xhrManager = createXhrManager();
         const audioStream = AAC['AudioShorts'];
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
         let loopCount = 0;
 
@@ -1593,7 +1661,7 @@ describe('MSE Codec Tests', () => {
         audioXhr.send();
       };
       ms.addEventListener('sourceopen', onSourceOpen);
-    }, EXTENDED_TIMEOUT_MS);
+    }), EXTENDED_TIMEOUT_MS * 2);
   }
 
   /**
@@ -1606,17 +1674,18 @@ describe('MSE Codec Tests', () => {
       id: string, videoStream: StreamDef, mandatory = true, seekBack = true) {
     const testName =
         `LoopAfterEnded${seekBack ? '' : 'NoSeek'}${videoStream.codec}`;
-    it(testName, (done) => {
+    it(testName, runDualCodecPlaybackTest((done, options) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
 
       const onSourceOpen = () => {
         ms.removeEventListener('sourceopen', onSourceOpen);
-        const xhrManager = new XhrManager();
+        const xhrManager = createXhrManager();
         const audioStream = AAC['AudioShorts'];
         const videoSb = ms.addSourceBuffer(
-            playbackUtil.getMimeTypeWithTunnelMode(videoStream.mimetype));
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
 
         const onVideoUpdate = () => {
@@ -1671,7 +1740,7 @@ describe('MSE Codec Tests', () => {
         audioXhr.send();
       };
       ms.addEventListener('sourceopen', onSourceOpen);
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
   }
 
   /**
@@ -1681,17 +1750,18 @@ describe('MSE Codec Tests', () => {
    */
   function createBufUnbufSeekTest(
       id: string, videoStream: StreamDef, mandatory = true) {
-    it(`BufUnbufSeek${videoStream.codec}`, (done) => {
+    it(`BufUnbufSeek${videoStream.codec}`, runDualCodecPlaybackTest((done, options) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
 
       const onSourceOpen = () => {
         ms.removeEventListener('sourceopen', onSourceOpen);
-        const xhrManager = new XhrManager();
+        const xhrManager = createXhrManager();
         const audioStream = AAC['AudioNormal'];
         const videoSb = ms.addSourceBuffer(
-            playbackUtil.getMimeTypeWithTunnelMode(videoStream.mimetype));
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const audioSb = ms.addSourceBuffer(audioStream.mimetype);
 
         const duration = 100000000;
@@ -1729,7 +1799,7 @@ describe('MSE Codec Tests', () => {
                 const seekTarget = (i++ % 2) * 1.0e6 + 1;
                 console.log(`[BufUnbufSeek] Seek to t=${seekTarget}`);
                 video.currentTime = seekTarget;
-                setTimeout(loop, 50);
+                timeoutManager.setTimeout(loop, 50);
               };
 
               console.log('[BufUnbufSeek] Play media');
@@ -1752,7 +1822,7 @@ describe('MSE Codec Tests', () => {
         xhr.send();
       };
       ms.addEventListener('sourceopen', onSourceOpen);
-    }, DEFAULT_TIMEOUT_MS);
+    }), DEFAULT_TIMEOUT_MS * 2);
   }
 
   function createIAMFPlaybackTest(
@@ -1788,16 +1858,18 @@ describe('MSE Codec Tests', () => {
 
   function createAAC256kPlaybackTest(
       id: string, stream: StreamDef, mandatory = true) {
-    it('AAC256kbpsPlayback', (done) => {
+    it('AAC256kbpsPlayback', runDualCodecPlaybackTest((done, options) => {
       checkMandatory(mandatory);
       const ms = new MediaSource();
       video.src = playbackUtil.createMediaSourceUrlFromSource(ms);
 
       const onSourceOpen = () => {
         ms.removeEventListener('sourceopen', onSourceOpen);
-        const xhrManager = new XhrManager();
+        const xhrManager = createXhrManager();
         const videoStream = H264['VideoNormal'];
-        const videoSb = ms.addSourceBuffer(videoStream.mimetype);
+        const videoSb = ms.addSourceBuffer(
+            getMimeTypeWithTunnelMode(
+                videoStream.mimetype, options));
         const audioSb = ms.addSourceBuffer(stream.mimetype);
 
         const audioXhr = xhrManager.createRequest(stream.src, () => {
@@ -1817,7 +1889,7 @@ describe('MSE Codec Tests', () => {
         audioXhr.send();
       };
       ms.addEventListener('sourceopen', onSourceOpen);
-    }, EXTENDED_TIMEOUT_MS);
+    }), EXTENDED_TIMEOUT_MS * 2);
   }
 
 

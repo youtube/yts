@@ -18,3 +18,4 @@
 export * from './global';
 export * from './parse_user_agent';
 export * from './sleep';
+export * from './time';

@@ -21,6 +21,7 @@ import {
   Config,
   getConfig,
   overrideConfig,
+  printConfig,
   updateOverrideConfigValues,
 } from './config';
 import {storage} from './storage';
@@ -106,13 +107,19 @@ describe('config', () => {
     const json = `{
       "minPort": 0,
       "preferredNetworkInterface": "terrence",
-      "retryAttempts": 2
+      "retryAttempts": 2,
+      "devConfig": {
+        "defaultAgentUrl": "http://localhost:8080/agent.html"
+      }
     }`;
 
     setConfig(json);
-    getConfig();
+    const config = getConfig();
 
     expect(logs.length).toEqual(0);
+    expect(config.devConfig?.defaultAgentUrl).toBe(
+      'http://localhost:8080/agent.html',
+    );
   });
 
   it('respects overrides', () => {
@@ -173,5 +180,25 @@ describe('config', () => {
     updateOverrideConfigValues({reconnectTimeout: 50_000});
     expect(getConfig().reconnectTimeout).toBe(50_000);
     expect(getConfig().dialLaunchTimeout).toBe(40_000);
+  });
+
+  it('prints custom config with config path', () => {
+    const json = `{
+      "reconnectTimeout": 30000
+    }`;
+    setConfig(json);
+    spyOn(storage, 'getFullDataDirPath')
+      .withArgs('configs.json')
+      .and.returnValue('/path/to/configs.json');
+    const debugSpy = spyOn(console, 'debug');
+
+    printConfig();
+
+    expect(debugSpy).toHaveBeenCalledWith(
+      'Custom config (/path/to/configs.json):',
+    );
+    expect(debugSpy).toHaveBeenCalledWith(
+      JSON.stringify({reconnectTimeout: 30000}, null, 2),
+    );
   });
 });

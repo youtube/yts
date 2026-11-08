@@ -15,11 +15,21 @@
  * limitations under the License.
  */
 
-import {arrayToString} from 'google3/third_party/javascript/yts/test_utils/eme/eme_utils';
-import {getShakaPlayer, Player, PlayerEvent, Request, RequestType} from 'google3/third_party/javascript/yts/yts_common/shaka';
+import {arrayToString, stringToArray} from 'google3/third_party/javascript/yts/test_utils/eme/eme_utils';
+import {getShakaPlayer, Player, PlayerEvent, Request, RequestType, Response} from 'google3/third_party/javascript/yts/yts_common/shaka';
 
 const WIDEVINE_UA =
     /([-.A-Za-z0-9\\\/]*)_([-.A-Za-z0-9\\\/]*)_([-.A-Za-z0-9\\\/]*)_([0-9]+) ?\/ ?[-_.A-Za-z0-9\\]* \(([-_.A-Za-z0-9\\\/ ]+), ?([-_.A-Za-z0-9\\\/ ]+)/;
+
+function odmSanitize(s: string|undefined): string {
+  return (s || '').replace(/[^A-Za-z0-9]/g, '');
+}
+
+function isCompanyNameMatch(
+    companyName: string, brand: string, systemIntegrator: string): boolean {
+  return companyName === brand || companyName === systemIntegrator ||
+      odmSanitize(companyName) === systemIntegrator;
+}
 
 interface ClientCapabilities {
   oem_crypto_api_version: string|number;
@@ -43,15 +53,113 @@ interface WidevineProxyResponse {
   device_credentials?: ClientCredentials;
 }
 
+interface OemCryptoCoreMessage {
+  messageType: number;
+  messageLength: number;
+  apiMinorVersion: number;
+  apiMajorVersion: number;
+  taMajorVersion?: number;
+  taMinorVersion?: number;
+  taPatchVersion?: number;
+}
+
 interface WidevineLicenseInfo {
   clientInfo: WidevineProxyResponse;
   license: {[key: string]: string};
+  coreMessage: OemCryptoCoreMessage|null;
 }
 
 interface ParsedUA {
   system_integrator: string;
   brand: string;
   model: string;
+}
+
+const SIGNED_MESSAGE_CORE_MESSAGE_FIELD_NUMBER = 9;
+const ODK_CORE_MESSAGE_HEADER_SIZE = 20;
+const ODK_COUNTER_INFO_END_OFFSET = 90;
+
+function readProtobufVarint(
+    buf: Uint8Array, offset: number): {value: number; nextOffset: number} {
+  let value = 0;
+  let multiplier = 1;
+  let pos = offset;
+  while (pos < buf.length) {
+    const byte = buf[pos++];
+    value += (byte & 0x7f) * multiplier;
+    if ((byte & 0x80) === 0) {
+      return {value, nextOffset: pos};
+    }
+    multiplier *= 128;
+  }
+  throw new Error('Truncated varint in SignedMessage');
+}
+
+/**
+ * Extracts and parses `SignedMessage.oemcrypto_core_message` (field 9).
+ *
+ * ODK packs fields in big-endian (network byte order) with no struct padding:
+ * - bytes 0..3:   uint32 message_type (1 = ODK_License_Request_Type)
+ * - bytes 4..7:   uint32 message_length
+ * - bytes 8..9:   uint16 nonce_values.api_minor_version
+ * - bytes 10..11: uint16 nonce_values.api_major_version
+ * - bytes 12..15: uint32 nonce_values.nonce
+ * - bytes 16..19: uint32 nonce_values.session_id
+ * For v18+ license requests (100+ bytes), `ODK_MessageCounterInfo` follows at
+ * byte 20, with TA version fields (`major_version`, `minor_version`,
+ * `patch_version`) at bytes 40..45.
+ */
+function parseOemCryptoCoreMessage(
+    signedMessageBytes: Uint8Array): OemCryptoCoreMessage|null {
+  let offset = 0;
+  let coreMsgBytes: Uint8Array|null = null;
+
+  while (offset < signedMessageBytes.length) {
+    const tagResult = readProtobufVarint(signedMessageBytes, offset);
+    offset = tagResult.nextOffset;
+    const fieldNumber = Math.floor(tagResult.value / 8);
+    const wireType = tagResult.value & 0x7;
+
+    if (wireType === 0) {
+      offset = readProtobufVarint(signedMessageBytes, offset).nextOffset;
+    } else if (wireType === 1) {
+      offset += 8;
+    } else if (wireType === 2) {
+      const lenResult = readProtobufVarint(signedMessageBytes, offset);
+      offset = lenResult.nextOffset;
+      if (fieldNumber === SIGNED_MESSAGE_CORE_MESSAGE_FIELD_NUMBER) {
+        coreMsgBytes =
+            signedMessageBytes.subarray(offset, offset + lenResult.value);
+        break;
+      }
+      offset += lenResult.value;
+    } else if (wireType === 5) {
+      offset += 4;
+    } else {
+      throw new Error(`Unsupported protobuf wire type: ${wireType}`);
+    }
+  }
+
+  if (!coreMsgBytes || coreMsgBytes.byteLength < ODK_CORE_MESSAGE_HEADER_SIZE) {
+    return null;
+  }
+
+  const view = new DataView(
+      coreMsgBytes.buffer, coreMsgBytes.byteOffset, coreMsgBytes.byteLength);
+  const parsed: OemCryptoCoreMessage = {
+    messageType: view.getUint32(0, false),
+    messageLength: view.getUint32(4, false),
+    apiMinorVersion: view.getUint16(8, false),
+    apiMajorVersion: view.getUint16(10, false),
+  };
+
+  if (coreMsgBytes.byteLength >= ODK_COUNTER_INFO_END_OFFSET) {
+    parsed.taMajorVersion = view.getUint16(40, false);
+    parsed.taMinorVersion = view.getUint16(42, false);
+    parsed.taPatchVersion = view.getUint16(44, false);
+  }
+
+  return parsed;
 }
 
 
@@ -77,6 +185,18 @@ function getExpectedCertScope(): string|null {
   const regex = new RegExp('(\\?|\\&)cert_scope=([-:,\\w]+)', 'g');
   const value = regex.exec(document.URL);
   return value ? value[2] : null;
+}
+
+/**
+ * Strips video AdaptationSets from a DASH MPD manifest XML string so that
+ * Shaka Player requests the Widevine license using only the encrypted audio
+ * track (which shares the same Widevine PSSH box) without decoding the
+ * 256x110 video stream.
+ */
+export function stripVideoAdaptationSets(manifestXml: string): string {
+  return manifestXml.replace(
+      /<AdaptationSet\b[^>]*(?:\bcontentType="video"|\bmimeType="video\/)[^>]*>[\s\S]*?<\/AdaptationSet>/g,
+      '');
 }
 
 /**
@@ -136,6 +256,18 @@ describe('Functional Tests', () => {
           player.configure(
               {drm: {servers: {'com.widevine.alpha': licenseServer}}});
 
+          player.getNetworkingEngine().registerResponseFilter(
+              (type: number, response: Response) => {
+                if (type === RequestType.MANIFEST) {
+                  const manifestXml =
+                      arrayToString(new Uint8Array(response.data));
+                  const audioOnlyManifestXml =
+                      stripVideoAdaptationSets(manifestXml);
+                  response.data =
+                      stringToArray(audioOnlyManifestXml).buffer as ArrayBuffer;
+                }
+              });
+
           player.getNetworkingEngine().registerRequestFilter(
               async (type: number, request: Request) => {
                 if (type === RequestType.LICENSE) {
@@ -145,6 +277,11 @@ describe('Functional Tests', () => {
                         btoa(arrayToString(rawLicenseRequest));
                     console.log(
                         'License request (base64): ' + rawLicenseRequestBase64);
+                    const coreMessage =
+                        parseOemCryptoCoreMessage(rawLicenseRequest);
+                    console.log(
+                        'Parsed oemcrypto_core_message: ' +
+                        JSON.stringify(coreMessage));
 
                     const url =
                         'https://proxy.uat.widevine.com/proxy?get_client_id=true';
@@ -179,6 +316,12 @@ describe('Functional Tests', () => {
                           'oem_crypto_api_version',
                           parsedResponse.client_capabilities.oem_crypto_api_version);
                     }
+                    if (coreMessage) {
+                      yts.addMetric(
+                          'oem_crypto_core_message_api_version',
+                          `${coreMessage.apiMajorVersion}.${
+                              coreMessage.apiMinorVersion}`);
+                    }
                     if (parsedResponse.type) {
                       yts.addMetric('widevine_provisioning_token_type', parsedResponse.type);
                     }
@@ -192,7 +335,11 @@ describe('Functional Tests', () => {
                       yts.addMetric('widevine_cdm_version', license['widevine_cdm_version']);
                     }
 
-                    resolve({clientInfo: parsedResponse, license});
+                    resolve({
+                      clientInfo: parsedResponse,
+                      license,
+                      coreMessage,
+                    });
                   } catch (error) {
                     reject(error);
                   }
@@ -214,8 +361,8 @@ describe('Functional Tests', () => {
       const {clientInfo, license} = await fetchWidevineLicenseInfo();
       const {brand, model, system_integrator} = parseWidevineUA();
 
-      const companyNameMatch = license['company_name'] === brand ||
-          license['company_name'] === system_integrator;
+      const companyNameMatch =
+          isCompanyNameMatch(license['company_name'], brand, system_integrator);
       expect(companyNameMatch)
           .withContext(`License company_name (${
               license['company_name']}) should equal UA brand (${
@@ -235,8 +382,8 @@ describe('Functional Tests', () => {
       const {clientInfo, license} = await fetchWidevineLicenseInfo();
       const {brand, model, system_integrator} = parseWidevineUA();
 
-      const companyNameMatch = license['company_name'] === brand ||
-          license['company_name'] === system_integrator;
+      const companyNameMatch =
+          isCompanyNameMatch(license['company_name'], brand, system_integrator);
       expect(companyNameMatch)
           .withContext(`License company_name (${
               license['company_name']}) should equal UA brand (${
@@ -256,8 +403,8 @@ describe('Functional Tests', () => {
       const {clientInfo, license} = await fetchWidevineLicenseInfo();
       const {brand, model, system_integrator} = parseWidevineUA();
 
-      const companyNameMatch = license['company_name'] === brand ||
-          license['company_name'] === system_integrator;
+      const companyNameMatch =
+          isCompanyNameMatch(license['company_name'], brand, system_integrator);
       expect(companyNameMatch)
           .withContext(`License company_name (${
               license['company_name']}) should equal UA brand (${
@@ -301,8 +448,8 @@ describe('Functional Tests', () => {
       const {license} = await fetchWidevineLicenseInfo();
       const {brand, model, system_integrator} = parseWidevineUA();
 
-      const companyNameMatch = license['company_name'] === brand ||
-          license['company_name'] === system_integrator;
+      const companyNameMatch =
+          isCompanyNameMatch(license['company_name'], brand, system_integrator);
       expect(companyNameMatch)
           .withContext(`License company_name (${
               license['company_name']}) should equal UA brand (${
@@ -338,22 +485,32 @@ describe('Functional Tests', () => {
           .toBeGreaterThanOrEqual(16);
     });
 
-    yts.test({id: '151B042B-A90A-438E-8E06-AFCDA8FD3FD3'});
-    it('Widevine License - v19.3', async () => {
+    yts.test({id: '0648176B-45A6-4147-BEE1-FDB607F494DD'});
+    it('Widevine License - v19', async () => {
       const {clientInfo} = await fetchWidevineLicenseInfo();
 
-      const oemCryptoVersion =
-          String(clientInfo.client_capabilities.oem_crypto_api_version)
-              .split('.');
-      const major = Number(oemCryptoVersion[0]);
-      const minor = oemCryptoVersion[1] ? Number(oemCryptoVersion[1]) : 0;
-
-      expect(major)
-          .withContext('OEMCrypto major version')
+      expect(Number(clientInfo.client_capabilities.oem_crypto_api_version))
+          .withContext('OEMCrypto version check')
           .toBeGreaterThanOrEqual(19);
-      if (major === 19) {
-        expect(minor)
-            .withContext('OEMCrypto minor version')
+    });
+
+    yts.test({id: '151B042B-A90A-438E-8E06-AFCDA8FD3FD3'});
+    it('Widevine License - v19.3', async () => {
+      const {clientInfo, coreMessage} = await fetchWidevineLicenseInfo();
+
+      expect(Number(clientInfo.client_capabilities.oem_crypto_api_version))
+          .withContext('OEMCrypto version check')
+          .toBeGreaterThanOrEqual(19);
+
+      expect(coreMessage)
+          .withContext('SignedMessage.oemcrypto_core_message should be present')
+          .not.toBeNull();
+      expect(coreMessage!.apiMajorVersion)
+          .withContext('OEMCrypto core message major version')
+          .toBeGreaterThanOrEqual(19);
+      if (coreMessage!.apiMajorVersion === 19) {
+        expect(coreMessage!.apiMinorVersion)
+            .withContext('OEMCrypto core message minor version')
             .toBeGreaterThanOrEqual(3);
       }
     });

@@ -61,14 +61,53 @@ declare global {
        * (e.g. to allow UI animations or voice overlays to render).
        */
       delayMs?: number;
+
+      /**
+       * Optional interval in milliseconds for periodic polling. When > 0, an
+       * initial screenshot is captured immediately and polling continues every
+       * intervalMs until stopped, yts.analyzeScreenshots() runs, or the test
+       * finishes. When <= 0, stops active polling without capturing an
+       * additional screenshot.
+       */
+      intervalMs?: number;
     }
 
     /**
      * Takes a screenshot of the device screen.
-     * @param options Optional configuration specifying screenshot name and/or delay.
+     * @param options Optional configuration specifying screenshot name and/or
+     *     delay.
      * @return A promise that resolves when the screenshot has been captured.
      */
     function screenshot(options?: ScreenshotOptions): Promise<void>;
+
+    /**
+     * Diagnosis returned by yts.analyzeScreenshots().
+     */
+    interface ScreenshotAnalysisResult {
+      /** Standardized code classifying the root cause of the failure. */
+      failureCode: FailureCode;
+      /** Human-readable explanation of what happened on the device. */
+      reason: string;
+      /** Confidence score between 0 and 100. */
+      certainty: number;
+      /**
+       * 0-based index of the key screenshot demonstrating the failure, or -1
+       * if not applicable.
+       */
+      keyFailureIndex: number;
+    }
+
+    /**
+     * Runs Gemini visual analysis over the screenshots captured so far in the
+     * current test, so the test can report the diagnosed failure mode (e.g.
+     * via yts.addFailureCode()) before deciding to fail.
+     * @param prompt Optional goal/hint guiding the analysis.
+     * @return A promise resolving to the diagnosis, or null if analysis is
+     *     unavailable (unsupported CLI, timeout, or no screenshots).
+     */
+    function analyzeScreenshots(
+      prompt?: string,
+    ): Promise<ScreenshotAnalysisResult | null>;
 
     /**
      * YTS test certification metadata.
@@ -81,5 +120,10 @@ declare global {
      * Assigns cert metadata to the next `it` or `fit`.
      */
     function test(certMetadata: CertMetadata): void;
+
+    /**
+     * Gets a runtime flag passed from the test runner via RunTests/RunScript.
+     */
+    function getFlag(key: string): string | undefined;
   }
 }

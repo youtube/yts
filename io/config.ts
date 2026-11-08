@@ -62,6 +62,11 @@ export declare interface DevConfig {
    * Leave "replace" values empty to remove messages entirely.
    */
   logRegexFilters?: LogRegexFilter[];
+
+  /**
+   * Default URL for the web agent when no explicit agent URL is provided.
+   */
+  defaultAgentUrl?: string;
 }
 /**
  * Lab configuration.
@@ -215,7 +220,8 @@ export function getConfigOverrides(): Partial<Config> | undefined {
  */
 export function printConfig() {
   const customConfig = Object.assign(getConfigFile(), configOverrides);
-  console.debug('Custom config:');
+  const configPath = storage.getFullDataDirPath(CONFIGS_JSON);
+  console.debug(`Custom config (${configPath}):`);
   console.debug(JSON.stringify(customConfig, null, 2));
 }
 
@@ -275,6 +281,7 @@ function getDefaultConfig(): Config {
       encodeDab: false,
       enableDeviceDiagnostics: false,
       logRegexFilters: [],
+      defaultAgentUrl: undefined,
     },
 
     throttleReportingMs: 1000,

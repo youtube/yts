@@ -15,7 +15,14 @@
  * limitations under the License.
  */
 
-import {ExpectedKey, keyToStr, keysMatch, micKey, ReceivedKey} from './key';
+import {
+  ExpectedKey,
+  keyToStr,
+  keysMatch,
+  micKey,
+  ReceivedKey,
+  ytButtonKey,
+} from './key';
 
 describe('key utils', () => {
   const expectedEnter: ExpectedKey = {
@@ -80,6 +87,12 @@ describe('key utils', () => {
   describe('keyToStr', () => {
     it('formats micKey correctly', () => {
       expect(keyToStr(micKey)).toBe('Microphone / Voice (MicrophoneToggle, 0x3002)');
+    });
+
+    it('formats ytButtonKey correctly', () => {
+      expect(keyToStr(ytButtonKey)).toBe(
+        'YouTube button (LaunchThisApplication, 0x3000)',
+      );
     });
 
     it('formats ExpectedKey correctly', () => {

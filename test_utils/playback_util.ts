@@ -15,12 +15,17 @@
  * limitations under the License.
  */
 
-import {isAndroidTv} from 'google3/third_party/javascript/yts/test_utils/cobalt';
+import 'yts';
+
 import {CobaltVideoElement} from 'google3/third_party/javascript/yts/test_utils/cobalt_video_element';
 import * as av1Codec from 'google3/third_party/javascript/yts/test_utils/codecs/av1_codec';
 import * as vp9Codec from 'google3/third_party/javascript/yts/test_utils/codecs/vp9_codec';
 import {appendContentToBuffer} from 'google3/third_party/javascript/yts/test_utils/streaming/stream_utils';
-import type {StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
+import type {
+  PlaybackOptions,
+  StreamDef,
+} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
+import {getMimeTypeWithTunnelMode} from 'google3/third_party/javascript/yts/test_utils/tunnel_mode';
 import {h5vcc} from 'google3/third_party/javascript/yts/yts_common/h5vcc';
 import {objectUrlFromSafeSource, unwrapUrl} from 'safevalues';
 
@@ -96,43 +101,6 @@ export function cleanupVideoElement(): void {
   if (container && container.parentNode) {
     container.parentNode.removeChild(container);
   }
-}
-
-/** Options for playback and stream configuration. */
-export interface PlaybackOptions {
-  disableTunnel?: boolean;
-}
-
-/**
- * Determines whether tunnel mode is disabled either via URL query parameters
- * or via explicit PlaybackOptions.
- */
-export function isTunnelModeDisabled(options?: PlaybackOptions): boolean {
-  return (
-      window.location.search.includes('disable_tunnel=true') ||
-      window.location.search.includes('disable_tunnel=1') ||
-      Boolean(options?.disableTunnel));
-}
-
-/**
- * Returns the MIME type with ';tunnelmode=true' appended if running on Android TV
- * and tunnel mode is supported by the device and not explicitly disabled.
- */
-export function getMimeTypeWithTunnelMode(
-    mimetype: string,
-    options?: PlaybackOptions,
-): string {
-  if (!mimetype.startsWith('video/')) {
-    return mimetype;
-  }
-  const disableTunnel = isTunnelModeDisabled(options);
-  if (isAndroidTv() && !disableTunnel &&
-      Boolean(MediaSource?.isTypeSupported?.(mimetype + ';tunnelmode=true'))) {
-    const tunnelMimeType = mimetype + ';tunnelmode=true';
-    console.log('Upgrading video stream to tunnel mode:', tunnelMimeType);
-    return tunnelMimeType;
-  }
-  return mimetype;
 }
 
 /** Decoder capability dimensions to declare for a video stream. */

@@ -167,6 +167,7 @@ export interface StreamDef extends StreamInfo {
 /** Interface for playback options like disabling tunnel mode. */
 export interface PlaybackOptions {
   disableTunnel?: boolean;
+  targetBufferDepth?: number;
 }
 
 // tslint:enable:enforce-name-casing

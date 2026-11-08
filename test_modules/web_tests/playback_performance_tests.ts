@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-import {isAndroidTv} from 'google3/third_party/javascript/yts/test_utils/cobalt';
 import {EMEHandler} from 'google3/third_party/javascript/yts/test_utils/eme/eme_handler';
 import {LicenseManager} from 'google3/third_party/javascript/yts/test_utils/eme/license_manager';
 import {setupEme} from 'google3/third_party/javascript/yts/test_utils/eme/setup_eme';
@@ -26,6 +25,7 @@ import * as playbackUtil from 'google3/third_party/javascript/yts/test_utils/pla
 import {StreamPromise} from 'google3/third_party/javascript/yts/test_utils/streaming/stream_promise';
 import type {StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
 import {AAC, AV1, H264, VP9} from 'google3/third_party/javascript/yts/test_utils/streams/media_streams';
+import {isTunnelModeSupported} from 'google3/third_party/javascript/yts/test_utils/tunnel_mode';
 
 // Seekable DRM videos start at currentTime = 12 seconds.
 const DRM_VIDEO_START_TIME = 12;
@@ -80,18 +80,13 @@ function createPlaybackPerfTest(
     );
   };
 
-  const isTunnelSupported = isAndroidTv() &&
-      typeof MediaSource !== 'undefined' &&
-      Boolean(MediaSource.isTypeSupported?.(
-          videoStream.mimetype + ';tunnelmode=true')) &&
-      !window.location.search.includes('disable_tunnel=true');
-
   const timeoutMs =
     playbackRate === 0.25 ? EXTENDED_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
 
   it(
     testName,
     (done) => {
+      const isTunnelSupported = isTunnelModeSupported();
       if (
         !MediaSource.isTypeSupported(
           playbackUtil.createMimeTypeStr(

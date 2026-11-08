@@ -119,15 +119,28 @@ export class MqttClient {
       const {...otherOptions} = options;
       options = Object.assign(MqttClient.DEFAULT_MQTT_OPTIONS, otherOptions);
 
+      let parsedUrl: URL;
       try {
         uri = await MqttClient.resolveToMqttAddress(uri);
+        parsedUrl = new URL(uri);
       } catch (e: unknown) {
         console.error(`Failed to resolve URI "${uri}" to MQTT address.`);
         reject(e);
         return;
       }
 
-      const mqttClient = connect(uri, options);
+      // Pass parsed URL fields in the options object rather than a broker URL
+      // string so `mqtt.connect` does not call the deprecated `url.parse()`.
+      const connectOptions: MqttClientOptions = {
+        protocol: parsedUrl.protocol.replace(
+          /:$/,
+          '',
+        ) as MqttClientOptions['protocol'],
+        hostname: parsedUrl.hostname.replace(/^\[|\]$/g, ''),
+        ...(parsedUrl.port ? {port: Number(parsedUrl.port)} : {}),
+        ...options,
+      };
+      const mqttClient = connect(connectOptions);
       const timeout = setTimeout(() => {
         mqttClient.end();
         reject(

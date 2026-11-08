@@ -28,21 +28,14 @@ import {
   evaluateMemoryApiAccuracy,
   extractMemorySampleFromStats,
   getAllMemoryStats,
-  minutes,
   parseSafeBytes,
   querySystemMemoryInfo,
-  seconds,
   toLoggableString,
   toSafeMb,
 } from './memory_utils';
 
 describe('memory_utils', () => {
-  describe('time and formatting helpers', () => {
-    it('converts seconds and minutes to milliseconds', () => {
-      expect(seconds(5)).toBe(5000);
-      expect(minutes(2)).toBe(120000);
-    });
-
+  describe('toLoggableString', () => {
     it('formats timestamped log lines with optional arguments', () => {
       expect(toLoggableString('Starting CUJ')).toMatch(
         /^\[\d{2}:\d{2}:\d{2}\.\d{3}\] Starting CUJ$/,

@@ -19,13 +19,30 @@ import {setupMse} from 'google3/third_party/javascript/yts/test_utils/mse/setup_
 import {PerfTestUtil} from 'google3/third_party/javascript/yts/test_utils/perf_test_util';
 import * as playbackUtil from 'google3/third_party/javascript/yts/test_utils/playback_util';
 import {StreamPromise} from 'google3/third_party/javascript/yts/test_utils/streaming/stream_promise';
-import type {StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
+import type {PlaybackOptions, StreamDef} from 'google3/third_party/javascript/yts/test_utils/streams/interfaces';
 import {AAC, AV1, H264, VP9} from 'google3/third_party/javascript/yts/test_utils/streams/media_streams';
+import {runWithTunnelModeDualPass} from 'google3/third_party/javascript/yts/test_utils/tunnel_mode';
 
 const DEFAULT_BUFFER_STOP_TIME = 15;
 const DEFAULT_TIMEOUT_MS = 60_000;
 const EXTENDED_TIMEOUT_MS = 120_000;
 let activeStream: StreamPromise<void>|undefined;
+
+function runDualQualityTest(
+    runPass: (done: DoneFn, options: PlaybackOptions) => void,
+): (done: DoneFn) => void {
+  return (done: DoneFn) => {
+    runWithTunnelModeDualPass(done, runPass, {
+      onBeforePass2: () => {
+        playbackUtil.getVideoElement()?.pause();
+        activeStream?.stop();
+        activeStream = undefined;
+        playbackUtil.cleanupVideoElement();
+        playbackUtil.initializeVideoElement();
+      },
+    });
+  };
+}
 
 function* getNextStreamPair(audioStream: StreamDef, videoStreams: StreamDef[]) {
   for (const [index, videoStream] of videoStreams.entries()) {
@@ -43,7 +60,7 @@ function createTotalVideoFramesValidationTest(
 ) {
   it(
       'correctly reports MediaPlaybackQuality.totalVideoFrames',
-      (done) => {
+      runDualQualityTest((done, options) => {
         const video = playbackUtil.getVideoElement()!;
         const audioStream = AAC['Audio1MB'];
 
@@ -69,20 +86,20 @@ function createTotalVideoFramesValidationTest(
         playbackUtil.listenForErrors(video, 'video', true);
 
         // It's okay to use a simple MediaSource because the video size is ~1MB.
-        video.src =
-            playbackUtil.createMediaSourceUrl([audioStream, videoStream]);
+        video.src = playbackUtil.createMediaSourceUrl(
+            [audioStream, videoStream], options);
         console.log('video.src=', video.src);
         video.play();
         console.log('video.play()');
-      },
-      DEFAULT_TIMEOUT_MS,
+      }),
+      DEFAULT_TIMEOUT_MS * 2,
   );
 }
 
 function createFrameDropValidationTest(videoStreams: StreamDef[]) {
   it(
       'correctly reports MediaPlaybackQuality.droppedVideoFrames after forced frame drops',
-      (done) => {
+      runDualQualityTest((done, options) => {
         const video = playbackUtil.getVideoElement()!;
         const perfTestUtil = new PerfTestUtil(video);
         const audioStream = AAC['AudioNormal'];
@@ -127,8 +144,7 @@ function createFrameDropValidationTest(videoStreams: StreamDef[]) {
           video.load();
           const next = streamGenerator.next();
           if (next.done) {
-            fail('None of the high FPS video streams are supported!');
-            done();
+            done.fail('None of the high FPS video streams are supported!');
             return;
           }
           const {audioStream, videoStream} = next.value;
@@ -136,7 +152,8 @@ function createFrameDropValidationTest(videoStreams: StreamDef[]) {
           // Stop the previous stream before starting a new one.
           activeStream?.stop();
           activeStream = setupMse(
-              video, videoStream, audioStream, DEFAULT_BUFFER_STOP_TIME);
+              video, videoStream, audioStream, DEFAULT_BUFFER_STOP_TIME,
+              undefined, undefined, options);
           activeStream.catch(onError);
 
           console.log('video.src set');
@@ -187,8 +204,8 @@ function createFrameDropValidationTest(videoStreams: StreamDef[]) {
 
         playbackUtil.listenForErrors(video, 'video', false, onError);
         playNextSrc();
-      },
-      EXTENDED_TIMEOUT_MS,
+      }),
+      EXTENDED_TIMEOUT_MS * 2,
   );
 }
 

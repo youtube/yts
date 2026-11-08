@@ -21,10 +21,6 @@ import {
   exitCobalt,
   getFriendlyName as getFriendlyNameUtil,
 } from 'google3/third_party/javascript/yts/test_utils/cobalt';
-import {
-  getDeepLinks,
-  listenDeepLink,
-} from 'google3/third_party/javascript/yts/test_utils/deep_link';
 
 const SEARCH_HISTORY_STORAGE_KEY =
   'yt.leanback.default.search-history::recent-searches';
@@ -122,9 +118,6 @@ yts.script('readProp', (path: string) => {
   }
   return obj;
 });
-
-yts.script('listenDeepLink', listenDeepLink);
-yts.script('getDeepLinks', getDeepLinks);
 
 yts.script('getFriendlyName', async () => {
   try {

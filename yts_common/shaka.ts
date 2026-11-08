@@ -36,9 +36,46 @@ export interface DrmConfiguration {
   servers: {[key: string]: string};
 }
 
+/** Override entry for EME initialization data in Shaka Player. */
+export interface InitDataOverride {
+  initData: Uint8Array;
+  initDataType: string;
+  keyId?: string | null;
+}
+
+/** Parsed DRM scheme configuration returned by custom manifest parsers. */
+export interface DrmInfo {
+  keySystem: string;
+  licenseServerUri: string;
+  distinctiveIdentifierRequired: boolean;
+  persistentStateRequired: boolean;
+  audioRobustness: string;
+  videoRobustness: string;
+  serverCertificate: Uint8Array | null;
+  initData: InitDataOverride[];
+  keyIds?: string[];
+}
+
+/** DASH-specific manifest parser configuration for Shaka Player. */
+export interface DashManifestConfiguration {
+  customScheme?: (element: Element) => DrmInfo[] | null;
+}
+
+/** Manifest parser configuration for Shaka Player. */
+export interface ManifestConfiguration {
+  dash?: DashManifestConfiguration;
+}
+
+/** Track selection restrictions for Shaka Player. */
+export interface Restrictions {
+  maxHeight?: number;
+}
+
 /** Minimal interface representing Shaka Player configurations. */
 export interface PlayerConfiguration {
   drm?: DrmConfiguration;
+  manifest?: ManifestConfiguration;
+  restrictions?: Restrictions;
 }
 
 /** Minimal interface representing a Shaka Player Error object. */
@@ -64,6 +101,13 @@ export interface Request {
   uris?: string[];
 }
 
+/** Minimal interface representing a Shaka Player network Response object. */
+export interface Response {
+  uri?: string;
+  data: ArrayBuffer;
+  headers?: {[key: string]: string};
+}
+
 /** Interface representing a Shaka Player instance. */
 export interface Player {
   unload(): Promise<void>;
@@ -72,12 +116,16 @@ export interface Player {
   getNetworkingEngine(): NetworkingEngine;
   load(uri: string): Promise<void>;
   addEventListener(type: string, listener: (event: PlayerEvent) => void): void;
+  removeEventListener(
+      type: string, listener: (event: PlayerEvent) => void): void;
 }
 
 /** Interface representing a Shaka NetworkingEngine instance. */
 export interface NetworkingEngine {
   registerRequestFilter(
       filter: (type: number, request: Request) => Promise<void>| void): void;
+  registerResponseFilter(
+      filter: (type: number, response: Response) => Promise<void> | void): void;
 }
 
 interface MockTextTrackList {
@@ -109,10 +157,8 @@ interface MockableHTMLMediaElement {
 
 /**
  * Mocks text tracks to prevent Shaka player constructor and destructor crashes.
- *
- * @param video The HTMLMediaElement to attach the mocked text tracks to.
  */
-function mockTextTracks(video: HTMLMediaElement) {
+function mockTextTracks(video: HTMLMediaElement): void {
   const tracks = createMockTextTrackList();
   try {
     Object.defineProperty(video, 'textTracks', {
@@ -132,16 +178,22 @@ function mockTextTracks(video: HTMLMediaElement) {
     }
   }
   mockableVideo.addTextTrack = () => {
+    // Cobalt lacks a TextTrack constructor; Shaka's TextEngine only accesses
+    // mode, cues, addCue, and removeCue on the returned track.
     return {
+      cues: [],
       addCue: () => {},
       removeCue: () => {},
     } as unknown as TextTrack;
   };
 }
 
-// Bind to the global window.shaka object at runtime, and export the references
-// tslint:disable-next-line:no-any
-const globalWindow = window as any;
+interface ShakaWindow extends Window {
+  shaka?: {
+    polyfill?: {installAll?: () => void};
+    Player: new (video: HTMLMediaElement) => Player;
+  };
+}
 
 /** Promise that resolves when the Shaka Player script has been loaded. */
 let shakaPromise: Promise<void>|undefined;
@@ -154,7 +206,9 @@ let shakaPromise: Promise<void>|undefined;
  * @return A Promise resolving to a strongly-typed Shaka Player instance.
  */
 export async function getShakaPlayer(video: HTMLMediaElement): Promise<Player> {
-  if (typeof globalWindow.shaka === 'undefined') {
+  // Downcast window to read the external global populated by Shaka's script.
+  const shakaWindow = globalThis.window as ShakaWindow | undefined;
+  if (!shakaWindow?.shaka) {
     if (!shakaPromise) {
       shakaPromise = loadScript(
           trustedResourceUrl`https://storage.googleapis.com/ytlr-cert.appspot.com/test/2020/third_party/Shaka/shaka-player.compiled.js`,
@@ -163,12 +217,17 @@ export async function getShakaPlayer(video: HTMLMediaElement): Promise<Player> {
     await shakaPromise;
   }
 
+  const shaka = shakaWindow?.shaka;
+  if (!shaka) {
+    throw new Error('Shaka Player failed to load.');
+  }
+
   // Install all required polyfills for older browser engines (e.g., Cobalt)
   // before instantiating the player.
-  globalWindow.shaka.polyfill?.installAll?.();
+  shaka.polyfill?.installAll?.();
   mockTextTracks(video);
 
-  return new globalWindow.shaka.Player(video) as Player;
+  return new shaka.Player(video);
 }
 
 /** The global Shaka RequestType enum. */
@@ -178,3 +237,6 @@ export const RequestType: RequestTypeEnum = {
   SEGMENT: 1,
   LICENSE: 2,
 };
+
+/** Internal helpers exported for unit testing only. */
+export const TEST_ONLY = {mockTextTracks};

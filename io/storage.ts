@@ -24,9 +24,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import {cliContext} from './cli_context';
-
 class Storage {
+  /**
+   * Subdirectory name under the OS-specific user data directory where CLI data
+   * and logs are stored. Defaults to 'yts_server' and is overridden to match
+   * the active CLI context when `setCliContext` is called.
+   */
+  storageDir = 'yts_server';
+
   write(pathName: string, data: string) {
     pathName = this.getFullDataDirPath(pathName);
 
@@ -93,7 +98,7 @@ class Storage {
         }
       }
     }
-    return path.join(dir, cliContext.storageDir);
+    return path.join(dir, this.storageDir);
   }
 }
 

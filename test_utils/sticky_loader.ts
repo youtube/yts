@@ -15,6 +15,10 @@
  * limitations under the License.
  */
 
+/**
+ * @fileoverview Utilities for applying and removing the Kabuki sticky loader.
+ */
+
 import 'yts';
 
 import * as globalUtils from 'google3/third_party/javascript/yts/yts_common/global';
@@ -33,17 +37,13 @@ function win() {
 
 ////////////// Sticky loader tools //////////////
 
-// Set to true if a sticky loader is already applied (to avoid unnecessary
-// applications)
-let stickyLoaderApplied = false;
-
 /**
  * Applies a sticky loader
  * @param testProd If true, applies the 'ytstest' loader instead of the default
  *     'yts' loader.
  */
 export async function applyStickyLoader(testProd = false) {
-  await stickyLoaderImpl(/* shouldStick = */ true, testProd);
+  await stickyLoaderImpl(/* shouldStick= */ true, testProd);
 }
 
 /**
@@ -52,13 +52,12 @@ export async function applyStickyLoader(testProd = false) {
  *     'yts' loader.
  */
 export async function removeStickyLoader(testProd = false) {
-  await stickyLoaderImpl(/* shouldStick = */ false, testProd);
+  await stickyLoaderImpl(/* shouldStick= */ false, testProd);
 }
 
 /**
- * Steps if shouldStick = true:
- *   1) Exits early if sticky loader is already applied or is running on
- *      localhost
+ * Steps:
+ *   1) Exits early if running on localhost
  *   2) Redirects to Kabuki with the following parameters:
  *      a) redirect=<current agent URL> if the current URL is a yts sub-version
  *         (that is, not prod)
@@ -73,17 +72,10 @@ export async function removeStickyLoader(testProd = false) {
  *   3) Redirects to the loader as specified in the redirect param (if present)
  */
 async function stickyLoaderImpl(shouldStick: boolean, testProd: boolean) {
-  // Early return if sticky loader is already applied or it's localhost
-  if (shouldStick === stickyLoaderApplied) {
-    return;
-  }
   const isLocalhost = win().location.hostname === 'localhost';
   if (isLocalhost) {
     return;
   }
-
-  // Record that the sticky loader is being applied/removed
-  stickyLoaderApplied = shouldStick;
 
   let redirParam = '';
   // If we're on a subdomain (not on prod or test prod), add a parameter to the
@@ -106,10 +98,3 @@ function isProdLike() {
       win().location.hostname.startsWith('yts.') ||
       win().location.hostname.startsWith('ytstest.yts.'));
 }
-
-export const TEST_ONLY = {
-  // Allows tests to indicate that a sticky loader has already been applied
-  setStickyLoaderApplied: (value: boolean) => {
-    stickyLoaderApplied = value;
-  },
-};

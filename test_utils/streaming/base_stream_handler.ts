@@ -36,6 +36,7 @@ export class BaseStreamHandler {
       protected readonly sb: SourceBuffer,
       protected readonly ms: MediaSource,
       protected readonly stopTime?: number,
+      protected readonly targetBufferDepth: number = TARGET_BUFFER_DEPTH,
   ) {}
 
   /** Explicitly stop streaming on the next loop iteration. */
@@ -107,7 +108,7 @@ export class BaseStreamHandler {
   private async throttleIfNecessary(): Promise<void> {
     while (this.ms.readyState === 'open' && !this.isStopped) {
       const bufferDepth = this.getBufferEnd() - this.videoElement.currentTime;
-      if (bufferDepth > TARGET_BUFFER_DEPTH) {
+      if (bufferDepth > this.targetBufferDepth) {
         console.log(`Throttling buffer at ${bufferDepth.toFixed(2)}s depth.`);
         await sleep(THROTTLE_POLL_INTERVAL_MS);
       } else {

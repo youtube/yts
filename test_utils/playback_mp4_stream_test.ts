@@ -17,6 +17,7 @@
 
 import 'jasmine';
 
+import {BaseStreamHandler} from './streaming/base_stream_handler';
 import {StreamHandlerType, streamVideoByChunksV2} from './streaming/playback_mp4_stream';
 import {StreamInfo} from './streams/interfaces';
 
@@ -56,6 +57,69 @@ describe('playback_mp4_stream', () => {
       await expectAsync(streamPromise).toBeRejected();
     } finally {
       (window as unknown as {MediaSource: unknown}).MediaSource = originalMediaSource;
+    }
+  });
+
+  it('forwards targetBufferDepth option to BaseStreamHandler', async () => {
+    let createdMediaSource: MediaSource | undefined;
+    const originalMediaSource = window.MediaSource;
+    const win = window as unknown as {
+      MediaSource: unknown;
+      yts?: {getFlag?: (name: string) => string};
+    };
+    const originalYts = win.yts;
+    win.yts = {...originalYts, getFlag: () => 'true'};
+    let capturedTargetBufferDepth: number | undefined;
+
+    spyOn(BaseStreamHandler.prototype, 'handleStreaming').and.callFake(function(
+        this: BaseStreamHandler & {targetBufferDepth?: number},
+    ) {
+      capturedTargetBufferDepth = this.targetBufferDepth;
+      return Promise.resolve();
+    });
+
+    class MockMediaSource extends originalMediaSource {
+      override get readyState(): ReadyState {
+        return 'open';
+      }
+      constructor() {
+        super();
+        createdMediaSource = this;
+      }
+      override addSourceBuffer(mime: string): SourceBuffer {
+        return {} as unknown as SourceBuffer;
+      }
+      override endOfStream(error?: EndOfStreamError) {}
+    }
+
+    win.MediaSource = MockMediaSource;
+
+    try {
+      const mockVideoElement = document.createElement('video');
+      const videoInfo: StreamInfo = {
+        mimetype: 'video/mp4; codecs="avc1.42E01E"',
+        src: 'http://example.com/test.mp4',
+        fileSize: 1024,
+      };
+
+      const streamPromise = streamVideoByChunksV2(
+          mockVideoElement,
+          StreamHandlerType.BASE,
+          videoInfo,
+          undefined,
+          undefined,
+          undefined,
+          {disableTunnel: true, targetBufferDepth: 45},
+      );
+
+      expect(createdMediaSource).toBeDefined();
+      createdMediaSource!.dispatchEvent(new Event('sourceopen'));
+
+      await streamPromise;
+      expect(capturedTargetBufferDepth).toBe(45);
+    } finally {
+      win.MediaSource = originalMediaSource;
+      win.yts = originalYts;
     }
   });
 });

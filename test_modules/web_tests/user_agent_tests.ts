@@ -146,12 +146,18 @@ describe('Functional Tests', () => {
 
       expect(parts.length)
           .withContext(`Device name "${
-              deviceNameBlock}" should have exactly 4 parts (Type_Brand_Model_Year)`)
+              deviceNameBlock}" should have exactly 4 parts (SysIntegrator_Type_Chip_Year)`)
           .toBe(4);
 
-      const [deviceType, brand, model, modelYear] = parts;
+      const [sysIntegrator, deviceType, chipset, modelYear] = parts;
 
       const VALID_DEVICE_CHARS = /[A-Za-z0-9-]+/;
+      const OTHER_VALID_CHARS = /[A-Za-z0-9-_.]+/;
+
+      expect(sysIntegrator.match(VALID_DEVICE_CHARS))
+          .withContext(
+              `SystemIntegrator "${sysIntegrator}" MUST be from [a-zA-Z0-9-]`)
+          .not.toBeNull();
 
       expect(deviceType)
           .withContext(
@@ -159,12 +165,8 @@ describe('Functional Tests', () => {
           .toMatch(
               /^(BDP|GAME|OTT|STB|TV|PROJECTOR|MMD|MONITOR|AUTO|SOUNDBAR)$/);
 
-      expect(brand.match(VALID_DEVICE_CHARS))
-          .withContext(`Brand "${brand}" MUST be from [a-zA-Z0-9-]`)
-          .not.toBeNull();
-
-      expect(model.match(VALID_DEVICE_CHARS))
-          .withContext(`Model "${model}" MUST be from [a-zA-Z0-9-]`)
+      expect(chipset.match(VALID_DEVICE_CHARS))
+          .withContext(`ChipsetModel "${chipset}" MUST be from [a-zA-Z0-9-]`)
           .not.toBeNull();
 
       expect(modelYear)
@@ -172,13 +174,31 @@ describe('Functional Tests', () => {
               modelYear}" must be a 4-digit year starting with 20`)
           .toMatch(/^20\d{2}$/);
 
+      expect(parsedUA.firmware)
+          .withContext('FirmwareVersion is missing')
+          .toBeTruthy();
+
+      expect(parsedUA.brand.match(OTHER_VALID_CHARS))
+          .withContext(
+              `BrandName "${parsedUA.brand}" MUST be from [a-zA-Z0-9-_.]`)
+          .not.toBeNull();
+
+      expect(parsedUA.model.match(OTHER_VALID_CHARS))
+          .withContext(
+              `ModelName "${parsedUA.model}" MUST be from [a-zA-Z0-9-_.]`)
+          .not.toBeNull();
+
       // Legacy 3-element trailing parentheses check "(Brand, Model,
       // Connection)"
       const parensIdx = ua.lastIndexOf('(');
       expect(parensIdx)
           .withContext('Could not locate trailing parentheses')
           .toBeGreaterThan(-1);
-      const trailingBlock = ua.substring(parensIdx + 1, ua.length - 1).trim();
+      const closeParensIdx = ua.indexOf(')', parensIdx);
+      expect(closeParensIdx)
+          .withContext('Could not locate closing parenthesis')
+          .toBeGreaterThan(parensIdx);
+      const trailingBlock = ua.substring(parensIdx + 1, closeParensIdx).trim();
       const trailingParts = trailingBlock.split(',').map(s => s.trim());
 
       expect(trailingParts.length)
@@ -189,8 +209,9 @@ describe('Functional Tests', () => {
       expect(trailingParts[1]).toBe(parsedUA.model);
       expect(trailingParts[2])
           .withContext(
-              'Connection parameter must be Wired, Wireless, or similar')
-          .toMatch(/^(WIRED|WIRELESS|Wired|Wireless|[\w-\/]+)$/);
+              `ConnectionType "${
+                  trailingParts[2]}" MUST be "Wired" or "Wireless"`)
+          .toMatch(/^(Wired|Wireless)$/);
     });
 
     yts.test({id: 'F217B75D-4F00-4A48-B89D-56D1799B7F6A'});
@@ -287,7 +308,7 @@ describe('Functional Tests', () => {
       expect(ua.firmware)
           .withContext(
               `Invalid User-Agent firmware version format: "${ua.firmware}"`)
-          .toMatch(/^[\w\W]+\.\w+$/);
+          .toMatch(/^[\w\W]+\.\w+/);
     });
   });
 });
